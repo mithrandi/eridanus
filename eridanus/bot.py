@@ -35,7 +35,7 @@ class User(object):
 
 class IRCBot(IRCClient):
     urlPattern = re.compile(ur'((?:(?:(?:https?|ftp):\/\/)|www\.)(?:(?:[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)|localhost|(?:[a-zA-Z0-9\-]+\.)*[a-zA-Z0-9\-]+\.(?:com|net|org|info|biz|gov|name|edu|[a-zA-Z][a-zA-Z]))(?::[0-9]+)?(?:(?:\/|\?)[^ "]*[^ ,;\.:">)])?/?)')
-    commentPattern = re.compile(ur'\s+(?:(?:\[(.*)\])|(?:<?-- (.*)))')
+    commentPattern = re.compile(ur'\s+(?:\[(.*)\]|<?--\s+(.*))')
 
     def __init__(self, config):
         self.config = config
