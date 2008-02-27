@@ -63,10 +63,7 @@ class Entry(Item):
     """, default=1)
 
     def addComment(self, nick, comment):
-        return Comment(store=self.store,
-                       parent=self,
-                       nick=nick,
-                       comment=comment)
+        return self.store.findOrCreate(Comment, parent=self, nick=nick, comment=comment)
 
     @property
     def comments(self):

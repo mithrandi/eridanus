@@ -99,9 +99,7 @@ class IRCBot(IRCClient):
                 ).addCallback(createEntry)
         else:
             entry.occurences += 1
-            if comment is not None and entry.nick != nickname:
-                print 'adding new comment by %s: %s to %s' % (nickname, comment, str(entry))
-                entry.addComment(nickname, comment)
+            entry.addComment(nickname, comment)
             d = succeed(entry)
 
         def noticeEntry(entry):
