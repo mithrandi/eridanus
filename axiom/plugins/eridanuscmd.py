@@ -31,15 +31,15 @@ class ConfigureService(axiomatic.AxiomaticSubCommand):
         else:
             config = svc.config
 
-        if 'host' in self:
+        if self['host']:
             config.hostname = self['host']
-        if 'port' in self:
+        if self['port']:
             config.portNumber = int(self['port'])
-        if 'nick' in self:
+        if self['nick']:
             config.nickname = self['nick'].decode('utf-8')
-        if 'channels' in self:
+        if self['channels']:
             config._channels = self['channels'].decode('utf-8')
-        if 'ignores' in self:
+        if self['ignores']:
             config._ignores = self['ignores'].decode('utf-8')
 
 
