@@ -15,7 +15,7 @@ from twisted.application.service import IService, IServiceCollection
 
 from eridanus import gchart
 from eridanus.entry import EntryManager
-from eridanus.util import encode, decode, getPage, extractTitle
+from eridanus.util import encode, decode, getPage, extractTitle, truncate
 
 
 class User(object):
@@ -188,6 +188,27 @@ class IRCBot(IRCClient):
                 msg += u' Comments: ' + '  '.join(comments)
         else:
             msg = u'No such entry with that ID.'
+
+        self.reply(user, channel, msg)
+
+    def cmd_find(self, user, channel, text, entryChannel=None):
+        if not text:
+            self.reply(u'Invalid search criteria.')
+            return
+
+        if entryChannel is None:
+            entryChannel = channel
+
+        em = self.getEntryManager(entryChannel)
+        entries = list(em.search(text))
+
+        if not entries:
+            msg = u'No results found for "%s".' % (text,)
+        elif len(entries) == 1:
+            msg = entries[0].completeHumanReadable
+        else:
+            msg = u'%d results. ' % (len(entries,))
+            msg += '  '.join([u'\002#%d\002: \037%s\037' % (e.eid, truncate(e.displayTitle, 30)) for e in entries])
 
         self.reply(user, channel, msg)
 

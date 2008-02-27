@@ -3,7 +3,7 @@ from itertools import islice, groupby
 from epsilon.extime import Time
 
 from axiom.item import Item
-from axiom.attributes import AND, timestamp, integer, reference, text
+from axiom.attributes import AND, OR, timestamp, integer, reference, text
 from axiom.upgrade import registerAttributeCopyingUpgrader, registerUpgrader
 
 from eridanus import const
@@ -185,6 +185,19 @@ class EntryManager(Item):
 
         if limit is not None and contributors > limit:
             yield 'Other', totalEntries - runningTotal
+
+    def search(self, text, limit=None):
+        searchTerm = '%%%s%%' % (text,)
+        store = self.store
+
+        return store.query(Entry,
+            AND(Entry.channel == self.channel,
+                OR(Entry.title.like(searchTerm),
+                   Entry.url.like(searchTerm),
+                   AND(Entry.storeID == Comment.parent,
+                       Comment.comment.like(searchTerm)))),
+            sort=Entry.occurences.descending,
+            limit=limit).distinct()
 
 def entrymanager1to2(old):
     return old.upgradeVersion(

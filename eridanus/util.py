@@ -46,3 +46,8 @@ def extractTitle(data):
     return None
 
 
+def truncate(s, limit):
+    if len(s) + 3 < limit:
+        return s
+
+    return s[:limit] + '...'
