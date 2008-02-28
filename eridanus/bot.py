@@ -245,7 +245,9 @@ class IRCBotFactory(ClientFactory):
         return self.bot
 
     def clientConnectionLost(self, conn, reason):
-        print 'clientConnectionLost', conn, reason
+        log.msg('Client connection lost: %s' % (reason,))
+        # XXX: maybe limit the number of attempts?
+        conn.connect()
 
 
 class IRCBotFactoryFactory(Item):
