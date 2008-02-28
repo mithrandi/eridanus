@@ -100,7 +100,8 @@ class IRCBot(IRCClient):
                 ).addCallback(createEntry)
         else:
             entry.occurences += 1
-            entry.addComment(nickname, comment)
+            if comment:
+                entry.addComment(nickname, comment)
             d = succeed(entry)
 
         def noticeEntry(entry):
