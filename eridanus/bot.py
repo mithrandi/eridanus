@@ -16,6 +16,7 @@ from twisted.application.service import IService, IServiceCollection
 from eridanus import gchart
 from eridanus.entry import EntryManager
 from eridanus.util import encode, decode, getPage, extractTitle, truncate
+from eridanus.tinyurl import tinyurl
 
 
 class User(object):
@@ -209,6 +210,28 @@ class IRCBot(IRCClient):
             msg += '  '.join([u'\002#%d\002: \037%s\037' % (e.eid, truncate(e.displayTitle, 30)) for e in entries])
 
         self.reply(user, channel, msg)
+
+    def cmd_tinyurl(self, user, channel, eid, entryChannel=None):
+        try:
+            eid = int(eid)
+        except ValueError:
+            self.reply(user, channel, u'Invalid entry ID.')
+            return
+
+        if entryChannel is None:
+            entryChannel = channel
+
+        def gotTiny(url):
+            self.reply(user, channel, url)
+
+        em = self.getEntryManager(entryChannel)
+        entry = em.entryById(eid)
+
+        # XXX: yuck
+        if entry is not None:
+            tinyurl(entry.url).addCallback(gotTiny)
+        else:
+            self.reply(u'No such entry with that ID.')
 
 
 class IRCBotFactory(ClientFactory):
