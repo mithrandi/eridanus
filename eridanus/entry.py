@@ -83,8 +83,12 @@ class Entry(Item):
         return u' [%s]' % ('; '.join(c.comment for c in comments),)
 
     @property
+    def slug(self):
+        return self.url.split('/')[-1]
+
+    @property
     def displayTitle(self):
-        return self.title or u'<Untitled>'
+        return self.title or self.slug
 
     @property
     def completeHumanReadable(self):
