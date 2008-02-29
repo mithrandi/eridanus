@@ -196,7 +196,11 @@ class IRCBot(IRCClient):
 
         title = 'Top %d URL contributors for %s' % (limit, channelName)
         chart = gchart.Pie(size=(900, 300), data=[data], labels=labels, title=title)
-        self.reply(user, channel, str(chart.url))
+
+        def gotTiny(url):
+            self.reply(user, channel, str(chart.url))
+
+        tinyurl(str(chart.url)).addCallback(gotTiny)
 
     def cmd_info(self, user, channel, eid, entryChannel=None):
         try:
