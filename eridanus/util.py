@@ -24,8 +24,18 @@ def handle206(failure):
     return failure
 
 
-def getPage(*a, **kw):
-    return client.getPage(*a, **kw).addErrback(handle206)
+def sanitizeUrl(url):
+    if '#' in url:
+        url = url[:url.index('#')]
+    return url
+
+
+def getPage(url, *a, **kw):
+    url = sanitizeUrl(url)
+
+    # XXX: getPage just follows redirects forever, thanks for that.
+    kw['followRedirect'] = False
+    return client.getPage(url, *a, **kw).addErrback(handle206)
 
 
 _whitespace = re.compile(ur'\s+')
