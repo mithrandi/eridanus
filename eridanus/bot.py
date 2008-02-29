@@ -19,6 +19,28 @@ from eridanus.util import encode, decode, getPage, extractTitle, truncate
 from eridanus.tinyurl import tinyurl
 
 
+class PerseverantDownloader(object):
+    def __init__(self, url, tries=10, *a, **kw):
+        self.url = url
+        self.args = a
+        self.kwargs = kw
+        self.tries = tries
+
+    def go(self):
+        return getPage(self.url, *self.args, **self.kwargs).addErrback(self.retry)
+
+    def retry(self, f):
+        log.msg('PerseverantDownloader.retry')
+        log.err(f)
+        # check error?
+        self.tries -= 1
+        if self.tries == 0:
+            if self.tries == 0:
+                return f
+
+        return self.go()
+
+
 class User(object):
     def __init__(self, user):
         super(User, self).__init__()
@@ -102,7 +124,7 @@ class IRCBot(IRCClient):
 
         if entry is None:
             # Only bother fetching the first 4096 bytes of the URL.
-            d = getPage(str(url), headers=dict(range='bytes=0-4095')
+            d = PerseverantDownloader(str(url), headers=dict(range='bytes=0-4095')).go(
                 ).addCallbacks(extractTitle, lambda e: None
                 ).addCallback(createEntry)
         else:
