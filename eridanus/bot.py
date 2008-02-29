@@ -1,4 +1,4 @@
-import re
+import re, shlex
 
 from zope.interface import implements
 
@@ -61,11 +61,18 @@ class IRCBot(IRCClient):
         self.say(channel, u'%s: %s' % (nick, message))
 
     def directedUserText(self, user, channel, message):
-        params = message.split()
+        # XXX:                    _
+        # XXX:   _   _ _   _  ___| | __
+        # XXX:  | | | | | | |/ __| |/ /
+        # XXX:  | |_| | |_| | (__|   <
+        # XXX:   \__, |\__,_|\___|_|\_\
+        # XXX:   |___/
+        params = [decode(p) for p in shlex.split(encode(message))]
         cmd = params.pop(0).lower()
 
         handler = getattr(self, 'cmd_' + cmd, None)
         if handler is not None:
+            log.msg('DEBUG: Dispatching handler for %r: %r (%s)' % (cmd, params, message))
             handler(user, channel, *params)
         else:
             self.reply(user, channel, u'No such command: %s' % (cmd,))
