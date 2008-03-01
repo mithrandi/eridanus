@@ -15,30 +15,8 @@ from twisted.application.service import IService, IServiceCollection
 
 from eridanus import gchart
 from eridanus.entry import EntryManager
-from eridanus.util import encode, decode, getPage, extractTitle, truncate
+from eridanus.util import encode, decode, extractTitle, truncate, PerseverantDownloader
 from eridanus.tinyurl import tinyurl
-
-
-class PerseverantDownloader(object):
-    def __init__(self, url, tries=10, *a, **kw):
-        self.url = url
-        self.args = a
-        self.kwargs = kw
-        self.tries = tries
-
-    def go(self):
-        return getPage(self.url, *self.args, **self.kwargs).addErrback(self.retry)
-
-    def retry(self, f):
-        log.msg('PerseverantDownloader.retry')
-        log.err(f)
-        # check error?
-        self.tries -= 1
-        if self.tries == 0:
-            if self.tries == 0:
-                return f
-
-        return self.go()
 
 
 class User(object):

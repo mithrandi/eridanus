@@ -8,6 +8,28 @@ from twisted.python import log
 from eridanus import const
 
 
+class PerseverantDownloader(object):
+    def __init__(self, url, tries=10, *a, **kw):
+        self.url = url
+        self.args = a
+        self.kwargs = kw
+        self.tries = tries
+
+    def go(self):
+        return getPage(self.url, *self.args, **self.kwargs).addErrback(self.retry)
+
+    def retry(self, f):
+        failure.trap(weberror.Error)
+        log.msg('PerseverantDownloader is retrying because of:')
+        log.err(f)
+        self.tries -= 1
+        if self.tries == 0:
+            if self.tries == 0:
+                return f
+
+        return self.go()
+
+
 def encode(s):
     return s.encode(const.ENCODING, 'replace')
 
