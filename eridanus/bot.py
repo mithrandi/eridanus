@@ -43,6 +43,9 @@ class IRCBot(IRCClient):
         self.nickname = encode(config.nickname)
         self._entryManagers = dict((em.channel, em) for em in config.getEntryManagers())
 
+    def noticed(self, user, channel, message):
+        pass
+
     def signedOn(self):
         for channel in self.config.channels:
             self.join(channel)
@@ -72,7 +75,7 @@ class IRCBot(IRCClient):
 
         handler = getattr(self, 'cmd_' + cmd, None)
         if handler is not None:
-            log.msg('DEBUG: Dispatching handler for %r: %r (%s)' % (cmd, params, message))
+            log.msg('DEBUG: Dispatching handler for %r from %s in %s: %r (%s)' % (cmd, user.nickname, channel, params, message))
             handler(user, channel, *params)
         else:
             self.reply(user, channel, u'No such command: %s' % (cmd,))
@@ -161,7 +164,7 @@ class IRCBot(IRCClient):
     def cmd_part(self, user, channel, channelName=None):
         if channelName is None:
             channelName = channel
-        self.part(channelName)
+        self.part(encode(channelName))
 
     def cmd_ignore(self, user, channel, nick):
         self.config.ignore(nick)
@@ -197,10 +200,10 @@ class IRCBot(IRCClient):
         em = self.getEntryManager(entryChannel)
         entry = em.entryById(eid)
         if entry is not None:
-            comments = ['%s: %s' % (c.nick, c.comment) for c in entry.comments]
-            msg = u'#%d: Mentioned %d time(s), first by \002%s\002.' % (entry.eid, entry.occurences, entry.nick)
+            comments = ['<%s> %s' % (c.nick, c.comment) for c in entry.comments]
+            msg = u'#%d: Mentioned \002%d\002 time(s). ' % (entry.eid, entry.occurences)
             if comments:
-                msg += u' Comments: ' + '  '.join(comments)
+                msg += '  '.join(comments)
         else:
             msg = u'No such entry with that ID.'
 

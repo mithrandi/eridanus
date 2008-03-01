@@ -189,9 +189,8 @@ class EntryManager(Item):
 
     def search(self, text, limit=None):
         searchTerm = '%%%s%%' % (text,)
-        store = self.store
 
-        return store.query(Entry,
+        return self.store.query(Entry,
             AND(Entry.channel == self.channel,
                 OR(Entry.title.like(searchTerm),
                    Entry.url.like(searchTerm),
