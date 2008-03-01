@@ -77,6 +77,14 @@ class IRCBot(IRCClient):
         else:
             self.reply(user, channel, u'No such command: %s' % (cmd,))
 
+    def createEntry(self, (channel, nick, url, comment, title)):
+        em = self.getEntryManager(channel)
+        return em.createEntry(channel=channel,
+                              nick=nick,
+                              url=url,
+                              comment=comment,
+                              title=title)
+
     def userText(self, user, channel, message):
         match = self.urlPattern.search(message)
         if match is None:
@@ -88,33 +96,29 @@ class IRCBot(IRCClient):
         if comment is not None:
             comment = filter(None, comment.groups())[0]
 
-        em = self.getEntryManager(channel)
         nickname = decode(user.nickname)
 
-        def createEntry(title):
-            return em.createEntry(channel=decode(channel),
-                                  nick=nickname,
-                                  url=url,
-                                  comment=comment,
-                                  title=title)
-
+        em = self.getEntryManager(channel)
         entry = em.entryByUrl(url)
+
+        def logCreateError(f):
+            log.msg('Creating a new entry failed:')
+            log.err(f)
+            return f
 
         if entry is None:
             # Only bother fetching the first 4096 bytes of the URL.
             d = PerseverantDownloader(str(url), headers=dict(range='bytes=0-4095')).go(
-                ).addCallbacks(extractTitle, lambda e: None
-                ).addCallback(createEntry)
+                ).addCallback(extractTitle).addErrback(lambda e: None
+                ).addCallback(lambda title: (decode(channel), nickname, url, comment, title)
+                ).addCallback(self.createEntry).addErrback(logCreateError)
         else:
             entry.occurences += 1
             if comment:
                 entry.addComment(nickname, comment)
             d = succeed(entry)
 
-        def noticeEntry(entry):
-            self.notice(channel, encode(entry.humanReadable))
-
-        d.addCallback(noticeEntry)
+        d.addCallback(lambda entry: self.notice(channel, encode(entry.humanReadable)))
 
     def privmsg(self, user, channel, message):
         user = User(user)
@@ -256,7 +260,8 @@ class IRCBotFactory(ClientFactory):
         return self.bot
 
     def clientConnectionLost(self, conn, reason):
-        log.msg('Client connection lost: %s' % (reason,))
+        log.msg('Client connection lost:')
+        log.err(reason)
         # XXX: maybe limit the number of attempts?
         conn.connect()
 
