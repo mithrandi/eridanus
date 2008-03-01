@@ -3,6 +3,7 @@ import re
 from BeautifulSoup import BeautifulSoup
 
 from twisted.web import client, http, error as weberror
+from twisted.python import log
 
 from eridanus import const
 
@@ -46,12 +47,13 @@ def sanitizeTitle(title):
 
 def extractTitle(data):
     try:
-        soup = BeautifulSoup(data)
+        soup = BeautifulSoup(data, convertEntities=[BeautifulSoup.HTML_ENTITIES, BeautifulSoup.XML_ENTITIES])
         titleElem = soup.find('title')
         if titleElem is not None:
             return sanitizeTitle(titleElem.contents[0])
     except:
-        pass
+        log.msg('Extracting title failed:')
+        log.err()
 
     return None
 
