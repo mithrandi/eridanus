@@ -69,7 +69,7 @@ def sanitizeTitle(title):
 
 def extractTitle(data):
     try:
-        soup = BeautifulSoup(data, convertEntities=[BeautifulSoup.HTML_ENTITIES, BeautifulSoup.XML_ENTITIES])
+        soup = BeautifulSoup(data, convertEntities=BeautifulSoup.HTML_ENTITIES)
         titleElem = soup.find('title')
         if titleElem is not None:
             return sanitizeTitle(titleElem.contents[0])

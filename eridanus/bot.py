@@ -341,7 +341,7 @@ class IRCBot(IRCClient):
         em = self.getEntryManager(entryChannel)
         entry = em.entryById(eid)
 
-        # XXX: yuck
+        # XXX: yuck, this kind of code appears everwhere
         if entry is not None:
             tinyurl(entry.url).addCallback(gotTiny)
         else:
