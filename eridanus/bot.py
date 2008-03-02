@@ -1,4 +1,5 @@
 import re, shlex
+from textwrap import dedent
 
 from zope.interface import implements
 
@@ -14,9 +15,24 @@ from twisted.words.protocols.irc import IRCClient
 from twisted.application.service import IService, IServiceCollection
 
 from eridanus import gchart
+from eridanus.errors import CommandNotFound
 from eridanus.entry import EntryManager
 from eridanus.util import encode, decode, extractTitle, truncate, PerseverantDownloader, prettyTimeDelta
 from eridanus.tinyurl import tinyurl
+
+
+paramPattern = re.compile(r'([<[])(\w+)([>\]])')
+
+def formatUsage(s):
+    return paramPattern.sub(r'\1\002\2\002\3', s)
+
+
+def usage(desc):
+    def fact(f):
+        f.usage = formatUsage(desc)
+        f.help = f.__doc__
+        return f
+    return fact
 
 
 class User(object):
@@ -71,13 +87,12 @@ class IRCBot(IRCClient):
         # XXX:   \__, |\__,_|\___|_|\_\
         # XXX:   |___/
         params = [decode(p) for p in shlex.split(encode(message))]
-        cmd = params.pop(0).lower()
 
-        handler = getattr(self, 'cmd_' + cmd, None)
-        if handler is not None:
-            log.msg('DEBUG: Dispatching handler for %r from %s in %s: %r (%s)' % (cmd, user.nickname, channel, params, message))
+        try:
+            handler = self.locateCommand(params)
+            log.msg('DEBUG: Dispatching handler %r from %s in %s: %r (%s)' % (handler, user.nickname, channel, params, message))
             handler(user, channel, *params)
-        else:
+        except CommandNotFound, cmd:
             self.reply(user, channel, u'No such command: %s' % (cmd,))
 
     def createEntry(self, (channel, nick, url, comment, title)):
@@ -137,9 +152,43 @@ class IRCBot(IRCClient):
         else:
             self.userText(user, channel, message)
 
+    def locateCommand(self, params):
+        cmd = params.pop(0).lower()
+        handler = getattr(self, 'cmd_' + cmd, None)
+        if handler is None:
+            raise CommandNotFound(cmd)
+        return handler
+
     ### Commands
 
+    def cmd_help(self, user, channel, commandName=None):
+        # XXX: implement this???
+        if commandName is None:
+            return
+
+        handler = self.locateCommand([commandName])
+        msg = u''
+
+        if hasattr(handler, 'usage'):
+            msg += handler.usage
+
+        if hasattr(handler, 'help'):
+            help = dedent(handler.help).splitlines()
+            if not help[0]:
+                help.pop(0)
+            help = ' '.join(help)
+            msg += u' -- %s' % (help,)
+
+        if not msg:
+            msg = u'No help for %s.' % (commandName,)
+
+        self.reply(user, channel, msg)
+
+    @usage('get <id> [channel]')
     def cmd_get(self, user, channel, eid, entryChannel=None):
+        """
+        Show entry <id> in [channel] or the current channel if not specified.
+        """
         try:
             eid = int(eid)
         except ValueError:
@@ -158,18 +207,35 @@ class IRCBot(IRCClient):
 
         self.reply(user, channel, msg)
 
-    def cmd_join(self, user, channel, channelName):
-        self.join(channelName)
+    @usage('join <channel> [key]')
+    def cmd_join(self, user, channel, channelName, key=None):
+        """
+        Joins <channel> with [key], if provided.
+        """
+        self.join(encode(channelName), key)
 
+    @usage('part [channel]')
     def cmd_part(self, user, channel, channelName=None):
+        """
+        Leave [channel] or the current channel if not specified.
+        """
         if channelName is None:
             channelName = channel
         self.part(encode(channelName))
 
+    @usage('ignore <nick>')
     def cmd_ignore(self, user, channel, nick):
+        """
+        Ignore text from <nick>.
+        """
         self.config.ignore(nick)
 
+    @usage('stats [channel]')
     def cmd_stats(self, user, channel, channelName=None):
+        """
+        Show some interesting statistics for [channel] or the current channel
+        if not specified.
+        """
         if channelName is None:
             channelName = channel
 
@@ -178,7 +244,12 @@ class IRCBot(IRCClient):
         msg = '%d entries with %d comments from %d contributors over a total time period of %s.' % (numEntries, numComments, numContributors, prettyTimeDelta(timespan))
         self.reply(user, channel, msg)
 
+    @usage('chart [channel]')
     def cmd_chart(self, user, channel, channelName=None):
+        """
+        Generate a chart of contributors for [channel] or the current channel
+        if not specified.
+        """
         if channelName is None:
             channelName = channel
 
@@ -196,7 +267,12 @@ class IRCBot(IRCClient):
 
         tinyurl(str(chart.url)).addCallback(gotTiny)
 
+    @usage('info <id> [channel]')
     def cmd_info(self, user, channel, eid, entryChannel=None):
+        """
+        Show information about entry <id> in [channel] or the current channel
+        if not specified.
+        """
         try:
             eid = int(eid)
         except ValueError:
@@ -218,7 +294,12 @@ class IRCBot(IRCClient):
 
         self.reply(user, channel, msg)
 
+    @usage('find <text> [channel]')
     def cmd_find(self, user, channel, text, entryChannel=None):
+        """
+        Search for <text> in URLs, titles and comments in [channel] or the
+        current channel if not specified.
+        """
         if not text:
             self.reply(u'Invalid search criteria.')
             return
@@ -239,7 +320,12 @@ class IRCBot(IRCClient):
 
         self.reply(user, channel, msg)
 
+    @usage('tinyurl <id> [channel]')
     def cmd_tinyurl(self, user, channel, eid, entryChannel=None):
+        """
+        Generate a TinyURL for entry <id> in [channel] or the current channel
+        if not specified.
+        """
         try:
             eid = int(eid)
         except ValueError:
