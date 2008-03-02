@@ -85,3 +85,27 @@ def truncate(s, limit):
         return s
 
     return s[:limit] + '...'
+
+
+def prettyTimeDelta(d):
+    days = d.days
+
+    seconds = d.seconds
+
+    hours = seconds // 3600
+    seconds -= hours * 3600
+
+    minutes = seconds // 60
+    seconds -= minutes * 60
+
+    s = []
+    if days:
+        s.append('%d days' % (days,))
+    if hours:
+        s.append('%d hours' % (hours,))
+    if minutes:
+        s.append('%d minutes' % (minutes,))
+    if seconds:
+        s.append('%d seconds' % (seconds,))
+
+    return ' '.join(s)

@@ -15,7 +15,7 @@ from twisted.application.service import IService, IServiceCollection
 
 from eridanus import gchart
 from eridanus.entry import EntryManager
-from eridanus.util import encode, decode, extractTitle, truncate, PerseverantDownloader
+from eridanus.util import encode, decode, extractTitle, truncate, PerseverantDownloader, prettyTimeDelta
 from eridanus.tinyurl import tinyurl
 
 
@@ -170,6 +170,15 @@ class IRCBot(IRCClient):
         self.config.ignore(nick)
 
     def cmd_stats(self, user, channel, channelName=None):
+        if channelName is None:
+            channelName = channel
+
+        em = self.getEntryManager(channelName)
+        numEntries, numComments, numContributors, timespan = em.stats()
+        msg = '%d entries with %d comments from %d contributors over a total time period of %s.' % (numEntries, numComments, numContributors, prettyTimeDelta(timespan))
+        self.reply(user, channel, msg)
+
+    def cmd_chart(self, user, channel, channelName=None):
         if channelName is None:
             channelName = channel
 

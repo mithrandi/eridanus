@@ -199,6 +199,21 @@ class EntryManager(Item):
             sort=Entry.occurences.descending,
             limit=limit).distinct()
 
+    def stats(self):
+        store = self.store
+        entries = store.query(Entry,
+                              Entry.channel == self.channel,
+                              sort=Entry.created.ascending)
+        numComments = store.query(Comment,
+                                  AND(Comment.parent == Entry.storeID,
+                                      Entry.channel == self.channel)).count()
+
+        numEntries = entries.count()
+        numContributors = len(list(entries.getColumn('nick').distinct()))
+        start = iter(entries).next()
+
+        return numEntries, numComments, numContributors, Time() - start.created
+
 def entrymanager1to2(old):
     return old.upgradeVersion(
         EntryManager.typeName, 1, 2,
