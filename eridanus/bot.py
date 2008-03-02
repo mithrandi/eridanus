@@ -8,7 +8,7 @@ from axiom.upgrade import registerUpgrader
 
 from twisted.python import log
 from twisted.internet import reactor
-from twisted.internet.protocol import ClientFactory
+from twisted.internet.protocol import ReconnectingClientFactory
 from twisted.internet.defer import succeed
 from twisted.words.protocols.irc import IRCClient
 from twisted.application.service import IService, IServiceCollection
@@ -262,7 +262,7 @@ class IRCBot(IRCClient):
             self.reply(u'No such entry with that ID.')
 
 
-class IRCBotFactory(ClientFactory):
+class IRCBotFactory(ReconnectingClientFactory):
     protocol = IRCBot
 
     def __init__(self, config):
@@ -270,12 +270,6 @@ class IRCBotFactory(ClientFactory):
 
     def buildProtocol(self, addr=None):
         return self.bot
-
-    def clientConnectionLost(self, conn, reason):
-        log.msg('Client connection lost:')
-        log.err(reason)
-        # XXX: maybe limit the number of attempts?
-        conn.connect()
 
 
 class IRCBotFactoryFactory(Item):
