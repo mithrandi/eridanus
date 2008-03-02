@@ -347,6 +347,34 @@ class IRCBot(IRCClient):
         else:
             self.reply(u'No such entry with that ID.')
 
+    @usage('discard <id> [channel]')
+    def cmd_discard(self, user, channel, eid, entryChannel=None):
+        """
+        Discards entry <id> in [channel] or the current channel if not
+        specified. Discarded items are not considered for searching.
+        """
+        if user.nickname != 'k4y':
+            self.reply(user, channel, u'You are not k4y. Lol.')
+            return
+        # XXX: this code is duplicated about 6 or 7 times, do something.
+        try:
+            eid = int(eid)
+        except ValueError:
+            self.reply(user, channel, u'Invalid entry ID.')
+            return
+
+        if entryChannel is None:
+            entryChannel = channel
+
+        em = self.getEntryManager(entryChannel)
+        entry = em.entryById(eid)
+
+        # XXX: yuck
+        if entry is not None:
+            entry.discarded = True
+        else:
+            self.reply(u'No such entry with that ID.')
+
 
 class IRCBotFactory(ReconnectingClientFactory):
     protocol = IRCBot

@@ -3,7 +3,7 @@ from itertools import islice, groupby
 from epsilon.extime import Time
 
 from axiom.item import Item
-from axiom.attributes import AND, OR, timestamp, integer, reference, text
+from axiom.attributes import AND, OR, timestamp, integer, reference, text, boolean
 from axiom.upgrade import registerAttributeCopyingUpgrader, registerUpgrader
 
 from eridanus import const
@@ -34,7 +34,7 @@ registerAttributeCopyingUpgrader(Comment, 1, 2)
 
 class Entry(Item):
     typeName = 'eridanus_entry'
-    schemaVersion = 4
+    schemaVersion = 5
 
     eid = integer(allowNone=False)
 
@@ -61,6 +61,10 @@ class Entry(Item):
     occurences = integer(doc="""
     Number of times this entry has been mentioned.
     """, default=1)
+
+    discarded = boolean(doc="""
+    Indicates whether this item is to be considered for searches and the like.
+    """, default=False)
 
     def addComment(self, nick, comment):
         return self.store.findOrCreate(Comment, parent=self, nick=nick, comment=comment)
@@ -136,6 +140,7 @@ def entry3to4(old):
         title=old.title)
 
 registerUpgrader(entry3to4, Entry.typeName, 3, 4)
+registerAttributeCopyingUpgrader(Entry, 4, 5)
 
 
 class EntryManager(Item):
@@ -192,6 +197,7 @@ class EntryManager(Item):
 
         return self.store.query(Entry,
             AND(Entry.channel == self.channel,
+                Entry.discarded == False,
                 OR(Entry.title.like(searchTerm),
                    Entry.url.like(searchTerm),
                    AND(Entry.storeID == Comment.parent,
