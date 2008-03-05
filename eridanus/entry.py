@@ -1,3 +1,4 @@
+import urllib
 from itertools import islice, groupby
 
 from epsilon.extime import Time
@@ -88,7 +89,9 @@ class Entry(Item):
 
     @property
     def slug(self):
-        return self.url.split('/')[-1]
+        for slug in reversed(self.url.split('/')):
+            if slug:
+                return urllib.unquote(slug)
 
     @property
     def displayTitle(self):
