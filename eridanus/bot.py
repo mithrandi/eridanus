@@ -1,10 +1,12 @@
 import re, shlex
 from textwrap import dedent
 
+from epsilon.extime import Time
+
 from zope.interface import implements
 
 from axiom.item import Item
-from axiom.attributes import integer, inmemory, reference, bytes, AND, text
+from axiom.attributes import integer, inmemory, reference, bytes, AND, text, timestamp
 from axiom.upgrade import registerUpgrader
 
 from twisted.python import log
@@ -14,8 +16,8 @@ from twisted.internet.defer import succeed
 from twisted.words.protocols.irc import IRCClient
 from twisted.application.service import IService, IServiceCollection
 
-from eridanus import gchart
-from eridanus.errors import CommandNotFound
+from eridanus import gchart, const
+from eridanus.errors import CommandError, InvalidEntry, CommandNotFound, ParameterError
 from eridanus.entry import EntryManager
 from eridanus.util import encode, decode, extractTitle, truncate, PerseverantDownloader, prettyTimeDelta
 from eridanus.tinyurl import tinyurl
@@ -35,9 +37,34 @@ def usage(desc):
     return fact
 
 
-class User(object):
+class UserConfig(Item):
+    typeName = 'eridanus_userconfig'
+    schemaVersion = 1
+
+    user = inmemory(doc="""
+    An L{IRCUser} instance.
+    """)
+
+    created = timestamp(defaultFactory=lambda: Time(), doc=u"""
+    Timestamp of when this comment was created.
+    """)
+
+    nickname = text(doc="""
+    Nickname this configuration is bound to.
+    """, allowNone=False)
+
+    channel = text(doc="""
+    Channel this configuration is bound to.
+    """, allowNone=False)
+
+    @property
+    def displayCreated(self):
+        return self.created.asHumanly(tzinfo=const.timezone)
+
+
+class IRCUser(object):
     def __init__(self, user):
-        super(User, self).__init__()
+        super(IRCUser, self).__init__()
         if '!' in user:
             nickname, realname = user.split('!', 1)
             realname, host = realname.split('@', 1)
@@ -82,8 +109,11 @@ class IRCBot(IRCClient, _KeepAliveMixin):
     def __init__(self, factory, config):
         self.factory = factory
         self.config = config
+        # XXX
+        self.store = config.store
         self.nickname = encode(config.nickname)
         self._entryManagers = dict((em.channel, em) for em in config.getEntryManagers())
+        self.userConfigs = {}
 
     def noticed(self, user, channel, message):
         pass
@@ -94,20 +124,23 @@ class IRCBot(IRCClient, _KeepAliveMixin):
         for channel in self.config.channels:
             self.join(channel)
 
-    def getEntryManager(self, channelName):
-        em = self._entryManagers.get(decode(channelName))
+    def userRenamed(self, old, new):
+        userConfigs = self.userConfigs
+
+        if old in userConfigs:
+            userConfigs[new] = userConfigs.pop(old)
+
+    def getEntryManager(self, channel):
+        em = self._entryManagers.get(channel)
         if em is None:
-            em = self._entryManagers[channelName] = self.config.createEntryManager(channelName)
+            em = self._entryManagers[channel] = self.config.createEntryManager(channel)
         return em
 
-    def say(self, channel, message, length=None):
-        return IRCClient.say(self, channel, encode(message), length)
+    def reply(self, conf, message):
+        message = u'%s: %s' % (conf.user.nickname, message)
+        self.say(encode(conf.channel), encode(message))
 
-    def reply(self, user, channel, message):
-        nick = user.nickname
-        self.say(channel, u'%s: %s' % (nick, message))
-
-    def directedUserText(self, user, channel, message):
+    def directedUserText(self, conf, message):
         # XXX:                    _
         # XXX:   _   _ _   _  ___| | __
         # XXX:  | | | | | | |/ __| |/ /
@@ -118,10 +151,10 @@ class IRCBot(IRCClient, _KeepAliveMixin):
 
         try:
             handler = self.locateCommand(params)
-            log.msg('DEBUG: Dispatching handler %r from %s in %s: %r (%s)' % (handler, user.nickname, channel, params, message))
-            handler(user, channel, *params)
-        except CommandNotFound, cmd:
-            self.reply(user, channel, u'No such command: %s' % (cmd,))
+            log.msg('DEBUG: Dispatching handler %r from %s in %s: %r (%s)' % (handler, conf.user.nickname, conf.channel, params, message))
+            handler(conf, *params)
+        except CommandError, e:
+            self.reply(conf, u'%s: %s' % (e.__class__.__name__, e))
 
     def createEntry(self, (channel, nick, url, comment, title)):
         em = self.getEntryManager(channel)
@@ -131,54 +164,85 @@ class IRCBot(IRCClient, _KeepAliveMixin):
                               comment=comment,
                               title=title)
 
-    def userText(self, user, channel, message):
-        match = self.urlPattern.search(message)
+    def snarfUrl(self, text):
+        match = self.urlPattern.search(text)
         if match is None:
-            return
+            return None
 
         url = match.group(1)
 
-        comment = self.commentPattern.search(message, match.start())
+        comment = self.commentPattern.search(text, match.start())
         if comment is not None:
             comment = filter(None, comment.groups())[0]
 
-        nickname = decode(user.nickname)
+        return url, comment, text[match.end():]
 
-        em = self.getEntryManager(channel)
-        entry = em.entryByUrl(url)
+    def findUrls(self, text):
+        while True:
+            result = self.snarfUrl(text)
+            if result is None:
+                break
+            url, comment, text = result
+            yield url, comment
+
+    def snarf(self, conf, text):
+        def brokenUrl(f):
+            self.reply(conf, f.value)
+            return f
 
         def logCreateError(f):
             log.msg('Creating a new entry failed:')
             log.err(f)
             return f
 
-        if entry is None:
-            # Only bother fetching the first 4096 bytes of the URL.
-            d = PerseverantDownloader(str(url), headers=dict(range='bytes=0-4095')).go(
-                ).addCallback(extractTitle).addErrback(lambda e: None
-                ).addCallback(lambda title: (decode(channel), nickname, url, comment, title)
-                ).addCallback(self.createEntry).addErrback(logCreateError)
-        else:
-            entry.occurences += 1
-            if comment:
-                entry.addComment(nickname, comment)
-            d = succeed(entry)
+        def spewParams(channel, nickname, url, comment):
+            return lambda title: (channel, nickname, url, comment, title)
 
-        d.addCallback(lambda entry: self.notice(channel, encode(entry.humanReadable)))
+        def noticeEntry(entry):
+            self.notice(encode(entry.channel), encode(entry.humanReadable))
+
+        em = self.getEntryManager(conf.channel)
+        nickname = conf.nickname
+
+        for url, comment in self.findUrls(text):
+            entry = em.entryByUrl(url)
+            if entry is None:
+                # Only bother fetching the first 4096 bytes of the URL.
+                d = PerseverantDownloader(str(url), headers=dict(range='bytes=0-4095')).go(
+                    ).addCallback(extractTitle).addErrback(brokenUrl
+                    ).addCallback(spewParams(conf.channel, nickname, url, comment)
+                    ).addCallback(self.createEntry).addErrback(logCreateError)
+            else:
+                entry.occurences += 1
+                if comment:
+                    entry.addComment(nickname, comment)
+                d = succeed(entry)
+
+            d.addCallback(noticeEntry)
+
+    def userText(self, conf, message):
+        self.snarf(conf, message)
 
     def privmsg(self, user, channel, message):
-        user = User(user)
-        if channel == self.nickname or user.nickname in self.config.ignores:
+        user = IRCUser(user)
+        if user.nickname in self.config.ignores:
             return
 
-        message = decode(message)
-        directed = self.nickname.lower() + u':'
+        conf = self.store.findOrCreate(UserConfig, nickname=decode(user.nickname), channel=decode(channel))
+        conf.user = user
 
-        if message.lower().startswith(directed):
-            message = message[len(directed):].strip()
-            self.directedUserText(user, channel, message)
+        message = decode(message)
+
+        private = channel == self.nickname
+        directedText = self.nickname.lower() + u':'
+        directed = message.lower().startswith(directedText)
+
+        if directed or private:
+            if directed:
+                message = message[len(directedText):].strip()
+            self.directedUserText(conf, message)
         else:
-            self.userText(user, channel, message)
+            self.userText(conf, message)
 
     def locateCommand(self, params):
         cmd = params.pop(0).lower()
@@ -187,9 +251,25 @@ class IRCBot(IRCClient, _KeepAliveMixin):
             raise CommandNotFound(cmd)
         return handler
 
+    def getEntry(self, channel, eid):
+        if eid.startswith('#'):
+            eid = eid[1:]
+
+        try:
+            eid = int(eid)
+        except ValueError:
+            raise InvalidEntry('Invalid entry ID')
+
+        em = self.getEntryManager(channel)
+        entry = em.entryById(eid)
+        if entry is None:
+            raise InvalidEntry('Entry #%d does not exist' % (eid,))
+
+        return em, entry
+
     ### Commands
 
-    def cmd_help(self, user, channel, commandName=None):
+    def cmd_help(self, conf, commandName=None):
         # XXX: implement this???
         if commandName is None:
             return
@@ -210,80 +290,58 @@ class IRCBot(IRCClient, _KeepAliveMixin):
         if not msg:
             msg = u'No help for %s.' % (commandName,)
 
-        self.reply(user, channel, msg)
+        self.reply(conf, msg)
 
     @usage('get <id> [channel]')
-    def cmd_get(self, user, channel, eid, entryChannel=None):
+    def cmd_get(self, conf, eid, entryChannel=None):
         """
         Show entry <id> in [channel] or the current channel if not specified.
         """
-        try:
-            eid = int(eid)
-        except ValueError:
-            self.reply(user, channel, u'Invalid entry ID.')
-            return
-
-        if entryChannel is None:
-            entryChannel = channel
-
-        em = self.getEntryManager(entryChannel)
-        entry = em.entryById(eid)
-        if entry is not None:
-            msg = entry.completeHumanReadable
-        else:
-            msg = u'No such entry with that ID.'
-
-        self.reply(user, channel, msg)
+        em, entry = self.getEntry(entryChannel or conf.channel, eid)
+        self.reply(conf, entry.completeHumanReadable)
 
     @usage('join <channel> [key]')
-    def cmd_join(self, user, channel, channelName, key=None):
+    def cmd_join(self, conf, channelName, key=None):
         """
         Joins <channel> with [key], if provided.
         """
         self.join(encode(channelName), key)
 
     @usage('part [channel]')
-    def cmd_part(self, user, channel, channelName=None):
+    def cmd_part(self, conf, channelName=None):
         """
         Leave [channel] or the current channel if not specified.
         """
-        if channelName is None:
-            channelName = channel
-        self.part(encode(channelName))
+        self.part(encode(channelName or conf.channel))
 
     @usage('ignore <nick>')
-    def cmd_ignore(self, user, channel, nick):
+    def cmd_ignore(self, conf, nick):
         """
         Ignore text from <nick>.
         """
+        # XXX: check privs
         self.config.ignore(nick)
 
     @usage('stats [channel]')
-    def cmd_stats(self, user, channel, channelName=None):
+    def cmd_stats(self, conf, channelName=None):
         """
         Show some interesting statistics for [channel] or the current channel
         if not specified.
         """
-        if channelName is None:
-            channelName = channel
-
-        em = self.getEntryManager(channelName)
+        em = self.getEntryManager(channelName or conf.channel)
         numEntries, numComments, numContributors, timespan = em.stats()
         msg = '%d entries with %d comments from %d contributors over a total time period of %s.' % (numEntries, numComments, numContributors, prettyTimeDelta(timespan))
-        self.reply(user, channel, msg)
+        self.reply(conf, msg)
 
     @usage('chart [channel]')
-    def cmd_chart(self, user, channel, channelName=None):
+    def cmd_chart(self, conf, channelName=None):
         """
         Generate a chart of contributors for [channel] or the current channel
         if not specified.
         """
-        if channelName is None:
-            channelName = channel
-
         limit = 10
 
-        em = self.getEntryManager(channelName)
+        em = self.getEntryManager(channelName or conf.channel)
         data = sorted(em.topContributors(limit=limit), key=lambda x: x[1])
         labels, data = zip(*data)
 
@@ -291,117 +349,79 @@ class IRCBot(IRCClient, _KeepAliveMixin):
         chart = gchart.Pie(size=(900, 300), data=[data], labels=labels, title=title)
 
         def gotTiny(url):
-            self.reply(user, channel, str(chart.url))
+            self.reply(conf, str(url))
 
         tinyurl(str(chart.url)).addCallback(gotTiny)
 
     @usage('info <id> [channel]')
-    def cmd_info(self, user, channel, eid, entryChannel=None):
+    def cmd_info(self, conf, eid, entryChannel=None):
         """
         Show information about entry <id> in [channel] or the current channel
         if not specified.
         """
-        try:
-            eid = int(eid)
-        except ValueError:
-            self.reply(user, channel, u'Invalid entry ID.')
-            return
+        em, entry = self.getEntry(entryChannel or conf.channel, eid)
+        comments = ['<%s> %s' % (c.nick, c.comment) for c in entry.comments]
+        msg = u'#%d: Mentioned \002%d\002 time(s). ' % (entry.eid, entry.occurences)
+        if comments:
+            msg = msg + '  '.join(comments)
 
-        if entryChannel is None:
-            entryChannel = channel
+        self.reply(conf, msg)
 
-        em = self.getEntryManager(entryChannel)
-        entry = em.entryById(eid)
-        if entry is not None:
-            comments = ['<%s> %s' % (c.nick, c.comment) for c in entry.comments]
-            msg = u'#%d: Mentioned \002%d\002 time(s). ' % (entry.eid, entry.occurences)
-            if comments:
-                msg += '  '.join(comments)
-        else:
-            msg = u'No such entry with that ID.'
-
-        self.reply(user, channel, msg)
-
-    @usage('find <text> [channel]')
-    def cmd_find(self, user, channel, text, entryChannel=None):
+    # XXX: the channel argument can no longer be supported without kwargs now.
+    # XXX: FIXME
+    @usage('find <term> [term ...]')
+    def cmd_find(self, conf, *terms):
         """
-        Search for <text> in URLs, titles and comments in [channel] or the
-        current channel if not specified.
+        Search entries for which every <term> matches the URL or title or
+        any comment.
         """
-        if not text:
-            self.reply(u'Invalid search criteria.')
-            return
+        if not terms:
+            raise ParameterError(u'Invalid search criteria.')
 
-        if entryChannel is None:
-            entryChannel = channel
-
-        em = self.getEntryManager(entryChannel)
-        entries = list(em.search(text))
+        em = self.getEntryManager(conf.channel)
+        entries = list(em.search(terms))
 
         if not entries:
-            msg = u'No results found for "%s".' % (text,)
+            msg = u'No results found for: %s.' % (u'; '.join(terms),)
         elif len(entries) == 1:
             msg = entries[0].completeHumanReadable
         else:
             msg = u'%d results. ' % (len(entries,))
             msg += '  '.join([u'\002#%d\002: \037%s\037' % (e.eid, truncate(e.displayTitle, 30)) for e in entries])
 
-        self.reply(user, channel, msg)
+        self.reply(conf, msg)
 
     @usage('tinyurl <id> [channel]')
-    def cmd_tinyurl(self, user, channel, eid, entryChannel=None):
+    def cmd_tinyurl(self, conf, eid, entryChannel=None):
         """
         Generate a TinyURL for entry <id> in [channel] or the current channel
         if not specified.
         """
-        try:
-            eid = int(eid)
-        except ValueError:
-            self.reply(user, channel, u'Invalid entry ID.')
-            return
-
-        if entryChannel is None:
-            entryChannel = channel
+        em, entry = self.getEntry(entryChannel or conf.channel, eid)
 
         def gotTiny(url):
-            self.reply(user, channel, url)
+            self.reply(conf, url)
 
-        em = self.getEntryManager(entryChannel)
-        entry = em.entryById(eid)
-
-        # XXX: yuck, this kind of code appears everwhere
-        if entry is not None:
-            tinyurl(entry.url).addCallback(gotTiny)
-        else:
-            self.reply(u'No such entry with that ID.')
+        tinyurl(entry.url).addCallback(gotTiny)
 
     @usage('discard <id> [channel]')
-    def cmd_discard(self, user, channel, eid, entryChannel=None):
+    def cmd_discard(self, conf, eid, entryChannel=None):
         """
         Discards entry <id> in [channel] or the current channel if not
         specified. Discarded items are not considered for searching.
         """
-        if user.nickname != 'k4y':
-            self.reply(user, channel, u'You are not k4y. Lol.')
-            return
-        # XXX: this code is duplicated about 6 or 7 times, do something.
-        try:
-            eid = int(eid)
-        except ValueError:
-            self.reply(user, channel, u'Invalid entry ID.')
-            return
+        em, entry = self.getEntry(entryChannel or conf.channel, eid)
 
-        if entryChannel is None:
-            entryChannel = channel
-
-        em = self.getEntryManager(entryChannel)
-        entry = em.entryById(eid)
-
-        # XXX: yuck
-        if entry is not None:
+        # XXX: implement proper privs
+        if entry.nick == conf.user.nickname or conf.user.nickname == u'k4y':
             entry.discarded = True
         else:
-            self.reply(u'No such entry with that ID.')
+            self.reply(conf, u'You did not post this entry, ask %s to discard it.' % (entry.nick,))
+
+    @usage('whoami')
+    def cmd_whoami(self, conf):
+        msg = 'You are %s, config created %s.' % (conf.nickname, conf.displayCreated)
+        self.reply(conf, msg)
 
 
 class IRCBotFactory(ReconnectingClientFactory):
