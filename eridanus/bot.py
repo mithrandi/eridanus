@@ -50,11 +50,37 @@ class User(object):
         self.host = host
 
 
-class IRCBot(IRCClient):
+class _KeepAliveMixin(object):
+    pingInterval = 120.0
+    pingTimeoutInterval = 60.0
+
+    pingTimeout = None
+
+    def disconnect(self):
+        self.factory.disconnect()
+
+    def die(self):
+        log.msg('PONG not received within %s seconds, asploding.' % (self.pingTimeout,))
+        self.quit()
+        self.disconnect()
+
+    def rawPing(self):
+        self.sendLine('PING ' + self.config.hostname)
+        self.pingTimeout = reactor.callLater(self.pingTimeoutInterval, self.die)
+
+    def irc_PONG(self, *args):
+        if self.pingTimeout is not None:
+            self.pingTimeout.cancel()
+
+        reactor.callLater(self.pingInterval, self.rawPing)
+
+
+class IRCBot(IRCClient, _KeepAliveMixin):
     urlPattern = re.compile(ur'((?:(?:(?:https?|ftp):\/\/)|www\.)(?:(?:[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)|localhost|(?:[a-zA-Z0-9\-]+\.)*[a-zA-Z0-9\-]+\.(?:com|net|org|info|biz|gov|name|edu|[a-zA-Z][a-zA-Z]))(?::[0-9]+)?(?:(?:\/|\?)[^ "]*[^ ,;\.:">)])?/?)')
     commentPattern = re.compile(ur'\s+(?:\[(.*)\]|<?--\s+(.*))')
 
-    def __init__(self, config):
+    def __init__(self, factory, config):
+        self.factory = factory
         self.config = config
         self.nickname = encode(config.nickname)
         self._entryManagers = dict((em.channel, em) for em in config.getEntryManagers())
@@ -63,6 +89,8 @@ class IRCBot(IRCClient):
         pass
 
     def signedOn(self):
+        self.rawPing()
+        self.factory.resetDelay()
         for channel in self.config.channels:
             self.join(channel)
 
@@ -379,11 +407,17 @@ class IRCBot(IRCClient):
 class IRCBotFactory(ReconnectingClientFactory):
     protocol = IRCBot
 
-    def __init__(self, config):
-        self.bot = self.protocol(config)
+    noisy = True
+
+    def __init__(self, service, config):
+        self.service = service
+        self.bot = self.protocol(self, config)
 
     def buildProtocol(self, addr=None):
         return self.bot
+
+    def disconnect(self):
+        self.service.disconnect()
 
 
 class IRCBotFactoryFactory(Item):
@@ -391,8 +425,8 @@ class IRCBotFactoryFactory(Item):
 
     dummy = integer()
 
-    def getFactory(self, config):
-        return IRCBotFactory(config)
+    def getFactory(self, service, config):
+        return IRCBotFactory(service, config)
 
 
 class IRCBotConfig(Item):
@@ -483,7 +517,10 @@ class IRCBotService(Item):
 
     def connect(self):
         assert self.config is not None, 'No configuration data'
-        return reactor.connectTCP(self.config.hostname, self.config.portNumber, self.factory.getFactory(self.config))
+        return reactor.connectTCP(self.config.hostname, self.config.portNumber, self.factory.getFactory(self, self.config))
+
+    def disconnect(self):
+        self.connector.disconnect()
 
     def activate(self):
         self.parent = None
@@ -514,5 +551,5 @@ class IRCBotService(Item):
             self.connector = self.connect()
 
     def stopService(self):
-        self.connector.disconnect()
+        self.disconnect()
         return succeed(None)
