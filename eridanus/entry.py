@@ -195,16 +195,19 @@ class EntryManager(Item):
         if limit is not None and contributors > limit:
             yield 'Other', totalEntries - runningTotal
 
-    def search(self, text, limit=None):
-        searchTerm = '%%%s%%' % (text,)
+    def search(self, terms, limit=None):
+        def makeCriteria():
+            for term in terms:
+                t = u'%%%s%%' % (term,)
+                yield OR(Entry.title.like(t),
+                         Entry.url.like(t),
+                         AND(Comment.parent == Entry.storeID,
+                             Comment.comment.like(t)))
 
         return self.store.query(Entry,
             AND(Entry.channel == self.channel,
                 Entry.discarded == False,
-                OR(Entry.title.like(searchTerm),
-                   Entry.url.like(searchTerm),
-                   AND(Entry.storeID == Comment.parent,
-                       Comment.comment.like(searchTerm)))),
+                *makeCriteria()),
             sort=Entry.occurences.descending,
             limit=limit).distinct()
 
