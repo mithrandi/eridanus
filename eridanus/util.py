@@ -19,7 +19,7 @@ class PerseverantDownloader(object):
         return getPage(self.url, *self.args, **self.kwargs).addErrback(self.retry)
 
     def retry(self, f):
-        failure.trap(weberror.Error)
+        f.trap(weberror.Error)
         log.msg('PerseverantDownloader is retrying because of:')
         log.err(f)
         self.tries -= 1
@@ -38,13 +38,13 @@ def decode(s):
     return s.decode(const.ENCODING, 'replace')
 
 
-def handle206(failure):
-    failure.trap(weberror.Error)
-    err = failure.value
+def handle206(f):
+    f.trap(weberror.Error)
+    err = f.value
     if int(err.status) == http.PARTIAL_CONTENT:
         return err.response
 
-    return failure
+    return f
 
 
 def sanitizeUrl(url):
@@ -57,7 +57,7 @@ def getPage(url, *a, **kw):
     url = sanitizeUrl(url)
 
     # XXX: getPage just follows redirects forever, thanks for that.
-    kw['followRedirect'] = False
+    #kw['followRedirect'] = False
     return client.getPage(url, *a, **kw).addErrback(handle206)
 
 
