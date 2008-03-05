@@ -183,8 +183,11 @@ class EntryManager(Item):
         runningTotal = 0
         contributors = 0
 
-        for nick, entries in islice(groupby(query, lambda e: e.nick), limit):
-            count = len(list(entries))
+        # XXX: this doesn't seem optimal
+        groups = ((nick, len(list(entries))) for nick, entries in groupby(query, lambda e: e.nick))
+        groups = sorted(groups, reverse=True, key=lambda g: g[1])
+
+        for nick, count in islice(groups, limit):
             contributors += 1
             runningTotal += count
             yield nick, count
