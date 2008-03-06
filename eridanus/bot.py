@@ -1,4 +1,5 @@
 import re, shlex
+from itertools import izip
 from textwrap import dedent
 
 from epsilon.extime import Time
@@ -343,7 +344,9 @@ class IRCBot(IRCClient, _KeepAliveMixin):
 
         em = self.getEntryManager(channelName or conf.channel)
         data = sorted(em.topContributors(limit=limit), key=lambda x: x[1])
+
         labels, data = zip(*data)
+        labels = [u'%s (%d)' % (l, d) for l, d in izip(labels, data)]
 
         title = 'Top %d URL contributors for %s' % (limit, channelName)
         chart = gchart.Pie(size=(900, 300), data=[data], labels=labels, title=title)
