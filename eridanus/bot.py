@@ -227,9 +227,11 @@ class IRCBot(IRCClient, _KeepAliveMixin):
 
     def privmsg(self, user, channel, message):
         user = IRCUser(user)
-        if user.nickname in self.config.ignores:
+        if channel == self.nickname or user.nickname in self.config.ignores:
             return
 
+        # XXX: this completely fails for private messages
+        # XXX: FAIL FAIL FAIL
         conf = self.store.findOrCreate(UserConfig, nickname=decode(user.nickname), channel=decode(channel))
         conf.user = user
 
