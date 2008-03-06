@@ -19,13 +19,12 @@ class PerseverantDownloader(object):
         return getPage(self.url, *self.args, **self.kwargs).addErrback(self.retry)
 
     def retry(self, f):
-        f.trap(weberror.Error)
+        # XXX: What to trap?
         log.msg('PerseverantDownloader is retrying because of:')
         log.err(f)
         self.tries -= 1
         if self.tries == 0:
-            if self.tries == 0:
-                return f
+            return f
 
         return self.go()
 

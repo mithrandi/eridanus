@@ -11,7 +11,7 @@ from axiom.attributes import integer, inmemory, reference, bytes, AND, text, tim
 from axiom.upgrade import registerUpgrader
 
 from twisted.python import log
-from twisted.internet import reactor
+from twisted.internet import reactor, error as ineterror
 from twisted.internet.protocol import ReconnectingClientFactory
 from twisted.internet.defer import succeed
 from twisted.words.protocols.irc import IRCClient
@@ -210,7 +210,8 @@ class IRCBot(IRCClient, _KeepAliveMixin):
             if entry is None:
                 # Only bother fetching the first 4096 bytes of the URL.
                 d = PerseverantDownloader(str(url), headers=dict(range='bytes=0-4095')).go(
-                    ).addCallback(extractTitle).addErrback(brokenUrl
+                    ).addErrback(brokenUrl
+                    ).addCallback(extractTitle
                     ).addCallback(spewParams(conf.channel, nickname, url, comment)
                     ).addCallback(self.createEntry).addErrback(logCreateError)
             else:
