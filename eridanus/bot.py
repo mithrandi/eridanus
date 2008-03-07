@@ -84,13 +84,10 @@ class _KeepAliveMixin(object):
 
     pingTimeout = None
 
-    def disconnect(self):
-        self.factory.disconnect()
-
     def die(self):
-        log.msg('PONG not received within %s seconds, asploding.' % (self.pingTimeout,))
+        log.msg('PONG not received within %s seconds, asploding.' % (self.pingTimeoutInterval,))
         self.quit()
-        self.disconnect()
+        self.factory.retry()
 
     def rawPing(self):
         self.sendLine('PING ' + self.config.hostname)
@@ -120,6 +117,7 @@ class IRCBot(IRCClient, _KeepAliveMixin):
         pass
 
     def signedOn(self):
+        log.msg('Signed on.')
         self.rawPing()
         self.factory.resetDelay()
         for channel in self.config.channels:
@@ -440,10 +438,9 @@ class IRCBotFactory(ReconnectingClientFactory):
         self.bot = self.protocol(self, config)
 
     def buildProtocol(self, addr=None):
+        # XXX: haev sum hax
+        self.connector = self.service.connector
         return self.bot
-
-    def disconnect(self):
-        self.service.disconnect()
 
 
 class IRCBotFactoryFactory(Item):
