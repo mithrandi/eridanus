@@ -186,8 +186,9 @@ class IRCBot(IRCClient, _KeepAliveMixin):
 
     def snarf(self, conf, text):
         def brokenUrl(f):
-            self.reply(conf, f.value)
-            return f
+            log.msg('Error getting page data: %r' % (text,))
+            log.err(f)
+            return None
 
         def logCreateError(f):
             log.msg('Creating a new entry failed:')

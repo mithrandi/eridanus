@@ -67,14 +67,15 @@ def sanitizeTitle(title):
 
 
 def extractTitle(data):
-    try:
-        soup = BeautifulSoup(data, convertEntities=BeautifulSoup.HTML_ENTITIES)
-        titleElem = soup.find('title')
-        if titleElem is not None:
-            return sanitizeTitle(titleElem.contents[0])
-    except:
-        log.msg('Extracting title failed:')
-        log.err()
+    if data is not None:
+        try:
+            soup = BeautifulSoup(data, convertEntities=BeautifulSoup.HTML_ENTITIES)
+            titleElem = soup.find('title')
+            if titleElem is not None:
+                return sanitizeTitle(titleElem.contents[0])
+        except:
+            log.msg('Extracting title failed:')
+            log.err()
 
     return None
 
