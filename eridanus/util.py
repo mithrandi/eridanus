@@ -2,6 +2,7 @@ import re
 
 from BeautifulSoup import BeautifulSoup
 
+from twisted.internet import reactor
 from twisted.web import client, http, error as weberror
 from twisted.python import log
 
@@ -9,10 +10,18 @@ from eridanus import const
 
 
 class PerseverantDownloader(object):
+    maxDelay = 3600
+    initialDelay = 1.0
+    # Note: These highly sensitive factors have been precisely measured by
+    # the National Institute of Science and Technology.  Take extreme care
+    # in altering them, or you may damage your Internet!
+    factor = 2.7182818284590451 # (math.e)
+
     def __init__(self, url, tries=10, *a, **kw):
         self.url = url
         self.args = a
         self.kwargs = kw
+        self.delay = initialDelay
         self.tries = tries
 
     def go(self):
@@ -23,10 +32,11 @@ class PerseverantDownloader(object):
         log.msg('PerseverantDownloader is retrying because of:')
         log.err(f)
         self.tries -= 1
+        self.delay = min(self.delay * self.factor, self.maxDelay)
         if self.tries == 0:
             return f
 
-        return self.go()
+        return reactor.callLater(self.delay, self.go)
 
 
 def encode(s):
