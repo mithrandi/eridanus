@@ -7,7 +7,7 @@ from epsilon.extime import Time
 from zope.interface import implements
 
 from axiom.item import Item
-from axiom.attributes import integer, inmemory, reference, bytes, AND, text, timestamp
+from axiom.attributes import integer, inmemory, reference, bytes, AND, text, timestamp, textlist
 from axiom.upgrade import registerUpgrader
 
 from twisted.python import log
@@ -121,7 +121,7 @@ class IRCBot(IRCClient, _KeepAliveMixin):
         self.rawPing()
         self.factory.resetDelay()
         for channel in self.config.channels:
-            self.join(channel)
+            self.join(encode(channel))
 
     def userRenamed(self, old, new):
         userConfigs = self.userConfigs
@@ -226,7 +226,7 @@ class IRCBot(IRCClient, _KeepAliveMixin):
 
     def privmsg(self, user, channel, message):
         user = IRCUser(user)
-        if channel == self.nickname or user.nickname in self.config.ignores:
+        if channel == self.nickname or decode(user.nickname) in self.config.ignores:
             return
 
         # XXX: this completely fails for private messages
@@ -455,7 +455,7 @@ class IRCBotFactoryFactory(Item):
 
 class IRCBotConfig(Item):
     typeName = 'eridanus_ircbotconfig'
-    schemaVersion = 2
+    schemaVersion = 3
 
     hostname = bytes(doc="""
     The hostname of the IRC server to connect to.
@@ -469,19 +469,17 @@ class IRCBotConfig(Item):
     The bot's nickname.
     """)
 
-    _channels = text(doc="""
+    channels = textlist(doc="""
     Channels the bot should monitor.
-    """)
+    """, default=[])
 
-    _ignores = text(default='')
+    ignores = textlist(default=[])
 
-    @property
-    def channels(self):
-        return encode(self._channels).split(',')
+    def join(self, channel):
+        self.channels.append(channel)
 
-    @property
-    def ignores(self):
-        return encode(self._ignores).split(',')
+    def ignore(self, nick):
+        self.ignores.append(nick)
 
     def getEntryManagers(self):
         return self.store.query(EntryManager, EntryManager.config == self)
@@ -494,12 +492,6 @@ class IRCBotConfig(Item):
     def createEntryManager(self, channel):
         return self.store.findOrCreate(EntryManager, config=self, channel=channel)
 
-    def ignore(self, nick):
-        self.ignores = ','.join(self.ignores.append(nick))
-
-    def unignore(self, nick):
-        raise NotImplementedError()
-
 def ircbotconfig1to2(old):
     return old.upgradeVersion(
         IRCBotConfig.typeName, 1, 2,
@@ -510,6 +502,17 @@ def ircbotconfig1to2(old):
         _ignores=old._ignores.decode('utf-8'))
 
 registerUpgrader(ircbotconfig1to2, IRCBotConfig.typeName, 1, 2)
+
+def ircbotconfig2to3(old):
+    return old.upgradeVersion(
+        IRCBotConfig.typeName, 2, 3,
+        hostname=old.hostname,
+        portNumber=old.portNumber,
+        nickname=old.nickname,
+        channels=old._channels.split(u','),
+        ignores=old._ignores.split(u','))
+
+registerUpgrader(ircbotconfig2to3, IRCBotConfig.typeName, 2, 3)
 
 
 class IRCBotService(Item):

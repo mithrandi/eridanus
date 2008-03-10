@@ -38,9 +38,9 @@ class ConfigureService(axiomatic.AxiomaticSubCommand):
         if self['nick']:
             config.nickname = self['nick'].decode('utf-8')
         if self['channels']:
-            config._channels = self['channels'].decode('utf-8')
+            config.channels = self['channels'].decode('utf-8').split(u',')
         if self['ignores']:
-            config._ignores = self['ignores'].decode('utf-8')
+            config.ignores = self['ignores'].decode('utf-8').split(u',')
 
 
 class CreateService(axiomatic.AxiomaticSubCommand):
