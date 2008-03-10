@@ -1,9 +1,13 @@
     * Quote .like() special characters
     * Handle failures and tracebacks better.
     * Better IRC config/etc interfaces.
-    * Implement a usage/help system.
+    * Improve usage/help system.
     * Handle named parameters to commands.
     * Update entry title if it was previously None and it gets pasted again.
       (This is probably going to require some hackery to getPage because there
       is no point trying to get the title of an image everytime it is pasted.)
     * Have the bot respond to private commands.
+    * Optimise topContributors.
+    * Implement a proper privs system.
+    * Improve command handling (see ICommand from shs)
+    * Switch to Mantissa. Plugin system.
