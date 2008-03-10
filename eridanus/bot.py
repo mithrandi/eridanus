@@ -344,13 +344,15 @@ class IRCBot(IRCClient, _KeepAliveMixin):
         """
         limit = 10
 
-        em = self.getEntryManager(channelName or conf.channel)
+        channel = channelName or conf.channel
+
+        em = self.getEntryManager(channel)
         data = sorted(em.topContributors(limit=limit), key=lambda x: x[1])
 
         labels, data = zip(*data)
         labels = [u'%s (%d)' % (l, d) for l, d in izip(labels, data)]
 
-        title = 'Top %d URL contributors for %s' % (limit, channelName)
+        title = 'Top %d URL contributors for %s' % (limit, channel)
         chart = gchart.Pie(size=(900, 300), data=[data], labels=labels, title=title)
 
         def gotTiny(url):
@@ -422,11 +424,6 @@ class IRCBot(IRCClient, _KeepAliveMixin):
             entry.discarded = True
         else:
             self.reply(conf, u'You did not post this entry, ask %s to discard it.' % (entry.nick,))
-
-    @usage('whoami')
-    def cmd_whoami(self, conf):
-        msg = 'You are %s, config created %s.' % (conf.nickname, conf.displayCreated)
-        self.reply(conf, msg)
 
 
 class IRCBotFactory(ReconnectingClientFactory):

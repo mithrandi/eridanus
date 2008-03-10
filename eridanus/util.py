@@ -21,7 +21,7 @@ class PerseverantDownloader(object):
         self.url = url
         self.args = a
         self.kwargs = kw
-        self.delay = initialDelay
+        self.delay = self.initialDelay
         self.tries = tries
 
     def go(self):
