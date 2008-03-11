@@ -8,11 +8,12 @@ from axiom.attributes import AND, OR, timestamp, integer, reference, text, boole
 from axiom.upgrade import registerAttributeCopyingUpgrader, registerUpgrader
 
 from eridanus import const
+from eridanus.util import encode, decode
 
 
 class Comment(Item):
     typeName = 'eridanus_comment'
-    schemaVersion = 2
+    schemaVersion = 3
 
     created = timestamp(defaultFactory=lambda: Time(), doc=u"""
     Timestamp of when this comment was created.
@@ -30,7 +31,16 @@ class Comment(Item):
     The comment text that L{nick} made.
     """, allowNone=False)
 
+    initial = boolean(doc="""
+    Indicates whether this was the initial comment made when the entry was created.
+    """, allowNone=False, default=False)
+
+    @property
+    def displayTimestamp(self):
+        return self.created.asHumanly(tzinfo=const.timezone)
+
 registerAttributeCopyingUpgrader(Comment, 1, 2)
+registerAttributeCopyingUpgrader(Comment, 2, 3)
 
 
 class Entry(Item):
@@ -67,25 +77,28 @@ class Entry(Item):
     Indicates whether this item is to be considered for searches and the like.
     """, default=False)
 
-    def addComment(self, nick, comment):
-        return self.store.findOrCreate(Comment, parent=self, nick=nick, comment=comment)
+    def addComment(self, nick, comment, initial=False):
+        return self.store.findOrCreate(Comment, parent=self, nick=nick, comment=comment, initial=initial)
 
     @property
     def comments(self):
-        return self.store.query(Comment, Comment.parent == self)
+        return list(self.store.query(Comment,
+                                     AND(Comment.parent == self,
+                                         Comment.initial == False),
+                                     sort=Comment.created.ascending))
 
     @property
-    def creatorComments(self):
-        return self.store.query(Comment,
-                                AND(Comment.parent == self,
-                                    Comment.nick == self.nick))
+    def initialComment(self):
+        return self.store.findFirst(Comment,
+                                    AND(Comment.parent == self,
+                                        Comment.initial == True))
 
     @property
     def displayComment(self):
-        comments = list(self.creatorComments)
-        if not comments:
+        comment = self.initialComment
+        if comment is None:
             return u''
-        return u' [%s]' % ('; '.join(c.comment for c in comments),)
+        return u' [%s]' % (comment.comment,)
 
     @property
     def slug(self):
@@ -98,12 +111,16 @@ class Entry(Item):
         return self.title or self.slug
 
     @property
+    def displayTimestamp(self):
+        return self.created.asHumanly(tzinfo=const.timezone)
+
+    @property
     def completeHumanReadable(self):
-        return u'#%d: \037%s\037%s @ %s posted %s by \002%s\002.' % (self.eid, self.displayTitle, self.displayComment, self.url, self.created.asHumanly(tzinfo=const.timezone), self.nick)
+        return u'#%d: \037%s\037%s @ %s posted %s by \002%s\002.' % (self.eid, self.displayTitle, self.displayComment, self.url, self.displayTimestamp, self.nick)
 
     @property
     def humanReadable(self):
-        return u'#%d: \037%s\037%s posted %s by \002%s\002.' % (self.eid, self.displayTitle, self.displayComment, self.created.asHumanly(tzinfo=const.timezone), self.nick)
+        return u'#%d: \037%s\037%s posted %s by \002%s\002.' % (self.eid, self.displayTitle, self.displayComment, self.displayTimestamp, self.nick)
 
 registerAttributeCopyingUpgrader(Entry, 1, 2)
 
@@ -146,6 +163,16 @@ registerUpgrader(entry3to4, Entry.typeName, 3, 4)
 registerAttributeCopyingUpgrader(Entry, 4, 5)
 
 
+def saneURL(url):
+    t, rest = urllib.splittype(encode(url))
+    if t is None:
+        if not rest.startswith('//'):
+            rest = '//' + rest
+        return u'http:' + decode(rest)
+
+    return url
+
+
 class EntryManager(Item):
     typeName = 'eridanus_entrymanager'
     schemaVersion = 2
@@ -161,11 +188,21 @@ class EntryManager(Item):
                   eid=eid,
                   channel=channel,
                   nick=nick,
-                  url=url,
+                  url=saneURL(url),
                   title=title)
+
         if comment is not None:
-            e.addComment(nick, comment)
+            e.addComment(nick, comment, initial=True)
+
         return e
+
+    def allEntries(self, limit=None, recentFirst=True, discarded=False):
+        sort = [Entry.created.ascending, Entry.created.descending][recentFirst]
+        return self.store.query(Entry,
+                                AND(Entry.channel == self.channel,
+                                    Entry.discarded == discarded),
+                                limit=limit,
+                                sort=sort)
 
     def entryById(self, eid):
         return self.store.findFirst(Entry,
