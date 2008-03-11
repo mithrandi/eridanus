@@ -50,8 +50,11 @@ def decode(s):
 def handle206(f):
     f.trap(weberror.Error)
     err = f.value
-    if int(err.status) == http.PARTIAL_CONTENT:
-        return err.response
+    try:
+        if int(err.status) == http.PARTIAL_CONTENT:
+            return err.response
+    except ValueError:
+        pass
 
     return f
 
