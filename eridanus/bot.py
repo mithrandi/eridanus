@@ -201,6 +201,11 @@ class IRCBot(IRCClient, _KeepAliveMixin):
         def noticeEntry(entry):
             self.notice(encode(entry.channel), encode(entry.humanReadable))
 
+        def noticeEntryUpdate((entry, comment)):
+            noticeEntry(entry)
+            if comment is not None:
+                self.notice(encode(entry.channel), encode(comment.humanReadable))
+
         em = self.getEntryManager(conf.channel)
         nickname = conf.nickname
 
@@ -208,18 +213,18 @@ class IRCBot(IRCClient, _KeepAliveMixin):
             entry = em.entryByUrl(url)
             if entry is None:
                 # Only bother fetching the first 4096 bytes of the URL.
-                d = PerseverantDownloader(str(url), headers=dict(range='bytes=0-4095')).go(
+                PerseverantDownloader(str(url), headers=dict(range='bytes=0-4095')).go(
                     ).addErrback(brokenUrl
                     ).addCallback(extractTitle
                     ).addCallback(spewParams(conf.channel, nickname, url, comment)
-                    ).addCallback(self.createEntry).addErrback(logCreateError)
+                    ).addCallback(self.createEntry).addErrback(logCreateError
+                    ).addCallback(noticeEntry)
             else:
                 entry.occurences += 1
+                c = None
                 if comment:
-                    entry.addComment(nickname, comment)
-                d = succeed(entry)
-
-            d.addCallback(noticeEntry)
+                    c = entry.addComment(nickname, comment)
+                succeed((entry, c)).addCallback(noticeEntryUpdate)
 
     def userText(self, conf, message):
         self.snarf(conf, message)

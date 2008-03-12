@@ -39,6 +39,10 @@ class Comment(Item):
     def displayTimestamp(self):
         return self.created.asHumanly(tzinfo=const.timezone)
 
+    @property
+    def humanReadable(self):
+        return u'#%d: %s -- \002%s\002 (%s)' % (self.parent.eid, self.comment, self.nick, self.displayTimestamp)
+
 registerAttributeCopyingUpgrader(Comment, 1, 2)
 registerAttributeCopyingUpgrader(Comment, 2, 3)
 
