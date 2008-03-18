@@ -101,7 +101,7 @@ class _KeepAliveMixin(object):
 
 
 class IRCBot(IRCClient, _KeepAliveMixin):
-    urlPattern = re.compile(ur'((?:(?:(?:https?|ftp):\/\/)|www\.)(?:(?:[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)|localhost|(?:[a-zA-Z0-9\-]+\.)*[a-zA-Z0-9\-]+\.(?:com|net|org|info|biz|gov|name|edu|[a-zA-Z][a-zA-Z]))(?::[0-9]+)?(?:(?:\/|\?)[^ "]*[^ ,;\.:">)])?/?)')
+    urlPattern = re.compile(ur'((?:(?:(?:https?|ftp):\/\/)|www\.)(?:(?:[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)|localhost|(?:[a-zA-Z0-9\-]+\.)*[a-zA-Z0-9\-]+\.(?:com|net|org|info|biz|gov|name|edu|[a-zA-Z][a-zA-Z]))(?::[0-9]+)?(?:(?:\/|\?)[^ "]*[^ ,;\.:">])?/?)')
     commentPattern = re.compile(ur'\s+(?:\[(.*)\]|<?--\s+(.*))')
 
     def __init__(self, factory, config):
