@@ -49,7 +49,7 @@ registerAttributeCopyingUpgrader(Comment, 2, 3)
 
 class Entry(Item):
     typeName = 'eridanus_entry'
-    schemaVersion = 5
+    schemaVersion = 6
 
     eid = integer(allowNone=False)
 
@@ -79,6 +79,10 @@ class Entry(Item):
 
     discarded = boolean(doc="""
     Indicates whether this item is to be considered for searches and the like.
+    """, default=False)
+
+    deleted = boolean(doc="""
+    Indicates whether this item is to be considered at all.
     """, default=False)
 
     def addComment(self, nick, comment, initial=False):
@@ -165,6 +169,7 @@ def entry3to4(old):
 
 registerUpgrader(entry3to4, Entry.typeName, 3, 4)
 registerAttributeCopyingUpgrader(Entry, 4, 5)
+registerAttributeCopyingUpgrader(Entry, 5, 6)
 
 
 def saneURL(url):
@@ -200,28 +205,37 @@ class EntryManager(Item):
 
         return e
 
-    def allEntries(self, limit=None, recentFirst=True, discarded=False):
-        sort = [Entry.created.ascending, Entry.created.descending][recentFirst]
+    def allEntries(self, limit=None, recentFirst=True, discarded=False, sort=None):
+        if sort is None:
+            sort = [Entry.created.ascending, Entry.created.descending][recentFirst]
+
         return self.store.query(Entry,
                                 AND(Entry.channel == self.channel,
-                                    Entry.discarded == discarded),
+                                    Entry.discarded == discarded,
+                                    Entry.deleted == False),
                                 limit=limit,
                                 sort=sort)
 
+    def entryBy(self, eid=None, url=None):
+        criteria = [
+            Entry.channel == self.channel,
+            Entry.deleted == False]
+
+        if eid is not None:
+            criteria.append(Entry.eid == eid)
+        if url is not None:
+            criteria.append(Entry.url == url)
+
+        return self.store.findFirst(Entry, AND(*criteria))
+
     def entryById(self, eid):
-        return self.store.findFirst(Entry,
-                                    AND(Entry.channel == self.channel,
-                                        Entry.eid == eid))
+        return self.entryBy(eid=eid)
 
     def entryByUrl(self, url):
-        return self.store.findFirst(Entry,
-                                    AND(Entry.channel == self.channel,
-                                        Entry.url == url))
+        return self.entryBy(url=url)
 
     def topContributors(self, limit=None):
-        query = self.store.query(Entry,
-                                 Entry.channel == self.channel,
-                                 sort=Entry.nick.descending)
+        query = self.allEntries(sort=Entry.nick.descending)
 
         totalEntries = query.count()
         runningTotal = 0
@@ -236,8 +250,9 @@ class EntryManager(Item):
             runningTotal += count
             yield nick, count
 
-        if limit is not None and contributors > limit:
-            yield 'Other', totalEntries - runningTotal
+        # XXX: other seems a bit of a pointless thing
+        #if limit is not None and contributors > limit:
+        #    yield 'Other', totalEntries - runningTotal
 
     def search(self, terms, limit=None):
         def makeCriteria():
@@ -251,6 +266,7 @@ class EntryManager(Item):
         return self.store.query(Entry,
             AND(Entry.channel == self.channel,
                 Entry.discarded == False,
+                Entry.deleted == False,
                 *makeCriteria()),
             sort=Entry.occurences.descending,
             limit=limit).distinct()

@@ -434,6 +434,20 @@ class IRCBot(IRCClient, _KeepAliveMixin):
         else:
             self.reply(conf, u'You did not post this entry, ask %s to discard it.' % (entry.nick,))
 
+    @usage('delete <id> [channel]')
+    def cmd_delete(self, conf, eid, entryChannel=None):
+        """
+        Deletes entry <id> in [channel] or the current channel if not
+        specified.
+        """
+        em, entry = self.getEntry(entryChannel or conf.channel, eid)
+
+        # XXX: implement proper privs
+        if entry.nick == conf.user.nickname or conf.user.nickname == u'k4y':
+            entry.deleted = True
+        else:
+            self.reply(conf, u'You did not post this entry, ask %s to delete it.' % (entry.nick,))
+
 
 class IRCBotFactory(ReconnectingClientFactory):
     protocol = IRCBot
