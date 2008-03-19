@@ -277,26 +277,30 @@ class IRCBot(IRCClient, _KeepAliveMixin):
 
     ### Commands
 
+    @usage('help [command]')
     def cmd_help(self, conf, commandName=None):
-        # XXX: implement this???
+        """
+        Display help for [command] or a list of commands if not specified.
+        """
         if commandName is None:
-            return
+            commands = [name[4:] for name in sorted(self.__class__.__dict__.iterkeys()) if name.startswith('cmd_')]
+            msg = u', '.join(commands)
+        else:
+            handler = self.locateCommand([commandName])
+            msg = u''
 
-        handler = self.locateCommand([commandName])
-        msg = u''
+            if hasattr(handler, 'usage'):
+                msg += handler.usage
 
-        if hasattr(handler, 'usage'):
-            msg += handler.usage
+            if hasattr(handler, 'help'):
+                help = dedent(handler.help).splitlines()
+                if not help[0]:
+                    help.pop(0)
+                help = ' '.join(help)
+                msg += u' -- %s' % (help,)
 
-        if hasattr(handler, 'help'):
-            help = dedent(handler.help).splitlines()
-            if not help[0]:
-                help.pop(0)
-            help = ' '.join(help)
-            msg += u' -- %s' % (help,)
-
-        if not msg:
-            msg = u'No help for %s.' % (commandName,)
+            if not msg:
+                msg = u'No help for %s.' % (commandName,)
 
         self.reply(conf, msg)
 
