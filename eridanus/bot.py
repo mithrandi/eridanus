@@ -116,6 +116,14 @@ class IRCBot(IRCClient, _KeepAliveMixin):
     def noticed(self, user, channel, message):
         pass
 
+    def join(self, channel, key=None):
+        self.config.join(channel)
+        return IRCClient.join(self, channel, key)
+
+    def part(self, channel):
+        self.config.leave(channel)
+        return IRCClient.part(self, channel)
+
     def signedOn(self):
         log.msg('Signed on.')
         self.rawPing()
@@ -496,10 +504,15 @@ class IRCBotConfig(Item):
     ignores = textlist(default=[])
 
     def join(self, channel):
-        self.channels.append(channel)
+        self.channels = self.channels + [channel]
+
+    def leave(self, channel):
+        channels = self.channels
+        channels.remove(channel)
+        self.channels = channels
 
     def ignore(self, nick):
-        self.ignores.append(nick)
+        self.ignores = self.ignores + [nick]
 
     def getEntryManagers(self):
         return self.store.query(EntryManager, EntryManager.config == self)
