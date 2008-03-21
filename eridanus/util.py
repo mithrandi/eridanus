@@ -2,7 +2,7 @@ import re
 
 from BeautifulSoup import BeautifulSoup
 
-from twisted.internet import reactor
+from twisted.internet import reactor, task
 from twisted.web import client, http, error as weberror
 from twisted.python import log
 
@@ -33,7 +33,7 @@ class PerseverantDownloader(object):
         if self.tries == 0:
             return f
 
-        return reactor.callLater(self.delay, self.go)
+        return task.deferLater(reactor, self.delay, self.go)
 
 
 def encode(s):
