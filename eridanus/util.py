@@ -12,10 +12,7 @@ from eridanus import const
 class PerseverantDownloader(object):
     maxDelay = 3600
     initialDelay = 1.0
-    # Note: These highly sensitive factors have been precisely measured by
-    # the National Institute of Science and Technology.  Take extreme care
-    # in altering them, or you may damage your Internet!
-    factor = 2.7182818284590451 # (math.e)
+    factor = 1.6180339887498948
 
     def __init__(self, url, tries=10, *a, **kw):
         self.url = url
@@ -29,9 +26,9 @@ class PerseverantDownloader(object):
 
     def retry(self, f):
         # XXX: What to trap?
-        log.msg('PerseverantDownloader is retrying because of:')
-        log.err(f)
         self.tries -= 1
+        log.msg('PerseverantDownloader is retrying, %d attempts left.' % (self.tries,))
+        log.err(f)
         self.delay = min(self.delay * self.factor, self.maxDelay)
         if self.tries == 0:
             return f
