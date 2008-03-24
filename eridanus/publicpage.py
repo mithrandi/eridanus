@@ -4,19 +4,19 @@ from zope.interface import implements
 from twisted.python.filepath import FilePath
 
 from axiom.item import Item
-from axiom.attributes import integer
+from axiom.attributes import integer, text
 from axiom.errors import ItemNotFound
 
 from nevow import static, tags, url
-from nevow.inevow import IRequest
+from nevow.inevow import IRequest, ICanHandleNotFound
 from nevow.rend import Page
 
-from xmantissa import publicweb
-from xmantissa.ixmantissa import IPublicPage
+from xmantissa import publicweb, website
+from xmantissa.ixmantissa import IPublicPage, ISiteRootPlugin
 from xmantissa.webtheme import SiteTemplateResolver
 
 from eridanus.bot import IRCBotService
-from eridanus.util import ThemedFragment, truncate, decode
+from eridanus.util import ThemedPage, ThemedFragment, truncate, decode
 
 
 class Trail(object):
@@ -325,3 +325,63 @@ class PublicIndexPage(Page):
     def child_(self, ctx):
         # XXX: don't hardcode this
         return url.URL.fromContext(ctx).child('shadowfire')
+
+
+class FrontPage(Item, website.PrefixURLMixin):
+    implements(ISiteRootPlugin)
+
+    typeName = 'eridanus_front_page'
+    schemaVersion = 1
+
+    sessioned = True
+
+    publicViews = integer(doc="""
+        The number of times this object has been viewed in a public
+        (non-authenticated) context.  This includes renderings of the front
+        page only.
+        """, default=0)
+
+    privateViews = integer(doc="""
+        The number of times this object has been viewed in a private
+        (authenticated) context.  This only counts the number of times users
+        have been redirected from "/" to "/private".
+        """, default=0)
+
+    prefixURL = text(doc="""
+        See L{website.PrefixURLMixin}.
+        """, default=u'', allowNone=False)
+
+    def createResource(self):
+        pfp = PublicFrontPage(self, staticContent=None, forUser=None)
+        pfp.remember(FourOhFourPage(self.store), ICanHandleNotFound)
+        return pfp
+
+
+class PublicFrontPage(publicweb.PublicFrontPage):
+    def child_(self, ctx):
+        return url.URL.fromContext(ctx).child('Eridanus')
+
+
+class FourOhFourPage(PublicContentPage):
+    implements(ICanHandleNotFound)
+
+    def getFragment(self):
+        return FourOhFourFragment(store=self.store)
+
+    def render_heading(self, ctx, data):
+        return []
+
+    def render_subHeading(self, ctx, data):
+        return []
+
+    def renderHTTP_notFound(self, ctx):
+        return self
+
+
+class FourOhFourFragment(ThemedFragment):
+    fragmentName = '404'
+
+    def render_url(self, ctx, data):
+        req = IRequest(ctx)
+        return ctx.tag[req.path]
+

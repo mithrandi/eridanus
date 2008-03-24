@@ -2,9 +2,9 @@ from axiom.scripts import axiomatic
 from axiom.dependency import installOn, uninstallFrom
 from axiom.attributes import AND
 
-#from xmantissa import publicweb
+from xmantissa import publicweb
 
-#from eridanus import publicpage
+from eridanus import publicpage
 from eridanus.bot import IRCBotService, IRCBotFactoryFactory, IRCBotConfig
 
 
@@ -99,24 +99,28 @@ class ManageServices(axiomatic.AxiomaticSubCommand):
         return self.parent.getStore()
 
 
+class SetupCommands(axiomatic.AxiomaticSubCommand):
+    longdesc = 'Setup stuff'
+
+    def postOptions(self):
+        s = self.parent.getStore()
+        s.transact(self.replaceFrontPage, s)
+
+    def replaceFrontPage(self, store):
+        store.query(publicweb.FrontPage).deleteFromStore()
+
+        fp = store.findOrCreate(publicpage.FrontPage, prefixURL=u'')
+        installOn(fp, store)
+
+
 class Eridanus(axiomatic.AxiomaticCommand):
     name = 'eridanus'
     description = 'Eridanus mechanic'
 
     subCommands = [
         ('service', None, ManageServices, 'Manage services'),
+        ('setup', None, SetupCommands, 'Setup stuff'),
         ]
 
     def getStore(self):
         return self.parent.getStore()
-
-    #def postOptions(self):
-    #    s = self.parent.getStore()
-    #    s.transact(self.installServices, s)
-    #    #s.transact(self.replaceFrontPage, s)
-
-    #def replaceFrontPage(self, store):
-    #    store.query(publicweb.FrontPage).deleteFromStore()
-    #
-    #    fp = store.findOrCreate(publicpage.FrontPage, prefixURL=u'')
-    #    installOn(fp, store)
