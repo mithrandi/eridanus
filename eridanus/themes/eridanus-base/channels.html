@@ -1,0 +1,10 @@
+<div xmlns:nevow="http://nevow.com/ns/nevow/0.1" class="search">
+<ul nevow:render="channels">
+    <li nevow:pattern="channel">
+        <a>
+            <nevow:attr name="href"><nevow:slot name="url" /></nevow:attr>
+            <nevow:slot name="name" />
+        </a>
+    </li>
+</ul>
+</div>

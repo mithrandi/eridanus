@@ -6,7 +6,34 @@ from twisted.internet import reactor, task
 from twisted.web import client, http, error as weberror
 from twisted.python import log
 
+from nevow.rend import Page, Fragment
+
+from xmantissa.webtheme import _ThemedMixin, SiteTemplateResolver
+
 from eridanus import const
+
+
+class _PublicThemedMixin(_ThemedMixin):
+    def getDocFactory(self, fragmentName, default=None):
+        resolver = SiteTemplateResolver(self.store)
+        return resolver.getDocFactory(fragmentName, default)
+
+
+class ThemedPage(_PublicThemedMixin, Page):
+    fragmentName = 'page-no-fragment-name-specified'
+
+    def renderHTTP(self, ctx):
+        if self.docFactory is None:
+            self.docFactory = self.getDocFactory(self.fragmentName)
+        return super(ThemedPage, self).renderHTTP(ctx)
+
+
+class ThemedFragment(_PublicThemedMixin, Fragment):
+    fragmentName = 'fragment-no-fragment-name-specified'
+
+    def __init__(self, store, **kw):
+        self.store = store
+        super(ThemedFragment, self).__init__(**kw)
 
 
 class PerseverantDownloader(object):
@@ -91,7 +118,7 @@ def extractTitle(data):
 
 
 def truncate(s, limit):
-    if len(s) + 3 < limit:
+    if len(s) - 3 < limit:
         return s
 
     return s[:limit] + '...'

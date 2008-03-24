@@ -8,16 +8,17 @@ from zope.interface import implements
 
 from axiom.item import Item
 from axiom.attributes import integer, inmemory, reference, bytes, AND, text, timestamp, textlist
-from axiom.upgrade import registerUpgrader
+from axiom.upgrade import registerUpgrader, registerAttributeCopyingUpgrader
 
 from twisted.python import log
-from twisted.internet import reactor, error as ineterror
+from twisted.internet import reactor
 from twisted.internet.protocol import ReconnectingClientFactory
 from twisted.internet.defer import succeed
 from twisted.words.protocols.irc import IRCClient
 from twisted.application.service import IService, IServiceCollection
 
 from eridanus import gchart, const
+from eridanus.ieridanus import INetwork
 from eridanus.errors import CommandError, InvalidEntry, CommandNotFound, ParameterError
 from eridanus.entry import EntryManager
 from eridanus.util import encode, decode, extractTitle, truncate, PerseverantDownloader, prettyTimeDelta
@@ -110,7 +111,7 @@ class IRCBot(IRCClient, _KeepAliveMixin):
         # XXX
         self.store = config.store
         self.nickname = encode(config.nickname)
-        self._entryManagers = dict((em.channel, em) for em in config.getEntryManagers())
+        self._entryManagers = dict((em.channel, em) for em in config.allEntryManagers())
         self.userConfigs = {}
 
     def noticed(self, user, channel, message):
@@ -138,6 +139,7 @@ class IRCBot(IRCClient, _KeepAliveMixin):
             userConfigs[new] = userConfigs.pop(old)
 
     def getEntryManager(self, channel):
+        assert channel.startswith(u'#')
         em = self._entryManagers.get(channel)
         if em is None:
             em = self._entryManagers[channel] = self.config.createEntryManager(channel)
@@ -325,6 +327,7 @@ class IRCBot(IRCClient, _KeepAliveMixin):
         """
         Joins <channel> with [key], if provided.
         """
+        # XXX: check privs
         self.join(encode(channelName), key)
 
     @usage('part [channel]')
@@ -332,6 +335,7 @@ class IRCBot(IRCClient, _KeepAliveMixin):
         """
         Leave [channel] or the current channel if not specified.
         """
+        # XXX: check privs
         self.part(encode(channelName or conf.channel))
 
     @usage('ignore <nick>')
@@ -482,8 +486,14 @@ class IRCBotFactoryFactory(Item):
 
 
 class IRCBotConfig(Item):
+    implements(INetwork)
+
     typeName = 'eridanus_ircbotconfig'
-    schemaVersion = 3
+    schemaVersion = 4
+
+    name = text(doc="""
+    The name of the network this config is for.
+    """)
 
     hostname = bytes(doc="""
     The hostname of the IRC server to connect to.
@@ -514,10 +524,10 @@ class IRCBotConfig(Item):
     def ignore(self, nick):
         self.ignores = self.ignores + [nick]
 
-    def getEntryManagers(self):
+    def allEntryManagers(self):
         return self.store.query(EntryManager, EntryManager.config == self)
 
-    def getEntryManager(self, channel):
+    def managerByChannel(self, channel):
         return self.store.findFirst(EntryManager,
                                     AND(EntryManager.config == self,
                                         EntryManager.channel == channel))
@@ -546,6 +556,7 @@ def ircbotconfig2to3(old):
         ignores=old._ignores.split(u','))
 
 registerUpgrader(ircbotconfig2to3, IRCBotConfig.typeName, 2, 3)
+registerAttributeCopyingUpgrader(IRCBotConfig, 3, 4)
 
 
 class IRCBotService(Item):
@@ -558,9 +569,11 @@ class IRCBotService(Item):
 
     name = None
 
-    serviceID = bytes(allowNone=False)
+    serviceID = bytes(doc="""
+    """, allowNone=False)
 
-    config = reference()
+    config = reference(doc="""
+    """, allowNone=False, reftype=IRCBotConfig)
 
     parent = inmemory(doc="""
     The parent of this service.

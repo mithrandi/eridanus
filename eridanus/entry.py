@@ -11,40 +11,129 @@ from eridanus import const
 from eridanus.util import encode, decode
 
 
-class Comment(Item):
-    typeName = 'eridanus_comment'
-    schemaVersion = 3
 
-    created = timestamp(defaultFactory=lambda: Time(), doc=u"""
-    Timestamp of when this comment was created.
-    """)
+def saneURL(url):
+    t, rest = urllib.splittype(encode(url))
+    if t is None:
+        if not rest.startswith('//'):
+            rest = '//' + rest
+        return u'http:' + decode(rest)
 
-    parent = reference(doc="""
-    L{Entry} item this comment refers to.
-    """, allowNone=False)
+    return url
 
-    nick = text(doc="""
-    The nickname of the person who commented on L{parent}.
-    """, allowNone=False)
 
-    comment = text(doc="""
-    The comment text that L{nick} made.
-    """, allowNone=False)
+class EntryManager(Item):
+    typeName = 'eridanus_entrymanager'
+    schemaVersion = 2
 
-    initial = boolean(doc="""
-    Indicates whether this was the initial comment made when the entry was created.
-    """, allowNone=False, default=False)
+    config = reference()
+    channel = text(allowNone=False)
+    lastEid = integer(allowNone=False, default=0)
 
-    @property
-    def displayTimestamp(self):
-        return self.created.asHumanly(tzinfo=const.timezone)
+    def createEntry(self, channel, nick, url, comment=None, title=None):
+        eid = self.lastEid
+        self.lastEid += 1
+        e = Entry(store=self.store,
+                  eid=eid,
+                  channel=channel,
+                  nick=nick,
+                  url=saneURL(url),
+                  title=title)
 
-    @property
-    def humanReadable(self):
-        return u'#%d: %s -- \002%s\002 (%s)' % (self.parent.eid, self.comment, self.nick, self.displayTimestamp)
+        if comment is not None:
+            e.addComment(nick, comment, initial=True)
 
-registerAttributeCopyingUpgrader(Comment, 1, 2)
-registerAttributeCopyingUpgrader(Comment, 2, 3)
+        return e
+
+    def allEntries(self, limit=None, recentFirst=True, discarded=False, sort=None):
+        if sort is None:
+            sort = [Entry.created.ascending, Entry.created.descending][recentFirst]
+
+        return self.store.query(Entry,
+                                AND(Entry.channel == self.channel,
+                                    Entry.discarded == discarded,
+                                    Entry.deleted == False),
+                                limit=limit,
+                                sort=sort)
+
+    def entryBy(self, eid=None, url=None):
+        criteria = [
+            Entry.channel == self.channel,
+            Entry.deleted == False]
+
+        if eid is not None:
+            criteria.append(Entry.eid == eid)
+        if url is not None:
+            criteria.append(Entry.url == url)
+
+        return self.store.findFirst(Entry, AND(*criteria))
+
+    def entryById(self, eid):
+        return self.entryBy(eid=eid)
+
+    def entryByUrl(self, url):
+        return self.entryBy(url=url)
+
+    def topContributors(self, limit=None):
+        query = self.allEntries(sort=Entry.nick.descending)
+
+        totalEntries = query.count()
+        runningTotal = 0
+        contributors = 0
+
+        # XXX: this doesn't seem optimal
+        groups = ((nick, len(list(entries))) for nick, entries in groupby(query, lambda e: e.nick))
+        groups = sorted(groups, reverse=True, key=lambda g: g[1])
+
+        for nick, count in islice(groups, limit):
+            contributors += 1
+            runningTotal += count
+            yield nick, count
+
+        # XXX: other seems a bit of a pointless thing
+        #if limit is not None and contributors > limit:
+        #    yield 'Other', totalEntries - runningTotal
+
+    def search(self, terms, limit=None):
+        def makeCriteria():
+            for term in terms:
+                t = u'%%%s%%' % (term,)
+                yield OR(Entry.title.like(t),
+                         Entry.url.like(t),
+                         AND(Comment.parent == Entry.storeID,
+                             Comment.comment.like(t)))
+
+        return self.store.query(Entry,
+            AND(Entry.channel == self.channel,
+                Entry.discarded == False,
+                Entry.deleted == False,
+                *makeCriteria()),
+            sort=Entry.created.descending,
+            limit=limit).distinct()
+
+    def stats(self):
+        store = self.store
+        entries = store.query(Entry,
+                              Entry.channel == self.channel,
+                              sort=Entry.created.ascending)
+        numComments = store.query(Comment,
+                                  AND(Comment.parent == Entry.storeID,
+                                      Entry.channel == self.channel)).count()
+
+        numEntries = entries.count()
+        numContributors = len(list(entries.getColumn('nick').distinct()))
+        start = iter(entries).next()
+
+        return numEntries, numComments, numContributors, Time() - start.created
+
+def entrymanager1to2(old):
+    return old.upgradeVersion(
+        EntryManager.typeName, 1, 2,
+        config=old.config,
+        channel=old.channel.decode('utf-8'),
+        lastEid=old.lastEid)
+
+registerUpgrader(entrymanager1to2, EntryManager.typeName, 1, 2)
 
 
 class Entry(Item):
@@ -172,125 +261,37 @@ registerAttributeCopyingUpgrader(Entry, 4, 5)
 registerAttributeCopyingUpgrader(Entry, 5, 6)
 
 
-def saneURL(url):
-    t, rest = urllib.splittype(encode(url))
-    if t is None:
-        if not rest.startswith('//'):
-            rest = '//' + rest
-        return u'http:' + decode(rest)
+class Comment(Item):
+    typeName = 'eridanus_comment'
+    schemaVersion = 3
 
-    return url
+    created = timestamp(defaultFactory=lambda: Time(), doc=u"""
+    Timestamp of when this comment was created.
+    """)
 
+    parent = reference(doc="""
+    L{Entry} item this comment refers to.
+    """, allowNone=False, reftype=Entry)
 
-class EntryManager(Item):
-    typeName = 'eridanus_entrymanager'
-    schemaVersion = 2
+    nick = text(doc="""
+    The nickname of the person who commented on L{parent}.
+    """, allowNone=False)
 
-    config = reference()
-    channel = text(allowNone=False)
-    lastEid = integer(allowNone=False, default=0)
+    comment = text(doc="""
+    The comment text that L{nick} made.
+    """, allowNone=False)
 
-    def createEntry(self, channel, nick, url, comment=None, title=None):
-        eid = self.lastEid
-        self.lastEid += 1
-        e = Entry(store=self.store,
-                  eid=eid,
-                  channel=channel,
-                  nick=nick,
-                  url=saneURL(url),
-                  title=title)
+    initial = boolean(doc="""
+    Indicates whether this was the initial comment made when the entry was created.
+    """, allowNone=False, default=False)
 
-        if comment is not None:
-            e.addComment(nick, comment, initial=True)
+    @property
+    def displayTimestamp(self):
+        return self.created.asHumanly(tzinfo=const.timezone)
 
-        return e
+    @property
+    def humanReadable(self):
+        return u'#%d: %s -- \002%s\002 (%s)' % (self.parent.eid, self.comment, self.nick, self.displayTimestamp)
 
-    def allEntries(self, limit=None, recentFirst=True, discarded=False, sort=None):
-        if sort is None:
-            sort = [Entry.created.ascending, Entry.created.descending][recentFirst]
-
-        return self.store.query(Entry,
-                                AND(Entry.channel == self.channel,
-                                    Entry.discarded == discarded,
-                                    Entry.deleted == False),
-                                limit=limit,
-                                sort=sort)
-
-    def entryBy(self, eid=None, url=None):
-        criteria = [
-            Entry.channel == self.channel,
-            Entry.deleted == False]
-
-        if eid is not None:
-            criteria.append(Entry.eid == eid)
-        if url is not None:
-            criteria.append(Entry.url == url)
-
-        return self.store.findFirst(Entry, AND(*criteria))
-
-    def entryById(self, eid):
-        return self.entryBy(eid=eid)
-
-    def entryByUrl(self, url):
-        return self.entryBy(url=url)
-
-    def topContributors(self, limit=None):
-        query = self.allEntries(sort=Entry.nick.descending)
-
-        totalEntries = query.count()
-        runningTotal = 0
-        contributors = 0
-
-        # XXX: this doesn't seem optimal
-        groups = ((nick, len(list(entries))) for nick, entries in groupby(query, lambda e: e.nick))
-        groups = sorted(groups, reverse=True, key=lambda g: g[1])
-
-        for nick, count in islice(groups, limit):
-            contributors += 1
-            runningTotal += count
-            yield nick, count
-
-        # XXX: other seems a bit of a pointless thing
-        #if limit is not None and contributors > limit:
-        #    yield 'Other', totalEntries - runningTotal
-
-    def search(self, terms, limit=None):
-        def makeCriteria():
-            for term in terms:
-                t = u'%%%s%%' % (term,)
-                yield OR(Entry.title.like(t),
-                         Entry.url.like(t),
-                         AND(Comment.parent == Entry.storeID,
-                             Comment.comment.like(t)))
-
-        return self.store.query(Entry,
-            AND(Entry.channel == self.channel,
-                Entry.discarded == False,
-                Entry.deleted == False,
-                *makeCriteria()),
-            sort=Entry.occurences.descending,
-            limit=limit).distinct()
-
-    def stats(self):
-        store = self.store
-        entries = store.query(Entry,
-                              Entry.channel == self.channel,
-                              sort=Entry.created.ascending)
-        numComments = store.query(Comment,
-                                  AND(Comment.parent == Entry.storeID,
-                                      Entry.channel == self.channel)).count()
-
-        numEntries = entries.count()
-        numContributors = len(list(entries.getColumn('nick').distinct()))
-        start = iter(entries).next()
-
-        return numEntries, numComments, numContributors, Time() - start.created
-
-def entrymanager1to2(old):
-    return old.upgradeVersion(
-        EntryManager.typeName, 1, 2,
-        config=old.config,
-        channel=old.channel.decode('utf-8'),
-        lastEid=old.lastEid)
-
-registerUpgrader(entrymanager1to2, EntryManager.typeName, 1, 2)
+registerAttributeCopyingUpgrader(Comment, 1, 2)
+registerAttributeCopyingUpgrader(Comment, 2, 3)

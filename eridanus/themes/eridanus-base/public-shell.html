@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:nevow="http://nevow.com/ns/nevow/0.1" xml:lang="en">
+    <head nevow:render="head">
+        <title nevow:render="title" />
+    </head>
+    <body>
+        <!--[if IE 6]>
+        <div class="root-ie6">
+        <![endif]-->
+        <div class="content">
+            <h1 nevow:render="heading" />
+            <h2 nevow:render="subHeading" />
+            <nevow:invisible nevow:render="content" />
+            <div class="terminator" />
+        </div>
+        <!--[if IE 6]>
+        </div>
+        <![endif]-->
+    </body>
+</html>

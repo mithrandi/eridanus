@@ -1,0 +1,66 @@
+<div xmlns:nevow="http://nevow.com/ns/nevow/0.1">
+
+<!--
+<h1 nevow:render="heading" />
+<h2 nevow:render="subHeading" />
+-->
+
+<div nevow:render="content" />
+
+<div nevow:render="entries">
+    <div nevow:pattern="noEntries">
+        <h2>No entries.</h2>
+    </div>
+
+    <li nevow:pattern="comment">
+        &#8220;<nevow:slot name="comment" />&#8221; &#8211;
+        <strong><nevow:slot name="name"/></strong>
+        (<em><nevow:slot name="timestamp" /></em>)
+    </li>
+
+    <nevow:invisible nevow:pattern="titleComment">
+        &#8211; &#8220;<nevow:slot name="initialComment" />&#8221;
+    </nevow:invisible>
+
+    <nevow:invisible nevow:pattern="commentSection">
+        <ul class="comments">
+            <nevow:slot name="content" />
+        </ul>
+    </nevow:invisible>
+
+    <div nevow:pattern="entry" class="entry">
+        <h2 class="entry-id">
+            <a>
+                <nevow:attr name="href"><nevow:slot name="intUrl" /></nevow:attr>
+                <nevow:slot name="id" />
+            </a>
+        </h2>
+
+        <div class="entry-content">
+            <h3>
+                <a>
+                    <nevow:attr name="href"><nevow:slot name="extUrl" /></nevow:attr>
+                    <nevow:attr name="title"><nevow:slot name="title" /></nevow:attr>
+                    <nevow:slot name="displayTitle" />
+                </a>
+            </h3>
+            <div class="title-comment">
+                <nevow:slot name="titleComment" />
+            </div>
+
+            <div class="entry-info">
+                Posted <em><nevow:slot name="timestamp" /></em> by <strong><nevow:slot name="creator" /></strong>. Mentioned <strong><nevow:slot name="occurences" /></strong> time(s).
+            </div>
+            <nevow:slot name="comments" />
+        </div>
+        <div class="terminator" />
+    </div>
+</div>
+
+<!--XXX:
+<div style="text-align: center;">
+    <img src="http://chart.apis.google.com/chart?chd=s%3AEFFILNSVs9&amp;chs=500x250&amp;cht=p&amp;chtt=Top%2010%20URL%20contributors%20for%20%23code&amp;chl=yegz%20(8)|Karl%20(10)|HelfiX%20(11)|nim%20(16)|pjd%20(23)|Karnaugh%20(26)|Shrimp%20(36)|Zelphar%20(43)|k4y%20(89)|mithrandi%20(121)&amp;chf=bg,s,222233&amp;chts=ffffff&amp;chxs=0,ffffff&amp;chxt=x&amp;chm=b,ff0000,0,1,0" alt="" />
+</div>
+FIXME-->
+
+</div>

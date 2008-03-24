@@ -1,0 +1,12 @@
+#!/bin/sh
+
+rm -rf dev.axiom
+cp -r ~/Coding/Eridanus/trunk/dev.axiom .
+rm dev.axiom/**/*.pid
+
+axiomatic -d dev.axiom mantissa
+axiomatic -d dev.axiom offering install Eridanus
+
+python bin/killbotservice.py dev.axiom
+python bin/fixinitialcomment.py dev.axiom
+python bin/fixbrokenurls.py dev.axiom
