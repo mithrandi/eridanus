@@ -1,5 +1,6 @@
 from axiom.scripts import axiomatic
-from axiom.dependency import installOn
+from axiom.dependency import installOn, uninstallFrom
+from axiom.attributes import AND
 
 #from xmantissa import publicweb
 
@@ -64,11 +65,33 @@ class CreateService(axiomatic.AxiomaticSubCommand):
         installOn(svc, store)
 
 
+class RemoveService(axiomatic.AxiomaticSubCommand):
+    longdesc = 'Remove an existing Eridanus service'
+
+    optParameters = [
+        ('id', None, None, 'Service identifier'),
+        ]
+
+    def getStore(self):
+        return self.parent.getStore()
+
+    def postOptions(self):
+        store = self.getStore()
+
+        fact = store.findUnique(IRCBotFactoryFactory)
+        svc = store.findUnique(IRCBotService,
+                               AND(IRCBotService.serviceID == self['id'],
+                                   IRCBotService.factory == fact));
+
+        uninstallFrom(svc, store)
+
+
 class ManageServices(axiomatic.AxiomaticSubCommand):
     longdesc = 'Manage Eridanus services'
 
     subCommands = [
         ('create', None, CreateService, 'Create a new service'),
+        ('remove', None, RemoveService, 'Remove an existing service'),
         ('config', None, ConfigureService, 'Set service configuration data'),
         ]
 
