@@ -181,6 +181,10 @@ class Entry(Item):
     def addComment(self, nick, comment, initial=False):
         return self.store.findOrCreate(Comment, parent=self, nick=nick, comment=comment, initial=initial)
 
+    def touchEntry(self):
+        self.modified = Time()
+        self.occurences += 1
+
     @property
     def comments(self):
         return list(self.store.query(Comment,

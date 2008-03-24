@@ -230,7 +230,7 @@ class IRCBot(IRCClient, _KeepAliveMixin):
                     ).addCallback(self.createEntry).addErrback(logCreateError
                     ).addCallback(noticeEntry)
             else:
-                entry.occurences += 1
+                entry.touchEntry()
                 c = None
                 if comment:
                     c = entry.addComment(nickname, comment)
