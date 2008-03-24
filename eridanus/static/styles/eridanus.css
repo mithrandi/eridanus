@@ -3,6 +3,7 @@ body {
     font-size: 1em;
     width: 750px;
     margin: auto;
+    margin-bottom: 2em;
 
     background: #151525;
     color: white;
@@ -45,7 +46,6 @@ a:link:hover, a:visited:hover {
     padding: 1px 25px;
     border: 1px solid #334;
     border-top: none;
-    border-bottom: none;
     background: #223;
 }
 
