@@ -335,6 +335,8 @@ class VHost(Item, website.PrefixURLMixin):
     typeName = 'eridanus_vhost'
     schemaVersion = 1
 
+    sessionless = True
+
     prefixURL = text(default=u'vhost')
 
     def createResource(self):
