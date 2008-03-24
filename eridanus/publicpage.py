@@ -13,7 +13,7 @@ from nevow.rend import Page
 from nevow.vhost import VHostMonsterResource
 
 from xmantissa import publicweb, website
-from xmantissa.ixmantissa import IPublicPage, ISiteRootPlugin
+from xmantissa.ixmantissa import IPublicPage, ISiteRootPlugin, ISessionlessSiteRootPlugin
 from xmantissa.webtheme import SiteTemplateResolver
 
 from eridanus.bot import IRCBotService
