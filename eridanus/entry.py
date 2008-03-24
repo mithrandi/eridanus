@@ -47,7 +47,7 @@ class EntryManager(Item):
 
     def allEntries(self, limit=None, recentFirst=True, discarded=False, sort=None):
         if sort is None:
-            sort = [Entry.created.ascending, Entry.created.descending][recentFirst]
+            sort = [Entry.modified.ascending, Entry.modified.descending][recentFirst]
 
         return self.store.query(Entry,
                                 AND(Entry.channel == self.channel,
@@ -108,7 +108,7 @@ class EntryManager(Item):
                 Entry.discarded == False,
                 Entry.deleted == False,
                 *makeCriteria()),
-            sort=Entry.created.descending,
+            sort=Entry.modified.descending,
             limit=limit).distinct()
 
     def stats(self):
@@ -138,12 +138,16 @@ registerUpgrader(entrymanager1to2, EntryManager.typeName, 1, 2)
 
 class Entry(Item):
     typeName = 'eridanus_entry'
-    schemaVersion = 6
+    schemaVersion = 7
 
     eid = integer(allowNone=False)
 
     created = timestamp(defaultFactory=lambda: Time(), doc=u"""
     Timestamp of when this entry was created.
+    """)
+
+    modified = timestamp(defaultFactory=lambda: Time(), doc=u"""
+    Timestamp of when this entry was last modified.
     """)
 
     channel = text(allowNone=False, doc=u"""
@@ -259,6 +263,7 @@ def entry3to4(old):
 registerUpgrader(entry3to4, Entry.typeName, 3, 4)
 registerAttributeCopyingUpgrader(Entry, 4, 5)
 registerAttributeCopyingUpgrader(Entry, 5, 6)
+registerAttributeCopyingUpgrader(Entry, 6, 7)
 
 
 class Comment(Item):
