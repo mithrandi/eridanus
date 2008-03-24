@@ -102,9 +102,21 @@ class ManageServices(axiomatic.AxiomaticSubCommand):
 class SetupCommands(axiomatic.AxiomaticSubCommand):
     longdesc = 'Setup stuff'
 
+    optFlags = [
+        ('vhost', None, 'Setup vhost stuff'),
+        ]
+
     def postOptions(self):
         s = self.parent.getStore()
         s.transact(self.replaceFrontPage, s)
+
+        if self['vhost']:
+            s.transact(self.setupVHost, s)
+
+    def setupVHost(self, store):
+        store.query(publicpage.VHost).deleteFromStore()
+        vh = store.findOrCreate(publicpage.VHost)
+        installOn(vh, store)
 
     def replaceFrontPage(self, store):
         store.query(publicweb.FrontPage).deleteFromStore()

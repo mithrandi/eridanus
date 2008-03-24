@@ -10,6 +10,7 @@ from axiom.errors import ItemNotFound
 from nevow import static, tags, url
 from nevow.inevow import IRequest, ICanHandleNotFound
 from nevow.rend import Page
+from nevow.vhost import VHostMonsterResource
 
 from xmantissa import publicweb, website
 from xmantissa.ixmantissa import IPublicPage, ISiteRootPlugin
@@ -326,6 +327,18 @@ class PublicIndexPage(Page):
     def child_(self, ctx):
         # XXX: don't hardcode this
         return url.URL.fromContext(ctx).child('shadowfire')
+
+
+class VHost(Item, website.PrefixURLMixin):
+    implements(ISiteRootPlugin)
+
+    typeName = 'eridanus_vhost'
+    schemaVersion = 1
+
+    prefixURL = text(default=u'vhost')
+
+    def createResource(self):
+        return VHostMonsterResource()
 
 
 class FrontPage(Item, website.PrefixURLMixin):
