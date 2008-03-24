@@ -6,6 +6,7 @@ rm dev.axiom/**/*.pid
 
 axiomatic -d dev.axiom mantissa
 axiomatic -d dev.axiom offering install Eridanus
+axiomatic -d dev.axiom eridanus setup
 
 python bin/killbotservice.py dev.axiom
 python bin/fixinitialcomment.py dev.axiom
