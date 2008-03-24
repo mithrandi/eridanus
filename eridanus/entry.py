@@ -3,7 +3,7 @@ from itertools import islice, groupby
 
 from epsilon.extime import Time
 
-from axiom.item import Item
+from axiom.item import Item, declareLegacyItem
 from axiom.attributes import AND, OR, timestamp, integer, reference, text, boolean
 from axiom.upgrade import registerAttributeCopyingUpgrader, registerUpgrader
 
@@ -51,15 +51,15 @@ class EntryManager(Item):
 
         return self.store.query(Entry,
                                 AND(Entry.channel == self.channel,
-                                    Entry.discarded == discarded,
-                                    Entry.deleted == False),
+                                    Entry.isDiscarded == discarded,
+                                    Entry.isDeleted == False),
                                 limit=limit,
                                 sort=sort)
 
     def entryBy(self, eid=None, url=None):
         criteria = [
             Entry.channel == self.channel,
-            Entry.deleted == False]
+            Entry.isDeleted == False]
 
         if eid is not None:
             criteria.append(Entry.eid == eid)
@@ -105,8 +105,8 @@ class EntryManager(Item):
 
         return self.store.query(Entry,
             AND(Entry.channel == self.channel,
-                Entry.discarded == False,
-                Entry.deleted == False,
+                Entry.isDiscarded == False,
+                Entry.isDeleted == False,
                 *makeCriteria()),
             sort=Entry.modified.descending,
             limit=limit).distinct()
@@ -170,11 +170,11 @@ class Entry(Item):
     Number of times this entry has been mentioned.
     """, default=1)
 
-    discarded = boolean(doc="""
+    isDiscarded = boolean(doc="""
     Indicates whether this item is to be considered for searches and the like.
     """, default=False)
 
-    deleted = boolean(doc="""
+    isDeleted = boolean(doc="""
     Indicates whether this item is to be considered at all.
     """, default=False)
 
@@ -213,7 +213,13 @@ class Entry(Item):
 
     @property
     def displayTitle(self):
-        return self.title or self.slug
+        if self.title is None:
+            comment = self.initialComment
+            if comment is None:
+                return self.slug
+            else:
+                return comment.comment
+        return self.title
 
     @property
     def displayTimestamp(self):
@@ -267,7 +273,52 @@ def entry3to4(old):
 registerUpgrader(entry3to4, Entry.typeName, 3, 4)
 registerAttributeCopyingUpgrader(Entry, 4, 5)
 registerAttributeCopyingUpgrader(Entry, 5, 6)
-registerAttributeCopyingUpgrader(Entry, 6, 7)
+
+declareLegacyItem(
+    typeName='eridanus_entry',
+    schemaVersion=6,
+    attributes=dict(
+        eid=integer(allowNone=False),
+        created=timestamp(defaultFactory=lambda: Time(), doc=u"""
+        Timestamp of when this entry was created.
+        """),
+        channel=text(allowNone=False, doc=u"""
+        The channel where this entry was first submitted.
+        """),
+        nick=text(allowNone=False, doc=u"""
+        The nickname of the person who submitted this entry first.
+        """),
+        url=text(allowNone=False, doc=u"""
+        Entry's URL.
+        """),
+        title=text(doc=u"""
+        Optional title for this entry.
+        """),
+        occurences=integer(doc="""
+        Number of times this entry has been mentioned.
+        """, default=1),
+        discarded=boolean(doc="""
+        Indicates whether this item is to be considered for searches and the like.
+        """, default=False),
+        deleted=boolean(doc="""
+        Indicates whether this item is to be considered at all.
+        """, default=False)))
+
+def entry6to7(old):
+    return old.upgradeVersion(
+        Entry.typeName, 6, 7,
+        eid=old.eid,
+        created=old.created,
+        modified=old.created,
+        channel=old.channel,
+        nick=old.nick,
+        url=old.url,
+        title=old.title,
+        occurences=old.occurences,
+        isDiscarded=old.discarded,
+        isDeleted=old.deleted)
+
+registerUpgrader(entry6to7, Entry.typeName, 6, 7)
 
 
 class Comment(Item):

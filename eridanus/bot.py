@@ -442,7 +442,7 @@ class IRCBot(IRCClient, _KeepAliveMixin):
 
         # XXX: implement proper privs
         if entry.nick == conf.user.nickname or conf.user.nickname == u'k4y':
-            entry.discarded = True
+            entry.isDiscarded = True
         else:
             self.reply(conf, u'You did not post this entry, ask %s to discard it.' % (entry.nick,))
 
@@ -456,7 +456,7 @@ class IRCBot(IRCClient, _KeepAliveMixin):
 
         # XXX: implement proper privs
         if entry.nick == conf.user.nickname or conf.user.nickname == u'k4y':
-            entry.deleted = True
+            entry.isDeleted = True
         else:
             self.reply(conf, u'You did not post this entry, ask %s to delete it.' % (entry.nick,))
 
