@@ -140,6 +140,7 @@ class EntriesFragment(ThemedFragment):
                 ).fillSlots('creator', e.nick
                 ).fillSlots('occurences', e.occurences
                 ).fillSlots('timestamp', e.displayTimestamp
+                ).fillSlots('modifiedTimestamp', e.displayModifiedTimestamp,
                 ).fillSlots('comments', comments(e))
 
         return tag[(entry(e) for e in self.entries)]

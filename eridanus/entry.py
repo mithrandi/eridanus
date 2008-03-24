@@ -226,6 +226,10 @@ class Entry(Item):
         return self.created.asHumanly(tzinfo=const.timezone)
 
     @property
+    def displayModifiedTimestamp(self):
+        return self.modified.asHumanly(tzinfo=const.timezone)
+
+    @property
     def completeHumanReadable(self):
         return u'#%d: \037%s\037%s @ %s posted %s by \002%s\002.' % (self.eid, self.displayTitle, self.displayComment, self.url, self.displayTimestamp, self.nick)
 
