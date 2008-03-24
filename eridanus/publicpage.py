@@ -330,7 +330,7 @@ class PublicIndexPage(Page):
 
 
 class VHost(Item, website.PrefixURLMixin):
-    implements(ISiteRootPlugin)
+    implements(ISessionlessSiteRootPlugin)
 
     typeName = 'eridanus_vhost'
     schemaVersion = 1
