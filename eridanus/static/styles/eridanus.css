@@ -50,9 +50,11 @@ a:link:hover, a:visited:hover {
 }
 
 .entry {
-    float: left;
+    display: table;
     border: 1px outset #936312;
     border: 1px outset #223;
+    padding: 0.5em;
+    padding-top: 0.25em;
     margin-bottom: 1em;
     width: 100%;
     background: #223 url(/Eridanus/static/images/entry-bg.png) repeat-x top left;
@@ -74,17 +76,16 @@ a:link:hover, a:visited:hover {
 
 .entry .entry-id,
 .entry .entry-content {
-    float: left;
+    display: table-cell;
 }
 
 .entry .entry-id {
-    padding: 0.25em 0.5em;
-    width: 3em;
-    height: 100%;
+    width: 4em;
 }
 
 .entry .entry-content {
-    margin: 0.5em;
+    margin: 0;
+    padding: 0;
 }
 
 .entry .entry-info {

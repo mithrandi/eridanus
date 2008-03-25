@@ -29,12 +29,14 @@
     </nevow:invisible>
 
     <div nevow:pattern="entry" class="entry">
-        <h2 class="entry-id">
-            <a>
-                <nevow:attr name="href"><nevow:slot name="intUrl" /></nevow:attr>
-                <nevow:slot name="id" />
-            </a>
-        </h2>
+        <div class="entry-id">
+            <h2>
+                <a>
+                    <nevow:attr name="href"><nevow:slot name="intUrl" /></nevow:attr>
+                    <nevow:slot name="id" />
+                </a>
+            </h2>
+        </div>
 
         <div class="entry-content">
             <h3>
