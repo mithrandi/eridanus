@@ -1,7 +1,7 @@
 <div xmlns:nevow="http://nevow.com/ns/nevow/0.1" class="search">
 <form name="search" action="search">
 <fieldset>
-    <input name="q" type="text" />
+    <input nevow:render="input" name="q" type="text"><nevow:attr name="value"><nevow:slot name="value" /></nevow:attr></input>
     <button type="submit">Search</button>
 </fieldset>
 </form>

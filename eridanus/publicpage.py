@@ -40,6 +40,27 @@ class Trail(object):
         return [(_render(d), ' / ') for d in data[:-1]] + [_render(data[-1])]
 
 
+class SearchInputFragment(ThemedFragment):
+    fragmentName = 'search-input'
+
+    def __init__(self, terms=None, **kw):
+        super(SearchInputFragment, self).__init__(**kw)
+        self.terms = terms
+
+    def render_input(self, ctx, data):
+        tag = ctx.tag
+        if self.terms is None:
+            value = u''
+        else:
+            def quoteTerm(term):
+                if u' ' in term:
+                    return u'"%s"' % (term,)
+                return term
+            terms = [quoteTerm(term) for term in self.terms]
+            value = u' '.join(terms)
+        return tag.fillSlots('value', value)
+
+
 class EridanusPublicPage(Item):
     implements(IPublicPage)
 
@@ -152,6 +173,9 @@ class SearchResultsFragment(EntriesFragment):
         self.terms = terms
         super(SearchResultsFragment, self).__init__(**kw)
 
+    def render_content(self, ctx, data):
+        return ctx.tag[SearchInputFragment(terms=self.terms, store=self.store)]
+
     @property
     def title(self):
         return u'Search results: ' + u' '.join(self.terms)
@@ -192,10 +216,6 @@ class EntryPage(EridanusPage):
 
     def getFragment(self):
         return EntryFragment(parent=self, entries=[self.entry])
-
-
-class SearchInputFragment(ThemedFragment):
-    fragmentName = 'search-input'
 
 
 class ChannelFragment(EntriesFragment):
