@@ -23,6 +23,7 @@ from eridanus.errors import CommandError, InvalidEntry, CommandNotFound, Paramet
 from eridanus.entry import EntryManager
 from eridanus.util import encode, decode, extractTitle, truncate, PerseverantDownloader, prettyTimeDelta
 from eridanus.tinyurl import tinyurl
+from eridanus.iriparse import extractURLsWithPosition
 
 
 paramPattern = re.compile(r'([<[])(\w+)([>\]])')
@@ -102,8 +103,7 @@ class _KeepAliveMixin(object):
 
 
 class IRCBot(IRCClient, _KeepAliveMixin):
-    urlPattern = re.compile(ur'((?:(?:(?:https?|ftp):\/\/)|www\.)(?:(?:[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)|localhost|(?:[a-zA-Z0-9\-]+\.)*[a-zA-Z0-9\-]+\.(?:com|net|org|info|biz|gov|name|edu|[a-zA-Z][a-zA-Z]))(?::[0-9]+)?(?:(?:\/|\?)[^ "]*[^ ,;\.:">])?/?)')
-    commentPattern = re.compile(ur'\s+(?:\[(.*)\]|<?--\s+(.*))')
+    commentPattern = re.compile(ur'\s+(?:\[(.*?)\]|<?--\s+(.*))')
 
     def __init__(self, factory, config):
         self.factory = factory
@@ -173,25 +173,12 @@ class IRCBot(IRCClient, _KeepAliveMixin):
                               comment=comment,
                               title=title)
 
-    def snarfUrl(self, text):
-        match = self.urlPattern.search(text)
-        if match is None:
-            return None
-
-        url = match.group(1)
-
-        comment = self.commentPattern.search(text, match.start())
-        if comment is not None:
-            comment = filter(None, comment.groups())[0]
-
-        return url, comment, text[match.end():]
-
     def findUrls(self, text):
-        while True:
-            result = self.snarfUrl(text)
-            if result is None:
-                break
-            url, comment, text = result
+        for url, pos in extractURLsWithPosition(text):
+            comment = self.commentPattern.match(text, pos)
+            if comment is not None:
+                comment = filter(None, comment.groups())[0]
+
             yield url, comment
 
     def snarf(self, conf, text):
