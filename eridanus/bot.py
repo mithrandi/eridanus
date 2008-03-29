@@ -500,6 +500,10 @@ class IRCBotConfig(Item):
 
     ignores = textlist(default=[])
 
+    @property
+    def service(self):
+        return self.store.findFirst(IRCBotService, IRCBotService.config == self)
+
     def join(self, channel):
         self.channels = self.channels + [channel]
 

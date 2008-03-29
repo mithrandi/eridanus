@@ -18,6 +18,7 @@ from xmantissa.webtheme import SiteTemplateResolver
 
 from eridanus.bot import IRCBotService
 from eridanus.util import ThemedPage, ThemedFragment, truncate, decode
+from eridanus.feeds import ChannelFeed
 
 
 class Trail(object):
@@ -259,6 +260,9 @@ class ChannelPage(EridanusPage):
         terms = [decode(term) for arg in req.args.get('q', []) for term in shlex.split(arg)]
         entries = list(self.manager.search(terms, limit=self.searchLimit))
         return SearchResultsPage(parent=self, terms=terms, entries=entries)
+
+    def child_feed(self, ctx):
+        return ChannelFeed(self.manager)
 
     def childFactory(self, ctx, name):
         req = IRequest(ctx)
