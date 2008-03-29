@@ -45,21 +45,23 @@ class ChannelFeed(FeedPage):
             comments = E('ul')[
                 [E('li')[u'\u201c%s\u201d \u2013 %s' % (c.comment, c.nick)] for c in comments]]
 
+        network = self.manager.config.service.serviceID
+        channel = entry.channel.strip('#')
+        href = '/Eridanus/%s/%s/%s' % (network, channel, entry.eid)
+
         return E('div', xmlns='http://www.w3.org/1999/xhtml')[
-            E('span')[u'Posted by %s.' % (entry.nick,)],
+            E('a', href=href)['#%s' % (entry.eid,)],
+            E('span')[u': Posted by %s.' % (entry.nick,)],
             initialComment,
             comments]
 
 
     def entryFromEntry(self, entry):
-        network = self.manager.config.service.serviceID
-        channel = entry.channel.strip('#')
-        entryHref = '/Eridanus/%s/%s/%s' % (network, channel, entry.eid)
         content = self.entryContent(entry)
         return Entry(id=unicode(entry.eid),
                      title=entry.displayTitle,
                      updated=entry.modified,
-                     links=[Link(rel='alternate', href=entryHref)],
+                     links=[Link(rel='alternate', href=entry.url)],
                      authors=[Author(name=entry.nick)],
                      content=Content(content, type='xhtml'))
 
