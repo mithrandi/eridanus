@@ -247,6 +247,9 @@ class ChannelPage(EridanusPage):
         self.manager = manager
         super(ChannelPage, self).__init__(**kw)
 
+    def head(self):
+        return tags.link(rel='alternate', href='feed', type='application/atom+xml')
+
     @property
     def heading(self):
         return self.trail.render('network', 'channel')
