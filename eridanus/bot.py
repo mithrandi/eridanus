@@ -505,7 +505,8 @@ class IRCBotConfig(Item):
         return self.store.findFirst(IRCBotService, IRCBotService.config == self)
 
     def join(self, channel):
-        self.channels = self.channels + [channel]
+        if channel not in self.channels:
+            self.channels = self.channels + [channel]
 
     def leave(self, channel):
         channels = self.channels
