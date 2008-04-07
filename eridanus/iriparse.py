@@ -2,8 +2,9 @@ import string
 
 from pymeta.grammar import OMeta
 
-# http://www.ietf.org/rfc/rfc3987.txt
+from nevow import url
 
+# http://www.ietf.org/rfc/rfc3987.txt
 
 def isInRange(c, ranges):
     o = ord(c)

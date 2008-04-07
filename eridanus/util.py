@@ -1,5 +1,5 @@
 import re
-
+from zope.interface import implements
 from BeautifulSoup import BeautifulSoup
 
 from twisted.internet import reactor, task
@@ -7,6 +7,7 @@ from twisted.web import client, http, error as weberror
 from twisted.python import log
 
 from nevow.rend import Page, Fragment
+from nevow.inevow import IResource, IRequest
 
 from xmantissa.webtheme import _ThemedMixin, SiteTemplateResolver
 

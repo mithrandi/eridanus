@@ -1,11 +1,5 @@
-try:
-    from xml.etree import ElementTree as ET
-except ImportError:
-    from elementtree import ElementTree as ET
-
 from nevow.rend import Page
 from nevow.inevow import IRequest
-from nevow.url import URL
 
 from eridanus.atom import tostring, Feed, Entry, Link, Author, Content, E
 

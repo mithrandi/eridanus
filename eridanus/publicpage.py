@@ -17,7 +17,7 @@ from xmantissa.ixmantissa import IPublicPage, ISiteRootPlugin, ISessionlessSiteR
 from xmantissa.webtheme import SiteTemplateResolver
 
 from eridanus.bot import IRCBotService
-from eridanus.util import ThemedPage, ThemedFragment, truncate, decode
+from eridanus.util import ThemedFragment, truncate, decode
 from eridanus.feeds import ChannelFeed
 
 
