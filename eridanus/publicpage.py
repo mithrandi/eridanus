@@ -118,8 +118,6 @@ class EridanusPage(PublicContentPage):
         if not navItems:
             return []
 
-        print navItems
-
         tag = ctx.tag
         imageRoot = url.URL.fromString('/Eridanus/static/images/')
         navItemPattern = tag.patternGenerator('navItem')
