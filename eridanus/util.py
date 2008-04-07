@@ -147,3 +147,42 @@ def prettyTimeDelta(d):
         s.append('%d seconds' % (seconds,))
 
     return ' '.join(s)
+
+
+# XXX: this needs to be hooked up at a global level, otherwise a new resource
+#      gets created for each page, defeating the point of caching.
+class CachingResource(object):
+    implements(IResource)
+
+    def __init__(self, contentGenerator, timeToLive):
+        self.contentGenerator = contentGenerator
+        self.timeToLive = timeToLive
+        self.updateCall = None
+        self.updateContent()
+
+    def updateContent(self):
+        if self.updateCall is not None and self.updateCall.active():
+            self.updateCall.cancel()
+
+        self.resourceInfo = self.contentGenerator()
+        self.updateCall = reactor.callLater(self.timeToLive, self.updateContent)
+
+    ### IResource
+
+    def locateChild(self, ctx, segments):
+        return None
+
+    def renderHTTP(self, ctx):
+        req = IRequest(ctx)
+
+        hasContentLength = False
+        data, headers = self.resourceInfo
+        for key, value in headers.iteritems():
+            if not hasContentLength and key.lower() == 'content-length':
+                hasContentLength = True
+            req.setHeader(key, value)
+
+        if not hasContentLength:
+            req.setHeader('Content-Length', len(data))
+
+        return data

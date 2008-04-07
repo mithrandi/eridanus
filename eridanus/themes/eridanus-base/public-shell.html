@@ -11,6 +11,15 @@
         <div class="content">
             <h1 nevow:render="heading" />
             <h2 nevow:render="subHeading" />
+            <div nevow:render="navigation" class="nav">
+                <li nevow:pattern="navItem">
+                    <a><nevow:attr name="href"><nevow:slot name="url" /></nevow:attr>
+                        <img alt=""><nevow:attr name="src"><nevow:slot name="imageUrl" /></nevow:attr>
+                                    <nevow:attr name="title"><nevow:slot name="title" /></nevow:attr></img></a></li>
+                <ul><nevow:slot name="items" /></ul>
+                <div class="terminator" />
+            </div>
+
             <nevow:invisible nevow:render="content" />
             <div class="terminator" />
         </div>

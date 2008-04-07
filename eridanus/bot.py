@@ -17,7 +17,7 @@ from twisted.internet.defer import succeed
 from twisted.words.protocols.irc import IRCClient
 from twisted.application.service import IService, IServiceCollection
 
-from eridanus import gchart, const
+from eridanus import const
 from eridanus.ieridanus import INetwork
 from eridanus.errors import CommandError, InvalidEntry, CommandNotFound, ParameterError
 from eridanus.entry import EntryManager
@@ -343,30 +343,6 @@ class IRCBot(IRCClient, _KeepAliveMixin):
         numEntries, numComments, numContributors, timespan = em.stats()
         msg = '%d entries with %d comments from %d contributors over a total time period of %s.' % (numEntries, numComments, numContributors, prettyTimeDelta(timespan))
         self.reply(conf, msg)
-
-    @usage('chart [channel]')
-    def cmd_chart(self, conf, channelName=None):
-        """
-        Generate a chart of contributors for [channel] or the current channel
-        if not specified.
-        """
-        limit = 10
-
-        channel = channelName or conf.channel
-
-        em = self.getEntryManager(channel)
-        data = sorted(em.topContributors(limit=limit), key=lambda x: x[1])
-
-        labels, data = zip(*data)
-        labels = [u'%s (%d)' % (l, d) for l, d in izip(labels, data)]
-
-        title = 'Top %d URL contributors for %s' % (limit, channel)
-        chart = gchart.Pie(size=(900, 300), data=[data], labels=labels, title=title)
-
-        def gotTiny(url):
-            self.reply(conf, str(url))
-
-        tinyurl(str(chart.url)).addCallback(gotTiny)
 
     @usage('info <id> [channel]')
     def cmd_info(self, conf, eid, entryChannel=None):

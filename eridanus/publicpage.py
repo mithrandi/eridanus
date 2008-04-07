@@ -1,5 +1,6 @@
 import shlex
 from zope.interface import implements
+from datetime import timedelta
 
 from twisted.python.filepath import FilePath
 
@@ -16,6 +17,7 @@ from xmantissa import publicweb, website
 from xmantissa.ixmantissa import IPublicPage, ISiteRootPlugin, ISessionlessSiteRootPlugin
 from xmantissa.webtheme import SiteTemplateResolver
 
+from eridanus import chart
 from eridanus.bot import IRCBotService
 from eridanus.util import ThemedFragment, truncate, decode
 from eridanus.feeds import ChannelFeed
@@ -94,6 +96,9 @@ class EridanusPage(PublicContentPage):
         self.trail = self.parent.trail
         super(EridanusPage, self).__init__(store=self.parent.store)
 
+    def navigation(self):
+        return None
+
     def getFragment(self):
         return None
 
@@ -107,6 +112,26 @@ class EridanusPage(PublicContentPage):
 
     def render_subHeading(self, ctx, data):
         return self.tagOrEmpty(ctx.tag, self.subHeading)
+
+    def render_navigation(self, ctx, data):
+        navItems = self.navigation()
+        if not navItems:
+            return []
+
+        print navItems
+
+        tag = ctx.tag
+        imageRoot = url.URL.fromString('/Eridanus/static/images/')
+        navItemPattern = tag.patternGenerator('navItem')
+
+        def _navItems():
+            for (title, imageName, url) in navItems:
+                yield navItemPattern(
+                    ).fillSlots('url', url
+                    ).fillSlots('imageUrl', imageRoot.child(imageName)
+                    ).fillSlots('title', title)
+
+        return tag.fillSlots('items', _navItems())
 
 
 class EntriesFragment(ThemedFragment):
@@ -219,6 +244,52 @@ class EntryPage(EridanusPage):
         return EntryFragment(parent=self, entries=[self.entry])
 
 
+class ChannelChartsFragment(ThemedFragment):
+    fragmentName = 'channel-charts'
+
+    charts = [
+        (u'Top contributors', 'contributors')]
+
+    def __init__(self, parent, manager, **kw):
+        self.parent = parent
+        self.manager = manager
+        super(ChannelChartsFragment, self).__init__(**kw)
+
+    @property
+    def title(self):
+        return u'Charts for %s' % (self.manager.channel,)
+
+    def render_charts(self, ctx, data):
+        tag = ctx.tag
+        img = tag.patternGenerator('chart')
+
+        # XXX: ergh
+        chartUrl = self.parent.trail.get('channel')[1].child('chart')
+
+        def _charts():
+            for title, chartType in self.charts:
+                yield img(
+                    ).fillSlots('imageUrl', chartUrl.add('type', chartType)
+                    ).fillSlots('title', title)
+
+        return tag[_charts()]
+
+
+class ChannelChartsPage(EridanusPage):
+    addSlash = True
+
+    def __init__(self, manager, **kw):
+        self.manager = manager
+        super(ChannelChartsPage, self).__init__(**kw)
+
+    @property
+    def heading(self):
+        return self.trail.render('network', 'channel', 'chart')
+
+    def getFragment(self):
+        return ChannelChartsFragment(parent=self, manager=self.manager, store=self.store)
+
+
 class ChannelFragment(EntriesFragment):
     def __init__(self, manager, **kw):
         self.manager = manager
@@ -234,9 +305,6 @@ class ChannelFragment(EntriesFragment):
     def render_content(self, ctx, data):
         return ctx.tag[SearchInputFragment(store=self.store)]
 
-    # XXX: leet google chart
-    # http://chart.apis.google.com/chart?chd=s%3AEFFILNSVs9&chs=900x300&cht=p&chtt=Top 10 URL contributors for %23code&chl=yegz (8)|Karl (10)|HelfiX (11)|nim (16)|pjd (23)|Karnaugh (26)|Shrimp (36)|Zelphar (43)|k4y (89)|mithrandi (121)&chf=bg,s,222233&chts=ffffff&chxs=0,ffffff&chxt=x
-
 
 class ChannelPage(EridanusPage):
     addSlash = True
@@ -249,6 +317,9 @@ class ChannelPage(EridanusPage):
 
     def head(self):
         return tags.link(rel='alternate', href='feed', type='application/atom+xml')
+
+    def navigation(self):
+        yield u'Charts', 'chart-icon.png', 'charts'
 
     @property
     def heading(self):
@@ -263,6 +334,26 @@ class ChannelPage(EridanusPage):
         terms = [decode(term) for arg in req.args.get('q', []) for term in shlex.split(arg)]
         entries = list(self.manager.search(terms, limit=self.searchLimit))
         return SearchResultsPage(parent=self, terms=terms, entries=entries)
+
+    def child_charts(self, ctx):
+        req = IRequest(ctx)
+        self.trail.add('chart', u'Charts', req.URLPath().child('charts'))
+        return ChannelChartsPage(parent=self, manager=self.manager)
+
+    def child_chart(self, ctx):
+        req = IRequest(ctx)
+        type = req.args.get('type', [None])[0]
+        if type is None:
+            return None
+
+        data = None
+        if type == 'contributors':
+            data = chart.contributors(self.manager, labelColor='#ffffff', colorScheme='#7d4f02').read()
+
+        if data is None:
+            return None
+
+        return static.Data(data=data, type='image/png', expires=timedelta(hours=1).seconds)
 
     def child_feed(self, ctx):
         return ChannelFeed(self.manager)

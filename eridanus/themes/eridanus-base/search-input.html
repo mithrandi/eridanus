@@ -1,8 +1,8 @@
 <div xmlns:nevow="http://nevow.com/ns/nevow/0.1" class="search">
 <form name="search" action="search">
 <fieldset>
-    <input nevow:render="input" name="q" type="text"><nevow:attr name="value"><nevow:slot name="value" /></nevow:attr></input>
-    <button type="submit">Search</button>
+    <input nevow:render="input" name="q" type="text" accesskey="S"><nevow:attr name="value"><nevow:slot name="value" /></nevow:attr></input>
+    <button type="submit"><span class="accel">S</span>earch</button>
 </fieldset>
 </form>
 <div class="terminator" />
