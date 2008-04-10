@@ -332,10 +332,7 @@ class IRCBot(IRCClient, _KeepAliveMixin):
         """
         # XXX: use masks instead
         # XXX: check privs
-        if nick == u'k4y':
-            self.config.ignore(nick)
-        else:
-            self.reply(conf, u'Denied.  You are a stupid.  Please remember to thank Shrimp and Zelphar for being children.')
+        self.config.ignore(nick)
 
     @usage('unignore <nick>')
     def cmd_unignore(self, conf, nick):
@@ -344,10 +341,7 @@ class IRCBot(IRCClient, _KeepAliveMixin):
         """
         # XXX: use masks instead
         # XXX: check privs
-        if nick == u'k4y':
-            self.config.unignore(nick)
-        else:
-            self.reply(conf, u'Denied.  You are a stupid.  Please remember to thank Shrimp and Zelphar for being children.')
+        self.config.unignore(nick)
 
     @usage('stats [channel]')
     def cmd_stats(self, conf, channelName=None):
