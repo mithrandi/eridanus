@@ -330,8 +330,24 @@ class IRCBot(IRCClient, _KeepAliveMixin):
         """
         Ignore text from <nick>.
         """
+        # XXX: use masks instead
         # XXX: check privs
-        self.config.ignore(nick)
+        if nick == u'k4y':
+            self.config.ignore(nick)
+        else:
+            self.reply(conf, u'Denied.  You are a stupid.  Please remember to thank Shrimp and Zelphar for being children.')
+
+    @usage('unignore <nick>')
+    def cmd_unignore(self, conf, nick):
+        """
+        Stop ignoring text from <nick>.
+        """
+        # XXX: use masks instead
+        # XXX: check privs
+        if nick == u'k4y':
+            self.config.unignore(nick)
+        else:
+            self.reply(conf, u'Denied.  You are a stupid.  Please remember to thank Shrimp and Zelphar for being children.')
 
     @usage('stats [channel]')
     def cmd_stats(self, conf, channelName=None):
@@ -491,6 +507,11 @@ class IRCBotConfig(Item):
 
     def ignore(self, nick):
         self.ignores = self.ignores + [nick]
+
+    def unignore(self, nick):
+        ignores = self.ignores
+        ignores.remove(nick)
+        self.ignores = ignores
 
     def allEntryManagers(self):
         return self.store.query(EntryManager, EntryManager.config == self)
