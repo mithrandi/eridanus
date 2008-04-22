@@ -383,7 +383,8 @@ class IRCBot(IRCClient, _KeepAliveMixin):
             raise ParameterError(u'Invalid search criteria.')
 
         em = self.getEntryManager(conf.channel)
-        entries = list(em.search(terms))
+        # XXX: parameterise this?
+        entries = list(em.search(terms, limit=25))
 
         if not entries:
             msg = u'No results found for: %s.' % (u'; '.join(terms),)
