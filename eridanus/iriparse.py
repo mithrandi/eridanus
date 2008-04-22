@@ -1,6 +1,7 @@
 import string
 
 from pymeta.grammar import OMeta
+from pymeta.runtime import ParseError
 
 from nevow import url
 
@@ -137,6 +138,9 @@ def extractURLsWithPosition(input, supportedSchemes=None):
                 uri, inc = extractURL(input[pos:])
                 pos += inc
                 yield uri, pos
+            except ParseError:
+                # Attempt to skip over the broken IRI.
+                pos += 1
             except ValueError:
                 break
 
