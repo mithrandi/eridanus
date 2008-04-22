@@ -17,3 +17,11 @@
       we will tell him as soon as he is.
     * Implement a more powerful EID addressing scheme: <eid>[.channel][.network]
       This will remove the need for an "entryChannel" parameter from commands.
+    * The following codes should be retried, while any other error should
+      stop retrying:
+        408 Request Timeout
+        500 Internal Server Error
+        502 Bad Gateway
+        503 Service Unavailable
+        504 Gateway Timeout
+    * Display any HTTP error that occured.
