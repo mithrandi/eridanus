@@ -145,9 +145,12 @@ class IRCBot(IRCClient, _KeepAliveMixin):
             em = self._entryManagers[channel] = self.config.createEntryManager(channel)
         return em
 
-    def reply(self, conf, message):
-        message = u'%s: %s' % (conf.user.nickname, message)
+    def tell(self, conf, nickname, message):
+        message = u'%s: %s' % (nickname, message)
         self.say(encode(conf.channel), encode(message))
+
+    def reply(self, conf, message):
+        self.tell(conf, conf.user.nickname, message)
 
     def directedUserText(self, conf, message):
         # XXX:                    _
@@ -432,6 +435,15 @@ class IRCBot(IRCClient, _KeepAliveMixin):
             entry.isDeleted = True
         else:
             self.reply(conf, u'You did not post this entry, ask %s to delete it.' % (entry.nick,))
+
+    @usage('tell <nick> <id>')
+    def cmd_tell(self, conf, nick, eid):
+        """
+        Tells <nick> about the entry <eid>.
+        """
+        em, entry = self.getEntry(conf.channel, eid)
+        # XXX: check that <nick> is in the channel
+        self.tell(conf, nick, entry.completeHumanReadable)
 
 
 class IRCBotFactory(ReconnectingClientFactory):
