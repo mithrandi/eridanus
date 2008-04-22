@@ -364,7 +364,7 @@ class IRCBot(IRCClient, _KeepAliveMixin):
         if not specified.
         """
         em, entry = self.getEntry(entryChannel or conf.channel, eid)
-        comments = ['<%s> %s' % (c.nick, c.comment) for c in entry.comments]
+        comments = ['<%s> %s' % (c.nick, c.comment) for c in entry.allComments]
         msg = u'#%d: Mentioned \002%d\002 time(s). ' % (entry.eid, entry.occurences)
         if comments:
             msg = msg + '  '.join(comments)

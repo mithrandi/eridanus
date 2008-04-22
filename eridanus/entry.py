@@ -186,6 +186,10 @@ class Entry(Item):
         self.occurences += 1
 
     @property
+    def allComments(self):
+        return list(self.store.query(Comment, Comment.parent == self, sort=Comment.created.ascending))
+
+    @property
     def comments(self):
         return list(self.store.query(Comment,
                                      AND(Comment.parent == self,
