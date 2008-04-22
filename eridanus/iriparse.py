@@ -38,7 +38,7 @@ iuserinfo      ::= (<iunreserved> | <pct_encoded> | <sub_delims> | ':')*
 
 ihost          ::= <IP_literal> | <IPv4address> | <ireg_name>
 
-ireg_name      ::= (<iunreserved> | <pct_encoded> | <sub_delims>)*
+ireg_name      ::= (<iunreserved> | <pct_encoded> | <sub_delims>)+
 
 ipath          ::= <ipath_abempty> | <ipath_absolute> | <ipath_noscheme> | <ipath_rootless>
 
