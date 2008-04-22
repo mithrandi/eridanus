@@ -11,3 +11,9 @@
     * Improve command handling (see ICommand from shs)
     * Switch to Mantissa. Plugin system.
     * Implement viewing network / channel / user entries
+    * Store who an IRI is addressed to, if anyone.
+    * Implement nickname tracking.
+    * Allow "deferred" "telling".  So if I "tell Shrimp #1" and he's not around
+      we will tell him as soon as he is.
+    * Implement a more powerful EID addressing scheme: <eid>[.channel][.network]
+      This will remove the need for an "entryChannel" parameter from commands.
