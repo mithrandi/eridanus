@@ -2,7 +2,7 @@ import re
 from zope.interface import implements
 from BeautifulSoup import BeautifulSoup
 
-from twisted.internet import reactor, task
+from twisted.internet import reactor, task, error as ineterror
 from twisted.web import client, http, error as weberror
 from twisted.python import log
 
@@ -42,6 +42,8 @@ class PerseverantDownloader(object):
     initialDelay = 1.0
     factor = 1.6180339887498948
 
+    retryableHTTPCodes = [408, 500, 502, 503, 504]
+
     def __init__(self, url, tries=10, *a, **kw):
         self.url = url
         self.args = a
@@ -50,10 +52,23 @@ class PerseverantDownloader(object):
         self.tries = tries
 
     def go(self):
-        return getPage(self.url, *self.args, **self.kwargs).addErrback(self.retry)
+        return getPage(self.url, *self.args, **self.kwargs
+            ).addErrback(self.retryWeb)
+            #).addErrback(self.retryInternet)
+
+    def retryWeb(self, f):
+        f.trap(weberror.Error)
+        err = f.value
+        if int(err.status) in self.retryableHTTPCodes:
+            return self.retry(f)
+
+        return f
+
+    def retryInternet(self, f):
+        f.trap(ineterror.ConnectError)
+        return self.retry(f)
 
     def retry(self, f):
-        # XXX: What to trap?
         self.tries -= 1
         log.msg('PerseverantDownloader is retrying, %d attempts left.' % (self.tries,))
         log.err(f)

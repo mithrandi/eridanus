@@ -168,13 +168,27 @@ class IRCBot(IRCClient, _KeepAliveMixin):
         except CommandError, e:
             self.reply(conf, u'%s: %s' % (e.__class__.__name__, e))
 
-    def createEntry(self, (channel, nick, url, comment, title)):
+    def createEntry(self, title, conf, url, comment):
+        channel = conf.channel
+        nick = conf.nickname
         em = self.getEntryManager(channel)
         return em.createEntry(channel=channel,
                               nick=nick,
                               url=url,
                               comment=comment,
                               title=title)
+
+    def updateEntry(self, title, conf, entry, comment):
+        if title is not None:
+            entry.title = title
+
+        if comment:
+            c = entry.addComment(conf.nickname, comment)
+        else:
+            c = None
+
+        entry.touchEntry()
+        return entry, c
 
     def findUrls(self, text):
         for url, pos in extractURLsWithPosition(text):
@@ -185,46 +199,42 @@ class IRCBot(IRCClient, _KeepAliveMixin):
             yield url, comment
 
     def snarf(self, conf, text):
-        def brokenUrl(f):
+        def fetchFailed(f):
+            e = f.value
+            msg = '%s: %s' % (e.__class__.__name__, e)
+            self.reply(conf, msg)
             log.msg('Error getting page data: %r' % (text,))
             log.err(f)
             return None
 
-        def logCreateError(f):
-            log.msg('Creating a new entry failed:')
+        def logEntryError(f):
+            log.msg('Creating or updating an entry failed:')
             log.err(f)
             return f
 
-        def spewParams(channel, nickname, url, comment):
-            return lambda title: (channel, nickname, url, comment, title)
-
-        def noticeEntry(entry):
+        def entryCreated(entry):
             self.notice(encode(entry.channel), encode(entry.humanReadable))
 
-        def noticeEntryUpdate((entry, comment)):
-            noticeEntry(entry)
+        def entryUpdated((entry, comment)):
+            self.notice(encode(entry.channel), encode(entry.humanReadable))
             if comment is not None:
                 self.notice(encode(entry.channel), encode(comment.humanReadable))
 
         em = self.getEntryManager(conf.channel)
-        nickname = conf.nickname
 
         for url, comment in self.findUrls(text):
+            d = PerseverantDownloader(str(url), headers=dict(range='bytes=0-4095')).go(
+                ).addErrback(fetchFailed
+                ).addCallback(extractTitle)
+
             entry = em.entryByUrl(url)
+
             if entry is None:
-                # Only bother fetching the first 4096 bytes of the URL.
-                PerseverantDownloader(str(url), headers=dict(range='bytes=0-4095')).go(
-                    ).addErrback(brokenUrl
-                    ).addCallback(extractTitle
-                    ).addCallback(spewParams(conf.channel, nickname, url, comment)
-                    ).addCallback(self.createEntry).addErrback(logCreateError
-                    ).addCallback(noticeEntry)
+                d.addCallback(self.createEntry, conf, url, comment
+                ).addCallback(entryCreated)
             else:
-                entry.touchEntry()
-                c = None
-                if comment:
-                    c = entry.addComment(nickname, comment)
-                succeed((entry, c)).addCallback(noticeEntryUpdate)
+                d.addCallback(self.updateEntry, conf, entry, comment
+                ).addCallback(entryUpdated)
 
     def userText(self, conf, message):
         self.snarf(conf, message)
