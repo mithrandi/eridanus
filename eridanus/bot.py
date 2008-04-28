@@ -167,6 +167,9 @@ class IRCBot(IRCClient, _KeepAliveMixin):
             handler(conf, *params)
         except CommandError, e:
             self.reply(conf, u'%s: %s' % (e.__class__.__name__, e))
+        # XXX: handle things that are not CommandErrors.  this probably also
+        #      means fixing up the command dispatcher specifically for things
+        #      like the number of params.
 
     def createEntry(self, title, conf, url, comment):
         channel = conf.channel
@@ -269,19 +272,37 @@ class IRCBot(IRCClient, _KeepAliveMixin):
             raise CommandNotFound(cmd)
         return handler
 
-    def getEntry(self, channel, eid):
+    def parseEntryID(self, eid):
         if eid.startswith('#'):
             eid = eid[1:]
 
+        parts = eid.split('.')
+
+        id = parts.pop(0)
         try:
-            eid = int(eid)
+            id = int(id)
         except ValueError:
-            raise InvalidEntry('Invalid entry ID')
+            raise InvalidEntry('Invalid entry ID: %s' % (id,))
+
+        if parts:
+            channel = parts.pop(0)
+            if not channel.startswith('#'):
+                channel = '#' + channel
+        else:
+            channel = None
+
+        return id, channel
+
+    def getEntry(self, conf, eid):
+        id, channel = self.parseEntryID(eid)
+
+        if channel is None:
+            channel = conf.channel
 
         em = self.getEntryManager(channel)
-        entry = em.entryById(eid)
+        entry = em.entryById(id)
         if entry is None:
-            raise InvalidEntry('Entry #%d does not exist' % (eid,))
+            raise InvalidEntry('Entry %s does not exist' % (eid,))
 
         return em, entry
 
@@ -314,12 +335,12 @@ class IRCBot(IRCClient, _KeepAliveMixin):
 
         self.reply(conf, msg)
 
-    @usage('get <id> [channel]')
-    def cmd_get(self, conf, eid, entryChannel=None):
+    @usage('get <id>')
+    def cmd_get(self, conf, eid):
         """
-        Show entry <id> in [channel] or the current channel if not specified.
+        Retrieve and display entry <id>.
         """
-        em, entry = self.getEntry(entryChannel or conf.channel, eid)
+        em, entry = self.getEntry(conf, eid)
         self.reply(conf, entry.completeHumanReadable)
 
     @usage('join <channel> [key]')
@@ -367,13 +388,12 @@ class IRCBot(IRCClient, _KeepAliveMixin):
         msg = '%d entries with %d comments from %d contributors over a total time period of %s.' % (numEntries, numComments, numContributors, prettyTimeDelta(timespan))
         self.reply(conf, msg)
 
-    @usage('info <id> [channel]')
-    def cmd_info(self, conf, eid, entryChannel=None):
+    @usage('info <id>')
+    def cmd_info(self, conf, eid):
         """
-        Show information about entry <id> in [channel] or the current channel
-        if not specified.
+        Show information about entry <id>.
         """
-        em, entry = self.getEntry(entryChannel or conf.channel, eid)
+        em, entry = self.getEntry(conf, eid)
         comments = ['<%s> %s' % (c.nick, c.comment) for c in entry.allComments]
         msg = u'#%d: Mentioned \002%d\002 time(s). ' % (entry.eid, entry.occurences)
         if comments:
@@ -406,26 +426,25 @@ class IRCBot(IRCClient, _KeepAliveMixin):
 
         self.reply(conf, msg)
 
-    @usage('tinyurl <id> [channel]')
-    def cmd_tinyurl(self, conf, eid, entryChannel=None):
+    @usage('tinyurl <id>')
+    def cmd_tinyurl(self, conf, eid):
         """
-        Generate a TinyURL for entry <id> in [channel] or the current channel
-        if not specified.
+        Generate a TinyURL for entry <id>.
         """
-        em, entry = self.getEntry(entryChannel or conf.channel, eid)
+        em, entry = self.getEntry(conf, eid)
 
         def gotTiny(url):
             self.reply(conf, url)
 
         tinyurl(entry.url).addCallback(gotTiny)
 
-    @usage('discard <id> [channel]')
-    def cmd_discard(self, conf, eid, entryChannel=None):
+    @usage('discard <id>')
+    def cmd_discard(self, conf, eid):
         """
-        Discards entry <id> in [channel] or the current channel if not
-        specified. Discarded items are not considered for searching.
+        Discards entry <id>.  Discarded entries are not considered for
+        searching but can still be viewed directly.
         """
-        em, entry = self.getEntry(entryChannel or conf.channel, eid)
+        em, entry = self.getEntry(conf, eid)
 
         # XXX: implement proper privs
         if entry.nick == conf.user.nickname or conf.user.nickname == u'k4y':
@@ -433,13 +452,13 @@ class IRCBot(IRCClient, _KeepAliveMixin):
         else:
             self.reply(conf, u'You did not post this entry, ask %s to discard it.' % (entry.nick,))
 
-    @usage('delete <id> [channel]')
-    def cmd_delete(self, conf, eid, entryChannel=None):
+    @usage('delete <id>')
+    def cmd_delete(self, conf, eid):
         """
-        Deletes entry <id> in [channel] or the current channel if not
-        specified.
+        Deletes entry <id>.  Deleted entries will cease to exist, this
+        operation cannot be undone.
         """
-        em, entry = self.getEntry(entryChannel or conf.channel, eid)
+        em, entry = self.getEntry(conf, eid)
 
         # XXX: implement proper privs
         if entry.nick == conf.user.nickname or conf.user.nickname == u'k4y':
@@ -452,7 +471,7 @@ class IRCBot(IRCClient, _KeepAliveMixin):
         """
         Tells <nick> about the entry <eid>.
         """
-        em, entry = self.getEntry(conf.channel, eid)
+        em, entry = self.getEntry(conf, eid)
         # XXX: check that <nick> is in the channel
         self.tell(conf, nick, entry.completeHumanReadable)
 
