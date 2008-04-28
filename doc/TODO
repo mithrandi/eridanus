@@ -2,9 +2,6 @@
     * Handle failures and tracebacks better.
     * Better IRC config/etc interfaces.
     * Handle named parameters to commands.
-    * Update entry title if it was previously None and it gets pasted again.
-      (This is probably going to require some hackery to getPage because there
-      is no point trying to get the title of an image everytime it is pasted.)
     * Have the bot respond to private commands.
     * Optimise topContributors.
     * Implement a proper privs system.
@@ -15,13 +12,5 @@
     * Implement nickname tracking.
     * Allow "deferred" "telling".  So if I "tell Shrimp #1" and he's not around
       we will tell him as soon as he is.
-    * Implement a more powerful EID addressing scheme: <eid>[.channel][.network]
-      This will remove the need for an "entryChannel" parameter from commands.
-    * The following codes should be retried, while any other error should
-      stop retrying:
-        408 Request Timeout
-        500 Internal Server Error
-        502 Bad Gateway
-        503 Service Unavailable
-        504 Gateway Timeout
-    * Display any HTTP error that occured.
+    * Handle protocols other than HTTP and HTTPS.
+      Also then don't bother trying to use getPage to retrieve the title.
