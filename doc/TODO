@@ -14,3 +14,8 @@
       we will tell him as soon as he is.
     * Handle protocols other than HTTP and HTTPS.
       Also then don't bother trying to use getPage to retrieve the title.
+    * Implement a "refresh" command.
+    * Respond to user input like "delete" and "discard".
+    * Some way to mark certain channels as private, which will:
+      + Not make them appear in the web listing.
+      + Make their entries inaccessible from outside the channel.
