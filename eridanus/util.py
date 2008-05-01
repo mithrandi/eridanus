@@ -45,16 +45,16 @@ class PerseverantDownloader(object):
     retryableHTTPCodes = [408, 500, 502, 503, 504]
 
     def __init__(self, url, tries=10, *a, **kw):
-        self.url = url
+        self.url = sanitizeUrl(url)
         self.args = a
         self.kwargs = kw
         self.delay = self.initialDelay
         self.tries = tries
 
     def go(self):
-        return getPage(self.url, *self.args, **self.kwargs
-            ).addErrback(self.retryWeb)
-            #).addErrback(self.retryInternet)
+        d, f = getPage(self.url, *self.args, **self.kwargs)
+        return d.addErrback(self.retryWeb
+               ).addCallback(lambda data: (data, f.response_headers))
 
     def retryWeb(self, f):
         f.trap(weberror.Error)
@@ -63,10 +63,6 @@ class PerseverantDownloader(object):
             return self.retry(f)
 
         return f
-
-    def retryInternet(self, f):
-        f.trap(ineterror.ConnectError)
-        return self.retry(f)
 
     def retry(self, f):
         self.tries -= 1
@@ -105,12 +101,17 @@ def sanitizeUrl(url):
     return url
 
 
-def getPage(url, *a, **kw):
-    url = sanitizeUrl(url)
-
-    # XXX: getPage just follows redirects forever, thanks for that.
-    #kw['followRedirect'] = False
-    return client.getPage(url, *a, **kw).addErrback(handle206)
+def getPage(url, contextFactory=None, *args, **kwargs):
+    scheme, host, port, path = client._parse(url)
+    factory = client.HTTPClientFactory(url, *args, **kwargs)
+    if scheme == 'https':
+        from twisted.internet import ssl
+        if contextFactory is None:
+            contextFactory = ssl.ClientContextFactory()
+        reactor.connectSSL(host, port, factory, contextFactory)
+    else:
+        reactor.connectTCP(host, port, factory)
+    return factory.deferred.addErrback(handle206), factory
 
 
 _whitespace = re.compile(ur'\s+')

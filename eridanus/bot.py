@@ -223,11 +223,21 @@ class IRCBot(IRCClient, _KeepAliveMixin):
             if comment is not None:
                 self.notice(encode(entry.channel), encode(comment.humanReadable))
 
+        def decodeData((data, headers)):
+            header = headers.get('content-type')
+            if header is not None:
+                params = dict(p.lower().strip().split('=', 1) for p in header[0].split(';')[1:])
+                charset = params['charset']
+                data = data.decode(charset)
+
+            return data
+
         em = self.getEntryManager(conf.channel)
 
         for url, comment in self.findUrls(text):
             d = PerseverantDownloader(str(url), headers=dict(range='bytes=0-4095')).go(
                 ).addErrback(fetchFailed
+                ).addCallback(decodeData
                 ).addCallback(extractTitle)
 
             entry = em.entryByUrl(url)
