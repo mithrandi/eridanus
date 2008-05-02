@@ -57,7 +57,7 @@ class PerseverantDownloader(object):
                ).addCallback(lambda data: (data, f.response_headers))
 
     def retryWeb(self, f):
-        f.trap(weberror.Error)
+        f.trap((weberror.Error, ineterror.ConnectionDone))
         err = f.value
         if int(err.status) in self.retryableHTTPCodes:
             return self.retry(f)
