@@ -227,8 +227,9 @@ class IRCBot(IRCClient, _KeepAliveMixin):
             header = headers.get('content-type')
             if header is not None:
                 params = dict(p.lower().strip().split('=', 1) for p in header[0].split(';')[1:])
-                charset = params['charset']
-                data = data.decode(charset)
+                charset = params.get('charset')
+                if charset is not None:
+                    data = data.decode(charset)
 
             return data
 
