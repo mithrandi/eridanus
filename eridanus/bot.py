@@ -204,7 +204,7 @@ class IRCBot(IRCClient, _KeepAliveMixin):
     def snarf(self, conf, text):
         def fetchFailed(f):
             e = f.value
-            msg = '%s: %s' % (e.__class__.__name__, e)
+            msg = '%s: Failed to get page data: %s' % (e.__class__.__name__, e)
             self.reply(conf, msg)
             log.msg('Error getting page data: %r' % (text,))
             log.err(f)
@@ -460,8 +460,11 @@ class IRCBot(IRCClient, _KeepAliveMixin):
         # XXX: implement proper privs
         if entry.nick == conf.user.nickname or conf.user.nickname == u'k4y':
             entry.isDiscarded = True
+            msg = u'Discarded entry %s.' % (eid,)
         else:
-            self.reply(conf, u'You did not post this entry, ask %s to discard it.' % (entry.nick,))
+            msg = u'You did not post this entry, ask %s to discard it.' % (entry.nick,)
+
+        self.reply(conf, msg)
 
     @usage('delete <id>')
     def cmd_delete(self, conf, eid):
@@ -474,8 +477,11 @@ class IRCBot(IRCClient, _KeepAliveMixin):
         # XXX: implement proper privs
         if entry.nick == conf.user.nickname or conf.user.nickname == u'k4y':
             entry.isDeleted = True
+            msg = u'Deleted entry %s.' % (eid,)
         else:
-            self.reply(conf, u'You did not post this entry, ask %s to delete it.' % (entry.nick,))
+            msg = u'You did not post this entry, ask %s to delete it.' % (entry.nick,)
+
+        self.reply(conf, msg)
 
     @usage('tell <nick> <id>')
     def cmd_tell(self, conf, nick, eid):

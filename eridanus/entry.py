@@ -241,6 +241,10 @@ class Entry(Item):
     def humanReadable(self):
         return u'#%d: \037%s\037%s posted %s by \002%s\002.' % (self.eid, self.displayTitle, self.displayComment, self.displayTimestamp, self.nick)
 
+    @property
+    def canonical(self):
+        return u'#%d.%s' % (self.eid, self.channel)
+
 registerAttributeCopyingUpgrader(Entry, 1, 2)
 
 def entry2to3(old):
