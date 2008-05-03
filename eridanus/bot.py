@@ -181,7 +181,7 @@ class IRCBot(IRCClient, _KeepAliveMixin):
                               comment=comment,
                               title=title)
 
-    def updateEntry(self, title, conf, entry, comment):
+    def updateEntry(self, title, conf, entry, comment=None):
         if title is not None:
             entry.title = title
 
@@ -201,7 +201,7 @@ class IRCBot(IRCClient, _KeepAliveMixin):
 
             yield url, comment
 
-    def snarf(self, conf, text):
+    def getPageTitle(self, url):
         def fetchFailed(f):
             e = f.value
             msg = '%s: Failed to get page data: %s' % (e.__class__.__name__, e)
@@ -209,19 +209,6 @@ class IRCBot(IRCClient, _KeepAliveMixin):
             log.msg('Error getting page data: %r' % (text,))
             log.err(f)
             return None
-
-        def logEntryError(f):
-            log.msg('Creating or updating an entry failed:')
-            log.err(f)
-            return f
-
-        def entryCreated(entry):
-            self.notice(encode(entry.channel), encode(entry.humanReadable))
-
-        def entryUpdated((entry, comment)):
-            self.notice(encode(entry.channel), encode(entry.humanReadable))
-            if comment is not None:
-                self.notice(encode(entry.channel), encode(comment.humanReadable))
 
         def decodeData((data, headers)):
             header = headers.get('content-type')
@@ -233,13 +220,24 @@ class IRCBot(IRCClient, _KeepAliveMixin):
 
             return data
 
+        return PerseverantDownloader(str(url), headers=dict(range='bytes=0-4095')).go(
+            ).addErrback(fetchFailed
+            ).addCallback(decodeData
+            ).addCallback(extractTitle)
+
+    def snarf(self, conf, text):
+        def entryCreated(entry):
+            self.notice(encode(entry.channel), encode(entry.humanReadable))
+
+        def entryUpdated((entry, comment)):
+            self.notice(encode(entry.channel), encode(entry.humanReadable))
+            if comment is not None:
+                self.notice(encode(entry.channel), encode(comment.humanReadable))
+
         em = self.getEntryManager(conf.channel)
 
         for url, comment in self.findUrls(text):
-            d = PerseverantDownloader(str(url), headers=dict(range='bytes=0-4095')).go(
-                ).addErrback(fetchFailed
-                ).addCallback(decodeData
-                ).addCallback(extractTitle)
+            d = self.getPageTitle(url)
 
             entry = em.entryByUrl(url)
 
@@ -491,6 +489,20 @@ class IRCBot(IRCClient, _KeepAliveMixin):
         em, entry = self.getEntry(conf, eid)
         # XXX: check that <nick> is in the channel
         self.tell(conf, nick, entry.completeHumanReadable)
+
+    @usage('refresh <id>')
+    def cmd_refresh(self, conf, eid):
+        """
+        Updates entry <id>'s title.
+        """
+        em, entry = self.getEntry(conf, eid)
+
+        def entryUpdated((entry, comment)):
+            self.notice(encode(entry.channel), encode(entry.humanReadable))
+
+        self.getPageTitle(entry.url
+            ).addCallback(self.updateEntry, conf, entry
+            ).addCallback(entryUpdated)
 
 
 class IRCBotFactory(ReconnectingClientFactory):
