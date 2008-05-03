@@ -127,10 +127,13 @@ class IRCBot(IRCClient, _KeepAliveMixin):
 
     def signedOn(self):
         log.msg('Signed on.')
+
         self.rawPing()
         self.factory.resetDelay()
         for channel in self.config.channels:
             self.join(encode(channel))
+
+        log.msg('Joined channels.')
 
     def userRenamed(self, old, new):
         userConfigs = self.userConfigs
