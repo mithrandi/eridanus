@@ -204,14 +204,16 @@ class IRCBot(IRCClient, _KeepAliveMixin):
 
             yield url, comment
 
+    def mentionError(self, f, conf):
+        msg = '%s: %s' % (f.type.__name__, f.value)
+        self.reply(conf, msg)
+        return None
+
     def getPageTitle(self, url):
         def fetchFailed(f):
-            e = f.value
-            msg = '%s: Failed to get page data: %s' % (e.__class__.__name__, e)
-            self.reply(conf, msg)
-            log.msg('Error getting page data: %r' % (text,))
+            log.msg('Error getting page data: %r' % (url,))
             log.err(f)
-            return None
+            return f
 
         def decodeData((data, headers)):
             header = headers.get('content-type')
@@ -240,7 +242,7 @@ class IRCBot(IRCClient, _KeepAliveMixin):
         em = self.getEntryManager(conf.channel)
 
         for url, comment in self.findUrls(text):
-            d = self.getPageTitle(url)
+            d = self.getPageTitle(url).addErrback(self.mentionError, conf)
 
             entry = em.entryByUrl(url)
 
@@ -505,7 +507,8 @@ class IRCBot(IRCClient, _KeepAliveMixin):
 
         self.getPageTitle(entry.url
             ).addCallback(self.updateEntry, conf, entry
-            ).addCallback(entryUpdated)
+            ).addCallback(entryUpdated
+            ).addErrback(self.mentionError, conf)
 
 
 class IRCBotFactory(ReconnectingClientFactory):
