@@ -218,10 +218,12 @@ class IRCBot(IRCClient, _KeepAliveMixin):
         def decodeData((data, headers)):
             header = headers.get('content-type')
             if header is not None:
-                params = dict(p.lower().strip().split('=', 1) for p in header[0].split(';')[1:])
-                charset = params.get('charset')
-                if charset is not None:
-                    data = data.decode(charset)
+                header = header[0].split(';')[1:]
+                if header:
+                    params = dict(p.lower().strip().split('=', 1) for p in header)
+                    charset = params.get('charset')
+                    if charset is not None:
+                        data = data.decode(charset)
 
             return data
 
