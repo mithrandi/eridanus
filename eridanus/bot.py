@@ -218,7 +218,6 @@ class IRCBot(IRCClient, _KeepAliveMixin):
         log.err(f)
         msg = '%s: %s' % (f.type.__name__, f.value)
         self.reply(conf, msg)
-        return None
 
     def getPageData(self, url):
         def buildMetadata(headers):
@@ -269,10 +268,14 @@ class IRCBot(IRCClient, _KeepAliveMixin):
             if comment is not None:
                 self.notice(encode(entry.channel), encode(comment.humanReadable))
 
+        def failedFetch(f):
+            self.mentionError(f, conf)
+            return None, {}
+
         em = self.getEntryManager(conf.channel)
 
         for url, comment in self.findUrls(text):
-            d = self.getPageData(url)
+            d = self.getPageData(url).addErrback(failedFetch)
 
             entry = em.entryByUrl(url)
 
@@ -537,10 +540,14 @@ class IRCBot(IRCClient, _KeepAliveMixin):
         def entryUpdated((entry, comment)):
             self.notice(encode(entry.channel), encode(entry.humanReadable))
 
+        def failedFetch(f):
+            self.mentionError(f, conf)
+            return entry, None
+
         self.getPageData(entry.url
             ).addCallback(self.updateEntry, conf, entry
-            ).addCallback(entryUpdated
-            ).addErrback(self.mentionError, conf)
+            ).addErrback(failedFetch
+            ).addCallback(entryUpdated)
 
 
 class IRCBotFactory(ReconnectingClientFactory):
