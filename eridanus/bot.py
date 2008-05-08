@@ -1,5 +1,4 @@
 import re, shlex
-from itertools import izip
 from textwrap import dedent
 
 from epsilon.extime import Time
@@ -7,7 +6,8 @@ from epsilon.extime import Time
 from zope.interface import implements
 
 from axiom.item import Item
-from axiom.attributes import integer, inmemory, reference, bytes, AND, text, timestamp, textlist
+from axiom.attributes import (integer, inmemory, reference, bytes, AND, text,
+    timestamp, textlist)
 from axiom.upgrade import registerUpgrader, registerAttributeCopyingUpgrader
 
 from twisted.python import log
@@ -19,7 +19,8 @@ from twisted.application.service import IService, IServiceCollection
 
 from eridanus import const
 from eridanus.ieridanus import INetwork
-from eridanus.errors import CommandError, InvalidEntry, CommandNotFound, ParameterError
+from eridanus.errors import (CommandError, InvalidEntry, CommandNotFound,
+    ParameterError)
 from eridanus.entry import EntryManager
 from eridanus.util import encode, decode, extractTitle, truncate, PerseverantDownloader, prettyTimeDelta
 from eridanus.tinyurl import tinyurl

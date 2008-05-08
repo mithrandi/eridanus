@@ -6,11 +6,6 @@ from pycha.chart import Option
 from pycha.pie import PieChart
 from pycha.color import DEFAULT_COLOR
 
-from twisted.python import log
-
-from nevow.inevow import IRequest
-from nevow.rend import Page
-
 
 def pieChart(fd, width, height, title, data, labels, bgColor=None, labelColor='#000000', colorScheme=DEFAULT_COLOR):
     dataSet = [(name, [[0, value]]) for name, value in izip(labels, data)]
