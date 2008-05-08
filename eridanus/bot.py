@@ -22,7 +22,8 @@ from eridanus.ieridanus import INetwork
 from eridanus.errors import (CommandError, InvalidEntry, CommandNotFound,
     ParameterError)
 from eridanus.entry import EntryManager
-from eridanus.util import encode, decode, extractTitle, truncate, PerseverantDownloader, prettyTimeDelta
+from eridanus.util import (encode, decode, extractTitle, truncate,
+    PerseverantDownloader, prettyTimeDelta, humanReadableFileSize)
 from eridanus.tinyurl import tinyurl
 from eridanus.iriparse import extractURLsWithPosition
 
@@ -175,17 +176,22 @@ class IRCBot(IRCClient, _KeepAliveMixin):
         #      means fixing up the command dispatcher specifically for things
         #      like the number of params.
 
-    def createEntry(self, title, conf, url, comment):
+    def createEntry(self, (title, metadata), conf, url, comment):
         channel = conf.channel
         nick = conf.nickname
         em = self.getEntryManager(channel)
-        return em.createEntry(channel=channel,
+        entry = em.createEntry(channel=channel,
                               nick=nick,
                               url=url,
                               comment=comment,
                               title=title)
 
-    def updateEntry(self, title, conf, entry, comment=None):
+        if metadata is not None:
+            entry.updateMetadata(metadata)
+
+        return entry
+
+    def updateEntry(self, (title, metadata), conf, entry, comment=None):
         if title is not None:
             entry.title = title
 
@@ -193,6 +199,9 @@ class IRCBot(IRCClient, _KeepAliveMixin):
             c = entry.addComment(conf.nickname, comment)
         else:
             c = None
+
+        if metadata is not None:
+            entry.updateMetadata(metadata)
 
         entry.touchEntry()
         return entry, c
@@ -206,30 +215,50 @@ class IRCBot(IRCClient, _KeepAliveMixin):
             yield url, comment
 
     def mentionError(self, f, conf):
+        log.err(f)
         msg = '%s: %s' % (f.type.__name__, f.value)
         self.reply(conf, msg)
         return None
 
-    def getPageTitle(self, url):
-        def fetchFailed(f):
-            log.msg('Error getting page data: %r' % (url,))
-            log.err(f)
-            return f
+    def getPageData(self, url):
+        def buildMetadata(headers):
+            def getHeader(name):
+                h = headers.get(name)
+                if h is not None:
+                    return decode(h[0])
+                return None
 
-        def decodeData((data, headers)):
-            header = headers.get('content-type')
-            if header is not None:
-                params = dict(p.lower().strip().split('=', 1) for p in header[0].split(';')[1:] if p.strip())
-                charset = params.get('charset')
-                if charset is not None:
-                    data = data.decode(charset)
+            contentType = getHeader('content-type')
+            if contentType is not None:
+                yield u'contentType', contentType
+
+            size = getHeader('content-range')
+            if size is not None:
+                if size.startswith('bytes'):
+                    size = int(size.split(u'/')[-1])
+                    yield u'size', humanReadableFileSize(size)
+
+        def decodeData(data, contentType):
+            params = dict(p.lower().strip().split('=', 1) for p in contentType.split(';')[1:] if p.strip())
+            charset = params.get('charset')
+            if charset is not None:
+                data = data.decode(charset)
 
             return data
 
-        return PerseverantDownloader(str(url), headers=dict(range='bytes=0-4095')).go(
-            ).addErrback(fetchFailed
-            ).addCallback(decodeData
-            ).addCallback(extractTitle)
+        def gotData((data, headers)):
+            metadata = dict(buildMetadata(headers))
+
+            contentType = metadata.get('contentType', u'application/octet-stream')
+            if contentType.startswith(u'text'):
+                data = decodeData(data, contentType)
+                title = extractTitle(data)
+            else:
+                title = None
+
+            return succeed((title, metadata))
+
+        return PerseverantDownloader(str(url), headers=dict(range='bytes=0-4095')).go().addCallback(gotData)
 
     def snarf(self, conf, text):
         def entryCreated(entry):
@@ -243,7 +272,7 @@ class IRCBot(IRCClient, _KeepAliveMixin):
         em = self.getEntryManager(conf.channel)
 
         for url, comment in self.findUrls(text):
-            d = self.getPageTitle(url).addErrback(self.mentionError, conf)
+            d = self.getPageData(url)
 
             entry = em.entryByUrl(url)
 
@@ -253,6 +282,8 @@ class IRCBot(IRCClient, _KeepAliveMixin):
             else:
                 d.addCallback(self.updateEntry, conf, entry, comment
                 ).addCallback(entryUpdated)
+
+            d.addErrback(self.mentionError, conf)
 
     def userText(self, conf, message):
         self.snarf(conf, message)
@@ -506,7 +537,7 @@ class IRCBot(IRCClient, _KeepAliveMixin):
         def entryUpdated((entry, comment)):
             self.notice(encode(entry.channel), encode(entry.humanReadable))
 
-        self.getPageTitle(entry.url
+        self.getPageData(entry.url
             ).addCallback(self.updateEntry, conf, entry
             ).addCallback(entryUpdated
             ).addErrback(self.mentionError, conf)

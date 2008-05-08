@@ -185,6 +185,17 @@ class Entry(Item):
         self.modified = Time()
         self.occurences += 1
 
+    def getMetadata(self, kind):
+        return self.store.query(EntryMetadata,
+                                AND(EntryMetadata.entry == self,
+                                    EntryMetadata.kind == kind))
+
+    def updateMetadata(self, metadata):
+        store = self.store
+        for kind, data in metadata.iteritems():
+            md = store.findOrCreate(EntryMetadata, entry=self, kind=kind)
+            md.data = data
+
     @property
     def allComments(self):
         return list(self.store.query(Comment, Comment.parent == self, sort=Comment.created.ascending))
@@ -217,13 +228,29 @@ class Entry(Item):
 
     @property
     def displayTitle(self):
-        if self.title is None:
+        def getMetadata(metadata):
+            contentType = metadata.get(u'contentType')
+            if contentType is not None:
+                yield contentType
+
+            size = metadata.get(u'size')
+            if size is not None:
+                yield size
+
+        if self.title is not None:
+            title = self.title
+        else:
             comment = self.initialComment
             if comment is None:
-                return self.slug
+                title = self.slug
             else:
-                return comment.comment
-        return self.title
+                title = comment.comment
+
+            md = list(getMetadata(self.metadata))
+            if md:
+                title = u'%s [%s]' % (title, u' '.join(md),)
+
+        return title
 
     @property
     def displayTimestamp(self):
@@ -244,6 +271,10 @@ class Entry(Item):
     @property
     def canonical(self):
         return u'#%d.%s' % (self.eid, self.channel)
+
+    @property
+    def metadata(self):
+        return dict((md.kind, md.data) for md in self.store.query(EntryMetadata, EntryMetadata.entry == self))
 
 registerAttributeCopyingUpgrader(Entry, 1, 2)
 
@@ -367,3 +398,12 @@ class Comment(Item):
 
 registerAttributeCopyingUpgrader(Comment, 1, 2)
 registerAttributeCopyingUpgrader(Comment, 2, 3)
+
+
+class EntryMetadata(Item):
+    typeName = 'eridanus_entry_metadata'
+    schemaVersion = 1
+
+    entry = reference(reftype=Entry)
+    kind = text()
+    data = text()

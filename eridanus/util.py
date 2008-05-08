@@ -1,4 +1,4 @@
-import re
+import re, math
 from zope.interface import implements
 from BeautifulSoup import BeautifulSoup
 
@@ -202,3 +202,10 @@ class CachingResource(object):
             req.setHeader('Content-Length', len(data))
 
         return data
+
+
+sizePrefixes = (u'bytes', u'KB', u'MB', u'GB', u'TB', u'PB', u'EB', u'ZB', u'YB')
+
+def humanReadableFileSize(size):
+    factor = int(math.log(size, 1024))
+    return u'%0.2f %s' % (size / (1024.0 ** factor), sizePrefixes[factor])
