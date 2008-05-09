@@ -238,7 +238,7 @@ class IRCBot(IRCClient, _KeepAliveMixin):
                     yield u'size', humanReadableFileSize(size)
 
         def decodeData(data, contentType):
-            params = dict(p.lower().strip().split('=', 1) for p in contentType.split(';')[1:] if p.strip())
+            params = dict(p.lower().strip().split(u'=', 1) for p in contentType.split(u';')[1:] if u'=' in p)
             charset = params.get('charset')
             if charset is not None:
                 data = data.decode(charset)
