@@ -1,5 +1,6 @@
-import re, shlex
+import re, shlex, gzip
 from textwrap import dedent
+from StringIO import StringIO
 
 from epsilon.extime import Time
 
@@ -237,7 +238,14 @@ class IRCBot(IRCClient, _KeepAliveMixin):
                     size = int(size.split(u'/')[-1])
                     yield u'size', humanReadableFileSize(size)
 
-        def decodeData(data, contentType):
+        def decodeData(data, contentType, contentEncoding):
+            # XXX: this should be done at a lower level, like util.getPage maybe
+            if contentEncoding is not None:
+                if contentEncoding in ('x-gzip', 'gzip'):
+                    data = gzip.GzipFile(fileobj=StringIO(data)).read()
+                else:
+                    raise ValueError(u'Unsupported content encoding: %r' % (contentEncoding,))
+
             params = dict(p.lower().strip().split(u'=', 1) for p in contentType.split(u';')[1:] if u'=' in p)
             charset = params.get('charset')
             if charset is not None:
@@ -250,7 +258,8 @@ class IRCBot(IRCClient, _KeepAliveMixin):
 
             contentType = metadata.get('contentType', u'application/octet-stream')
             if contentType.startswith(u'text'):
-                data = decodeData(data, contentType)
+                contentEncoding = headers.get('content-encoding', [None])[0]
+                data = decodeData(data, contentType, contentEncoding)
                 title = extractTitle(data)
             else:
                 title = None
