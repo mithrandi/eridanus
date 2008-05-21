@@ -1,4 +1,4 @@
-import re, shlex, gzip
+import re, shlex, gzip, chardet
 from textwrap import dedent
 from StringIO import StringIO
 
@@ -238,6 +238,21 @@ class IRCBot(IRCClient, _KeepAliveMixin):
                     size = int(size.split(u'/')[-1])
                     yield u'size', humanReadableFileSize(size)
 
+        def decodeTextData(data, encoding):
+            def detectEncoding(data):
+                info = chardet.detect(data)
+                return info.get('encoding', 'ascii')
+
+            if encoding is None:
+                encoding = detectEncoding(data)
+
+            try:
+                return data.decode(encoding, 'replace')
+            except LookupError:
+                newEncoding = detectEncoding(data)
+                log.msg('Decoding text with %r failed, detected data as %r.' % (encoding, newEncoding))
+                return data.decode(newEncoding, 'replace')
+
         def decodeData(data, contentType, contentEncoding):
             # XXX: this should be done at a lower level, like util.getPage maybe
             if contentEncoding is not None:
@@ -247,11 +262,7 @@ class IRCBot(IRCClient, _KeepAliveMixin):
                     raise ValueError(u'Unsupported content encoding: %r' % (contentEncoding,))
 
             params = dict(p.lower().strip().split(u'=', 1) for p in contentType.split(u';')[1:] if u'=' in p)
-            charset = params.get('charset')
-            if charset is not None:
-                data = data.decode(charset, 'replace')
-
-            return data
+            return decodeTextData(data, params.get('charset'))
 
         def gotData((data, headers)):
             metadata = dict(buildMetadata(headers))
