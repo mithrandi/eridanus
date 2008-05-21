@@ -249,7 +249,7 @@ class IRCBot(IRCClient, _KeepAliveMixin):
             params = dict(p.lower().strip().split(u'=', 1) for p in contentType.split(u';')[1:] if u'=' in p)
             charset = params.get('charset')
             if charset is not None:
-                data = data.decode(charset)
+                data = data.decode(charset, 'replace')
 
             return data
 
