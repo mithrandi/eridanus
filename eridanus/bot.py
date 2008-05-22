@@ -709,8 +709,14 @@ class IRCBotService(Item):
     """)
 
     def connect(self):
-        assert self.config is not None, 'No configuration data'
-        return reactor.connectTCP(self.config.hostname, self.config.portNumber, self.factory.getFactory(self, self.config))
+        config = self.config
+        assert config is not None, 'No configuration data'
+
+        hostname = config.hostname
+        port = config.portNumber
+
+        log.msg('Connecting to %s (%s:%s) as %r' % (config.name, hostname, port, config.nickname))
+        return reactor.connectTCP(hostname, port, self.factory.getFactory(self, config))
 
     def disconnect(self):
         self.connector.disconnect()
