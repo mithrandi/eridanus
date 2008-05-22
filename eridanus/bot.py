@@ -633,7 +633,8 @@ class IRCBotConfig(Item):
 
     def leave(self, channel):
         channels = self.channels
-        channels.remove(channel)
+        while channel in channels:
+            channels.remove(channel)
         self.channels = channels
 
     def ignore(self, nick):
