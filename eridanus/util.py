@@ -162,6 +162,9 @@ def prettyTimeDelta(d):
     if seconds:
         s.append('%d seconds' % (seconds,))
 
+    if not s:
+        s.append('never')
+
     return ' '.join(s)
 
 

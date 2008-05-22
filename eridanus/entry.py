@@ -1,5 +1,6 @@
 import urllib
 from itertools import islice, groupby
+from datetime import timedelta
 
 from epsilon.extime import Time
 
@@ -122,9 +123,13 @@ class EntryManager(Item):
 
         numEntries = entries.count()
         numContributors = len(list(entries.getColumn('nick').distinct()))
-        start = iter(entries).next()
+        if numEntries > 0:
+            start = iter(entries).next().created
+            age = Time() - start
+        else:
+            age = timedelta()
 
-        return numEntries, numComments, numContributors, Time() - start.created
+        return numEntries, numComments, numContributors, age
 
 def entrymanager1to2(old):
     return old.upgradeVersion(
