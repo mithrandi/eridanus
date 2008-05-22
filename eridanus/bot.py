@@ -692,7 +692,7 @@ class IRCBotService(Item):
     """, allowNone=False)
 
     config = reference(doc="""
-    """, allowNone=False, reftype=IRCBotConfig)
+    """, reftype=IRCBotConfig)
 
     parent = inmemory(doc="""
     The parent of this service.

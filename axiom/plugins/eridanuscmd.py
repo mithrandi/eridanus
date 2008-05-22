@@ -13,6 +13,7 @@ class ConfigureService(axiomatic.AxiomaticSubCommand):
 
     optParameters = [
         ('id',       None, None, 'Service identifier'),
+        ('name',     None, None, 'Network name'),
         ('host',     'h',  None, 'Service hostname'),
         ('port',     'p',  6667, 'Service port number'),
         ('nick',     'n',  None, 'Bot nickname'),
@@ -32,6 +33,8 @@ class ConfigureService(axiomatic.AxiomaticSubCommand):
         else:
             config = svc.config
 
+        if self['name']:
+            config.name = self['name'].decode('utf-8')
         if self['host']:
             config.hostname = self['host']
         if self['port']:
