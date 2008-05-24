@@ -120,14 +120,6 @@ class IRCBot(IRCClient, _KeepAliveMixin):
     def noticed(self, user, channel, message):
         pass
 
-    def join(self, channel, key=None):
-        self.config.join(channel)
-        return IRCClient.join(self, channel, key)
-
-    def part(self, channel):
-        self.config.leave(channel)
-        return IRCClient.part(self, channel)
-
     def signedOn(self):
         log.msg('Signed on.')
 
@@ -419,6 +411,7 @@ class IRCBot(IRCClient, _KeepAliveMixin):
         Joins <channel> with [key], if provided.
         """
         # XXX: check privs
+        self.config.join(channelName)
         self.join(encode(channelName), key)
 
     @usage('part [channel]')
@@ -427,6 +420,7 @@ class IRCBot(IRCClient, _KeepAliveMixin):
         Leave [channel] or the current channel if not specified.
         """
         # XXX: check privs
+        self.config.leave(channelName)
         self.part(encode(channelName or conf.channel))
 
     @usage('ignore <nick>')
