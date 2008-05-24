@@ -1,6 +1,10 @@
-import re, math
+import re, math, html5lib
 from zope.interface import implements
-from BeautifulSoup import BeautifulSoup
+
+try:
+    from xml.etree import ElementTree
+except ImportError:
+    from elementtree import ElementTree
 
 from twisted.internet import reactor, task, error as ineterror
 from twisted.web import client, http, error as weberror
@@ -121,12 +125,14 @@ def sanitizeTitle(title):
 
 
 def extractTitle(data):
-    if data is not None:
+    if data:
         try:
-            soup = BeautifulSoup(data, convertEntities=BeautifulSoup.HTML_ENTITIES)
-            titleElem = soup.find('title')
+            parser = html5lib.HTMLParser(tree=html5lib.treebuilders.getTreeBuilder('etree', ElementTree))
+            tree = ElementTree.ElementTree(parser.parse(data))
+            titleElem = tree.find('//title')
             if titleElem is not None:
-                return sanitizeTitle(titleElem.contents[0])
+                text = unicode(titleElem.text)
+                return sanitizeTitle(text)
         except:
             log.msg('Extracting title failed:')
             log.err()
