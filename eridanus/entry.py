@@ -42,7 +42,7 @@ class EntryManager(Item):
                   title=title)
 
         if comment is not None:
-            e.addComment(nick, comment, initial=True)
+            e.addComment(nick, comment)
 
         return e
 
@@ -183,7 +183,10 @@ class Entry(Item):
     Indicates whether this item is to be considered at all.
     """, default=False)
 
-    def addComment(self, nick, comment, initial=False):
+    def addComment(self, nick, comment):
+        # The first comment made by the original poster is considered to be
+        # the initial comment.
+        initial = self.initialComment is None and nick == self.nick
         return self.store.findOrCreate(Comment, parent=self, nick=nick, comment=comment, initial=initial)
 
     def touchEntry(self):
@@ -214,9 +217,10 @@ class Entry(Item):
 
     @property
     def initialComment(self):
-        return self.store.findFirst(Comment,
-                                    AND(Comment.parent == self,
-                                        Comment.initial == True))
+        return self.store.findUnique(Comment,
+                                     AND(Comment.parent == self,
+                                         Comment.initial == True),
+                                     default=None)
 
     @property
     def displayComment(self):
