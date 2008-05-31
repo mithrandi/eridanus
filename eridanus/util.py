@@ -130,7 +130,7 @@ def extractTitle(data):
             parser = html5lib.HTMLParser(tree=html5lib.treebuilders.getTreeBuilder('etree', ElementTree))
             tree = ElementTree.ElementTree(parser.parse(data))
             titleElem = tree.find('//title')
-            if titleElem is not None:
+            if titleElem is not None and titleElem.text is not None:
                 text = unicode(titleElem.text)
                 return sanitizeTitle(text)
         except:
