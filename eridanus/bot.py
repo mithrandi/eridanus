@@ -11,7 +11,7 @@ from axiom.attributes import (integer, inmemory, reference, bytes, AND, text,
     timestamp, textlist)
 from axiom.upgrade import registerUpgrader, registerAttributeCopyingUpgrader
 
-from twisted.python import log
+from twisted.python import log, failure
 from twisted.internet import reactor
 from twisted.internet.protocol import ReconnectingClientFactory
 from twisted.internet.defer import succeed
@@ -166,9 +166,17 @@ class IRCBot(IRCClient, _KeepAliveMixin):
             handler(conf, *params)
         except CommandError, e:
             self.reply(conf, u'%s: %s' % (e.__class__.__name__, e))
-        # XXX: handle things that are not CommandErrors.  this probably also
-        #      means fixing up the command dispatcher specifically for things
-        #      like the number of params.
+        except:
+            # XXX: handle things that are not CommandErrors.  this probably also
+            #      means fixing up the command dispatcher specifically for things
+            #      like the number of params.
+
+            # XXX: this is not the proper way to do this, this whole function
+            # needs to be handled by something.
+            log.msg('Exception in %r' % (handler,))
+            f = failure.Failure()
+            log.err(f)
+            self.mentionError(f, conf)
 
     def createEntry(self, (title, metadata), conf, url, comment):
         channel = conf.channel
