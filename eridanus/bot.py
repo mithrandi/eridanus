@@ -572,6 +572,32 @@ class IRCBot(IRCClient, _KeepAliveMixin):
             ).addErrback(failedFetch
             ).addCallback(entryUpdated)
 
+    @usage('retitle <id> [title]')
+    def cmd_retitle(self, conf, eid, *title):
+        """
+        Retitle entry <id> with [title].  If [title] is omitted, the entry's
+        title is removed.  Something to note: If the entry is updated, and the
+        page data contains a valid title tag, the current title will be
+        overwritten.
+        """
+        em, entry = self.getEntry(conf, eid)
+        title = u' '.join(title)
+
+        # XXX: implement proper privs
+        if entry.nick == conf.user.nickname or conf.user.nickname == u'k4y':
+            if title:
+                msg = u'Retitled entry: %s'
+            else:
+                msg = u'Removed title: %s'
+                title = None
+
+            entry.title = title
+            msg = msg % (entry.humanReadable,)
+        else:
+            msg = u'You did not post this entry, ask %s to do this.' % (entry.nick,)
+
+        self.reply(conf, msg)
+
 
 class IRCBotFactory(ReconnectingClientFactory):
     protocol = IRCBot
