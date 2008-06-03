@@ -1,6 +1,7 @@
 import re, shlex, gzip, chardet
 from textwrap import dedent
 from StringIO import StringIO
+from PIL import Image
 
 from epsilon.extime import Time
 
@@ -222,7 +223,7 @@ class IRCBot(IRCClient, _KeepAliveMixin):
         self.reply(conf, msg)
 
     def getPageData(self, url):
-        def buildMetadata(headers):
+        def buildMetadata(data, headers):
             def getHeader(name):
                 h = headers.get(name)
                 if h is not None:
@@ -232,6 +233,16 @@ class IRCBot(IRCClient, _KeepAliveMixin):
             contentType = getHeader('content-type')
             if contentType is not None:
                 yield u'contentType', contentType
+
+                if contentType.startswith('image'):
+                    try:
+                        im = Image.open(StringIO(data))
+                        dims = im.size
+                    except IOError:
+                        dims = None
+
+                    if dims is not None:
+                        yield u'dimensions', u'x'.join(map(unicode, dims))
 
             size = getHeader('content-range')
             if size is not None:
@@ -266,7 +277,7 @@ class IRCBot(IRCClient, _KeepAliveMixin):
             return decodeTextData(data, params.get('charset'))
 
         def gotData((data, headers)):
-            metadata = dict(buildMetadata(headers))
+            metadata = dict(buildMetadata(data, headers))
 
             contentType = metadata.get('contentType', u'application/octet-stream')
             if contentType.startswith(u'text'):

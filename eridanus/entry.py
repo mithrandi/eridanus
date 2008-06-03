@@ -242,6 +242,11 @@ class Entry(Item):
             if contentType is not None:
                 yield contentType
 
+                if contentType.startswith('image'):
+                    dims = metadata.get(u'dimensions')
+                    if dims is not None:
+                        yield dims
+
             size = metadata.get(u'size')
             if size is not None:
                 yield size
