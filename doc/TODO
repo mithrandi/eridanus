@@ -17,3 +17,4 @@
     * Some way to mark certain channels as private, which will:
       + Not make them appear in the web listing.
       + Make their entries inaccessible from outside the channel.
+    * Add some kind of proper IRC interfaceable configuration system.
