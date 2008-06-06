@@ -269,7 +269,11 @@ class IRCBot(IRCClient, _KeepAliveMixin):
             # XXX: this should be done at a lower level, like util.getPage maybe
             if contentEncoding is not None:
                 if contentEncoding in ('x-gzip', 'gzip'):
-                    data = gzip.GzipFile(fileobj=StringIO(data)).read()
+                    gf = gzip.GzipFile(fileobj=StringIO(data))
+                    # Monkey patch the CRC verification routine away.  Thanks
+                    # to reddit for pointing out that Lighttpd is horrid.
+                    gf._read_eof = lambda: None
+                    data = gf.read()
                 else:
                     raise ValueError(u'Unsupported content encoding: %r' % (contentEncoding,))
 
