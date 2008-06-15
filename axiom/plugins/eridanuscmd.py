@@ -11,7 +11,6 @@ from xmantissa import publicweb
 
 from eridanus import publicpage, plugin, util
 from eridanus.bot import IRCBotService, IRCBotFactoryFactory, IRCBotConfig
-from eridanus.entry import EntryManager, Entry, Comment, EntryMetadata
 
 
 class ConfigureService(axiomatic.AxiomaticSubCommand):
@@ -152,6 +151,9 @@ class SetupCommands(axiomatic.AxiomaticSubCommand):
         installOn(fp, store)
 
 
+# XXX: this shouldn't be anywhere near here
+from eridanusstd import linkdb
+from eridanusstd.linkdb import LinkManager, LinkEntry, LinkEntryComment, LinkEntryMetadata
 class ImportExportFile(object):
     encoding = 'utf-8'
 
@@ -241,6 +243,9 @@ class ImportExportFile(object):
 
         self.writeConfig(service.config)
 
+        for manager in linkdb.getAllLinkManagers(service.store, service.serviceID):
+            self.writeEntryManager(manager)
+
     def readService(self):
         return self.readItem(IRCBotService, self.serviceAttrs)
 
@@ -249,9 +254,6 @@ class ImportExportFile(object):
     def writeConfig(self, config):
         self.writeline('config')
         self.writeItem(config, self.configAttrs)
-
-        for entryManager in config.getEntryManagers():
-            self.writeEntryManager(entryManager)
 
     def readConfig(self):
         return self.readItem(IRCBotConfig, self.configAttrs)
@@ -266,7 +268,7 @@ class ImportExportFile(object):
             self.writeEntry(entry)
 
     def readEntryManager(self):
-        return self.readItem(EntryManager, self.entryManagerAttrs)
+        return self.readItem(LinkManager, self.entryManagerAttrs)
 
     entryAttrs = ['eid', 'created', 'modified', 'channel', 'nick', 'url', 'title', 'occurences', 'isDiscarded', 'isDeleted']
 
@@ -281,7 +283,7 @@ class ImportExportFile(object):
             self.writeMetadata(metadata)
 
     def readEntry(self):
-        return self.readItem(Entry, self.entryAttrs)
+        return self.readItem(LinkEntry, self.entryAttrs)
 
     commentAttrs = ['created', 'nick', 'comment', 'initial']
 
@@ -290,7 +292,7 @@ class ImportExportFile(object):
         self.writeItem(comment, self.commentAttrs)
 
     def readComment(self):
-        return self.readItem(Comment, self.commentAttrs)
+        return self.readItem(LinkEntryComment, self.commentAttrs)
 
     metadataAttrs = ['kind', 'data']
 
@@ -299,9 +301,10 @@ class ImportExportFile(object):
         self.writeItem(metadata, self.metadataAttrs)
 
     def readMetadata(self):
-        return self.readItem(EntryMetadata, self.metadataAttrs)
+        return self.readItem(LinkEntryMetadata, self.metadataAttrs)
 
 
+# XXX: this shouldn't be anywhere near here
 class ExportEntries(axiomatic.AxiomaticSubCommand):
     longdesc = 'Export linkdb entries to disk'
 
@@ -333,6 +336,7 @@ class ExportEntries(axiomatic.AxiomaticSubCommand):
             ief.writeService(service)
 
 
+# XXX: this shouldn't be anywhere near here
 class ImportEntries(axiomatic.AxiomaticSubCommand):
     longdesc = 'Import linkdb entries from an export'
 
@@ -377,25 +381,24 @@ class ImportEntries(axiomatic.AxiomaticSubCommand):
                     service = createService(siteStore, **kw)
                 elif mode == 'config':
                     kw = ief.readConfig()
-                    config = IRCBotConfig(store=siteStore, **kw)
-                    service.configID = config.storeID
+                    service.config = config = IRCBotConfig(store=siteStore, **kw)
                 elif mode == 'entrymanager':
-                    assert config is not None
+                    assert service is not None
                     kw = ief.readEntryManager()
-                    entryManager = EntryManager(store=appStore, config=config, **kw)
+                    entryManager = LinkManager(store=appStore, serviceID=service.serviceID, **kw)
                 elif mode == 'entry':
                     assert entryManager is not None
                     kw = ief.readEntry()
                     print 'Creating entry #%(eid)s for %(channel)s...' % kw
-                    entry = Entry(store=appStore, **kw)
+                    entry = LinkEntry(store=appStore, **kw)
                 elif mode == 'comment':
                     assert entry is not None
                     kw = ief.readComment()
-                    Comment(store=appStore, parent=entry, **kw)
+                    LinkEntryComment(store=appStore, parent=entry, **kw)
                 elif mode == 'metadata':
                     assert entry is not None
                     kw = ief.readMetadata()
-                    EntryMetadata(store=appStore, entry=entry, **kw)
+                    LinkEntryMetadata(store=appStore, entry=entry, **kw)
 
 
 class InstallPlugin(axiomatic.AxiomaticSubCommand):
@@ -416,6 +419,7 @@ class InstallPlugin(axiomatic.AxiomaticSubCommand):
         plugin.installPlugin(self.getAppStore(), self['pluginName'])
 
 
+# XXX: stale, fix plox
 class EndowPlugin(axiomatic.AxiomaticSubCommand):
     longdesc = 'Endow a user with a plugin'
 
