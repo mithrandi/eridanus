@@ -635,7 +635,7 @@ class LinkEntry(Item):
         @return: The newly created comment
         """
         initial = self.getInitialComment() is None and nick == self.nick
-        return self.store.findOrCreate(Comment, parent=self, nick=nick, comment=comment, initial=initial)
+        return self.store.findOrCreate(LinkEntryComment, parent=self, nick=nick, comment=comment, initial=initial)
 
     def touchEntry(self):
         """
