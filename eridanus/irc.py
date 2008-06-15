@@ -48,7 +48,7 @@ class IRCSource(object):
     An IRC message source.
 
     @ivar protocol: The protocol that data will travel back over
-    
+
     @ivar channel: The channel the message originated from
     @type channel: C{str}
 
@@ -75,17 +75,28 @@ class IRCSource(object):
 
         return None
 
+    def _getTarget(self, privateSay, publicSay):
+        if self.isPrivate:
+            f = privateSay
+            target = encode(self.user.nickname)
+        else:
+            f = publicSay
+            target = encode(self.channel)
+
+        return f, target
+
+    def notice(self, text):
+        """
+        Notice C{text} to the current channel.
+        """
+        f, target = self._getTarget(self.protocol.notice, self.protocol.notice)
+        f(target, encode(text))
+
     def say(self, text):
         """
         Say C{text} in the current channel (or private) over the protocol.
         """
-        if self.isPrivate:
-            f = self.protocol.msg
-            target = self.user.nickname
-        else:
-            f = self.protocol.say
-            target = encode(self.channel)
-        
+        f, target = self._getTarget(self.protocol.msg, self.protocol.say)
         f(target, encode(text))
 
     def reply(self, text):
