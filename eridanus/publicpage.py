@@ -294,7 +294,7 @@ class ChannelFragment(EntriesFragment):
         super(ChannelFragment, self).__init__(entries=self.getEntries(), **kw)
 
     def getEntries(self):
-        return self.manager.allEntries(limit=50)
+        return self.manager.getEntries(limit=50)
 
     @property
     def title(self):

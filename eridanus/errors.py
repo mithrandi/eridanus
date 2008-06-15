@@ -1,14 +1,36 @@
-class CommandError(Exception):
-    pass
+class PluginError(Exception):
+    """
+    General plugin-related error.
+    """
 
 
-class CommandNotFound(CommandError):
-    pass
+class PluginNotFound(PluginError):
+    """
+    The specified plugin does not exist.
+    """
 
 
-class InvalidEntry(CommandError):
-    pass
+class PluginNotInstalled(PluginError):
+    """
+    The specified plugin exists but is not installed.
+    """
 
 
-class ParameterError(CommandError):
-    pass
+class UsageError(Exception):
+    """
+    Attempting to use a command resulted in an error.
+
+    Usually this indicates a malformed command or missing parameters.
+    """
+
+
+class InvalidMaskError(ValueError):
+    """
+    Caused by a malformed user mask.
+    """
+
+
+class AuthenticationError(ValueError):
+    """
+    Authentication could not complete successfully.
+    """
