@@ -391,7 +391,7 @@ class NetworkFragment(ThemedFragment):
                 ).fillSlots('url', channel[1:]
                 ).fillSlots('name', channel)
 
-        return tag[(channel(m) for m in self.network.allEntryManagers())]
+        return tag[(channel(m) for m in self.network.getEntryManagers())]
 
 
 class NetworkPage(EridanusPage):

@@ -60,7 +60,7 @@ class ChannelFeed(FeedPage):
                      content=Content(content, type='xhtml'))
 
     def getFeed(self):
-        entries = list(self.manager.allEntries(limit=self.maxItems))
+        entries = list(self.manager.getEntries(limit=self.maxItems))
         atomEntries = (self.entryFromEntry(e) for e in entries)
 
         title = u'%s links' % (self.manager.channel,)

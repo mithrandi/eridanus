@@ -12,17 +12,6 @@ from eridanus import const
 from eridanus.util import encode, decode
 
 
-
-def saneURL(url):
-    t, rest = urllib.splittype(encode(url))
-    if t is None:
-        if not rest.startswith('//'):
-            rest = '//' + rest
-        return u'http:' + decode(rest)
-
-    return url
-
-
 class EntryManager(Item):
     typeName = 'eridanus_entrymanager'
     schemaVersion = 2
@@ -38,7 +27,7 @@ class EntryManager(Item):
                   eid=eid,
                   channel=channel,
                   nick=nick,
-                  url=saneURL(url),
+                  url=url,
                   title=title)
 
         if comment is not None:
@@ -46,14 +35,18 @@ class EntryManager(Item):
 
         return e
 
-    def allEntries(self, limit=None, recentFirst=True, discarded=False, sort=None):
+    def getEntries(self, limit=None, recentFirst=True, discarded=False, sort=None, deleted=False):
         if sort is None:
             sort = [Entry.modified.ascending, Entry.modified.descending][recentFirst]
 
+        criteria = [Entry.channel == self.channel]
+        if discarded:
+            criteria.append(Entry.isDiscarded == discarded)
+        if deleted:
+            criteria.append(Entry.isDeleted == deleted)
+
         return self.store.query(Entry,
-                                AND(Entry.channel == self.channel,
-                                    Entry.isDiscarded == discarded,
-                                    Entry.isDeleted == False),
+                                AND(*criteria),
                                 limit=limit,
                                 sort=sort)
 
@@ -76,7 +69,7 @@ class EntryManager(Item):
         return self.entryBy(url=url)
 
     def topContributors(self, limit=None):
-        query = self.allEntries(sort=Entry.nick.descending)
+        query = self.getEntries(sort=Entry.nick.descending)
 
         totalEntries = query.count()
         runningTotal = 0
@@ -286,9 +279,13 @@ class Entry(Item):
     def canonical(self):
         return u'#%d.%s' % (self.eid, self.channel)
 
+    def getAllMetadata(self):
+        return self.store.query(EntryMetadata,
+                                EntryMetadata.entry == self)
+
     @property
     def metadata(self):
-        return dict((md.kind, md.data) for md in self.store.query(EntryMetadata, EntryMetadata.entry == self))
+        return dict((md.kind, md.data) for md in self.getAllMetadata())
 
 registerAttributeCopyingUpgrader(Entry, 1, 2)
 
