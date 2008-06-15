@@ -258,6 +258,8 @@ def installPlugin(store, pluginName):
     for plugin in getPluginProvidersByName(pluginName):
         p = store.findOrCreate(plugin)
         store.powerUp(p, IEridanusPlugin)
+        if IAmbientEventObserver.providedBy(plugin):
+            store.powerUp(p, IAmbientEventObserver)
         return
 
     raise errors.PluginNotFound(u'No plugin named "%s".' % (pluginName,))
