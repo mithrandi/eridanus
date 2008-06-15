@@ -107,7 +107,7 @@ class LinkDBPlugin(Item, Plugin, AmbientEventObserver, _LinkDBHelperMixin):
             entry.title = title
 
         if comment:
-            c = entry.addComment(source.nickname, comment)
+            c = entry.addComment(source.user.nickname, comment)
         else:
             c = None
 
