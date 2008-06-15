@@ -35,7 +35,7 @@ class IRCUser(object):
             host = usermask
 
         self.usermask = usermask
-        self.nickname = nickname
+        self.nickname = unicode(nickname, 'ascii') # XXX: is this a good idea?
         self.realname = realname
         self.host = host
 

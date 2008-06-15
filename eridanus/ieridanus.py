@@ -75,6 +75,8 @@ class IAmbientEventObserver(Interface):
     def publicMessageReceived(source, message):
         """
         A public message occured.
+
+        @rtype: C{twisted.internet.Deferred}
         """
 
 

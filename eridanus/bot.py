@@ -343,7 +343,7 @@ class IRCBot(IRCClient, _IRCKeepAliveMixin):
 
     def getUsername(self, nickname):
         # XXX: maybe check that nickname is sane?
-        return '%s@%s' % (nickname, self.serviceID)
+        return u'%s@%s' % (nickname, self.serviceID)
 
     def _getAvatar(self, nickname):
         username = self.getUsername(nickname)
