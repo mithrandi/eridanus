@@ -325,7 +325,9 @@ class IRCBot(IRCClient, _IRCKeepAliveMixin):
             cmd = avatar.getCommand(self, params)
             return cmd.invoke(source)
 
-    def mentionFailure(self, f, source):
+    def mentionFailure(self, f, source, msg=None):
+        if msg is not None:
+            log.msg(msg)
         log.err(f)
         msg = '%s: %s' % (f.type.__name__, f.getErrorMessage())
         source.reply(msg)

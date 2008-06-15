@@ -153,3 +153,9 @@ class IRCSource(object):
         Stop ignoring a user mask.
         """
         self.protocol.unignore(mask)
+
+    def logFailure(self, f, msg):
+        """
+        Log the failure and have the protocol mention it.
+        """
+        self.protocol.mentionFailure(f, self, msg)
