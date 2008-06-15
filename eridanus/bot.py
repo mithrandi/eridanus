@@ -172,8 +172,14 @@ class IRCBot(IRCClient, _IRCKeepAliveMixin):
                 value = True
             isupported[key] = value
 
+    def setModes(self):
+        for mode in self.config.modes:
+            self.mode(self.nickname, True, mode)
+
     def signedOn(self):
         log.msg('Signed on.')
+
+        self.setModes()
 
         self.rawPing()
         self.factory.resetDelay()
@@ -395,7 +401,7 @@ class IRCBotFactoryFactory(Item):
 
 class IRCBotConfig(Item):
     typeName = 'eridanus_ircbotconfig'
-    schemaVersion = 4
+    schemaVersion = 5
 
     name = text(doc="""
     The name of the network this config is for.
@@ -420,6 +426,10 @@ class IRCBotConfig(Item):
     ignores = textlist(doc="""
     A C{list} of masks to ignore.
     """, default=[])
+
+    modes = bytes(doc="""
+    A string of user modes to set after successfully connecting to C{hostname}.
+    """, default='B')
 
     def addChannel(self, channel):
         if channel not in self.channels:
@@ -472,6 +482,7 @@ def ircbotconfig2to3(old):
 
 registerUpgrader(ircbotconfig2to3, IRCBotConfig.typeName, 2, 3)
 registerAttributeCopyingUpgrader(IRCBotConfig, 3, 4)
+registerAttributeCopyingUpgrader(IRCBotConfig, 4, 5)
 
 
 # XXX: technically this has no real ties to IRC anything, so the name sucks
