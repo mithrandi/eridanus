@@ -35,6 +35,9 @@ class _LinkDBHelperMixin(object):
 
 
 class LinkDBAdminPlugin(Item, Plugin, _LinkDBHelperMixin):
+    """
+    Provides functionality for managing the LinkDB plugin.
+    """
     classProvides(IPlugin, IEridanusPluginProvider)
     schemaVersion = 1
     typeName = 'eridanus_plugins_linkdbadmin'
@@ -46,18 +49,31 @@ class LinkDBAdminPlugin(Item, Plugin, _LinkDBHelperMixin):
 
     @usage(u'undiscard <entryID>')
     def cmd_undiscard(self, source, entryID):
+        """
+        Undiscard <entryID>.
+        """
         entry = self.getEntryByID(source, entryID)
         entry.isDiscarded = False
         source.reply(u'Undiscarded entry %s.' % (entry.canonical,))
 
     @usage(u'undelete <entryID>')
     def cmd_undelete(self, source, entryID):
+        """
+        Undelete <entryID>.
+        """
         entry = self.getEntryByID(source, entryID, evenDeleted=True)
         entry.isDeleted = False
         source.reply(u'Undeleted entry %s.' % (entry.canonical,))
 
 
 class LinkDBPlugin(Item, Plugin, AmbientEventObserver, _LinkDBHelperMixin):
+    """
+    LinkDB is designed to track HTTP URLs authored by users.  Each URL is
+    stored along with information about the author, the web page's title or
+    information about its content and timestamps.  Users can comment on
+    LinkDB entries and can recall them by ID.  Entries are grouped by channel
+    and access is restricted as such.
+    """
     classProvides(IPlugin, IEridanusPluginProvider, IAmbientEventObserver)
     schemaVersion = 1
     typeName = 'eridanus_plugins_linkdb'
@@ -140,6 +156,9 @@ class LinkDBPlugin(Item, Plugin, AmbientEventObserver, _LinkDBHelperMixin):
 
     @usage(u'get <entryID>')
     def cmd_get(self, source, entryID):
+        """
+        Retrieve the entry for <entryID>.
+        """
         entry = self.getEntryByID(source, entryID)
         source.reply(entry.completeHumanReadable)
 
