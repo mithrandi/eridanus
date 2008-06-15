@@ -1,4 +1,4 @@
-import re, math, html5lib, fnmatch, itertools
+import re, math, html5lib, fnmatch, itertools, warnings
 
 try:
     from xml.etree import ElementTree
@@ -353,3 +353,7 @@ def tabulate(headers, data, joiner='  '):
 
     for row in data:
         yield joiner.join(value.ljust(columnWidths[i]) for i, value in enumerate(row)).rstrip()
+
+
+def deprecation(msg):
+    warnings.warn(msg, DeprecationWarning, stacklevel=2)
