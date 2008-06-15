@@ -72,14 +72,16 @@ class PerseverantDownloader(object):
         Any additional positional or keyword arguments are passed on to
         C{twisted.web.client.HTTPPageGetter}.
 
-        @type url: C{nevow.url.URL}
+        @type url: C{nevow.url.URL} or C{unicode} or C{str}
         @param url: The HTTP URL to attempt to download
 
         @type tries: C{int}
         @param tries: The maximum number of retry attempts before giving up
         """
-        self.url = URL(url)
-        self.url.fragment = None
+        if isinstance(url, (str, unicode)):
+            url = URL.fromString(url)
+
+        self.url = url.anchor(None)
         self.args = a
         self.kwargs = kw
         self.delay = self.initialDelay
