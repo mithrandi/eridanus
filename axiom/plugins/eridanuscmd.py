@@ -419,16 +419,14 @@ class InstallPlugin(axiomatic.AxiomaticSubCommand):
         plugin.installPlugin(self.getAppStore(), self['pluginName'])
 
 
-# XXX: stale, fix plox
-class EndowPlugin(axiomatic.AxiomaticSubCommand):
-    longdesc = 'Endow a user with a plugin'
+class GrantPlugin(axiomatic.AxiomaticSubCommand):
+    longdesc = 'Grant a user with access to a plugin'
 
-    synopsis = '<user@domain> <pluginName>'
+    synopsis = '<user> <domain> <pluginName>'
 
-    def parseArgs(self, userdomain, pluginName):
-        username, domain = self.decodeCommandLine(userdomain).split(u'@', 1)
-        self['username'] = username
-        self['domain'] = domain
+    def parseArgs(self, username, domain, pluginName):
+        self['username'] = self.decodeCommandLine(username)
+        self['domain'] = self.decodeCommandLine(domain)
         self['pluginName'] = self.decodeCommandLine(pluginName)
 
     def postOptions(self):
@@ -444,7 +442,7 @@ class ManagePlugins(axiomatic.AxiomaticSubCommand):
 
     subCommands = [
         ('install', None, InstallPlugin, 'Install a plugin'),
-        ('endow', None, EndowPlugin, 'Endow a user with a plugin'),
+        ('grant', None, GrantPlugin, 'Endow a user with access to a plugin'),
         ]
 
     def getStore(self):
