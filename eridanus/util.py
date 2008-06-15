@@ -1,9 +1,4 @@
-import re, math, html5lib, fnmatch, itertools, warnings
-
-try:
-    from xml.etree import ElementTree
-except ImportError:
-    from elementtree import ElementTree
+import re, math, fnmatch, itertools, warnings
 
 from twisted.internet import reactor, task, error as ineterror
 from twisted.web import client, http, error as weberror
@@ -170,27 +165,6 @@ def getPage(url, contextFactory=None, *args, **kwargs):
     else:
         reactor.connectTCP(host, port, factory)
     return factory.deferred.addErrback(handle206), factory
-
-
-# XXX: move this into the linkdb stuff
-_whitespace = re.compile(ur'\s+')
-def extractTitle(data):
-    def sanitizeTitle(title):
-        return _whitespace.sub(u' ', title.strip())
-
-    if data:
-        try:
-            parser = html5lib.HTMLParser(tree=html5lib.treebuilders.getTreeBuilder('etree', ElementTree))
-            tree = ElementTree.ElementTree(parser.parse(data))
-            titleElem = tree.find('//title')
-            if titleElem is not None and titleElem.text is not None:
-                text = unicode(titleElem.text)
-                return sanitizeTitle(text)
-        except:
-            log.msg('Extracting title failed:')
-            log.err()
-
-    return None
 
 
 def truncate(s, limit):
