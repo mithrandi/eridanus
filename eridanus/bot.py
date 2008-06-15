@@ -202,11 +202,11 @@ class IRCBot(IRCClient, _IRCKeepAliveMixin):
 
     def join(self, channel, key=None):
         self.config.addChannel(channel)
-        return IRCClient.join(encode(channel), key)
+        return IRCClient.join(self, encode(channel), key)
 
     def part(self, channel):
         self.config.removeChannel(channel)
-        return IRCClient.part(encode(channel))
+        return IRCClient.part(self, encode(channel))
 
     def ignore(self, mask):
         self.config.addIgnore(mask)
