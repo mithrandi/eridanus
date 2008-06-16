@@ -88,7 +88,8 @@ class LinkDBPlugin(Item, Plugin, AmbientEventObserver, _LinkDBHelperMixin):
         Create a new entry.
         """
         lm = self.getLinkManager(source)
-        entry = lm.createEntry(nick=source.user.nickname,
+        nick = source.user.nickname
+        entry = lm.createEntry(nick=nick,
                                url=url,
                                title=title)
 
