@@ -10,6 +10,8 @@ from eridanus import errors
 from eridanus.ieridanus import IEridanusPluginProvider
 from eridanus.plugin import Plugin, usage
 
+from eridanusstd import dict
+
 
 class AdminPlugin(Item, Plugin):
     """

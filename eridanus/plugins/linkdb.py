@@ -14,12 +14,18 @@ from eridanusstd import linkdb
 
 
 class _LinkDBHelperMixin(object):
+    def getLinkStore(self, source):
+        """
+        Get the C{axiom.store.Store} to find links in.
+        """
+        raise NotImplementedError()
+
     def getLinkManager(self, source):
         """
         Get the link manager for C{source}.
         """
         serviceID = source.protocol.serviceID
-        return linkdb.getLinkManager(self.store,
+        return linkdb.getLinkManager(self.getLinkStore(source),
                                      serviceID,
                                      source.channel)
 
@@ -28,7 +34,7 @@ class _LinkDBHelperMixin(object):
         Get the entry for C{entryID} and C{source}.
         """
         serviceID = source.protocol.serviceID
-        return linkdb.getEntryByID(self.store,
+        return linkdb.getEntryByID(self.getLinkStore(source),
                                    serviceID,
                                    entryID,
                                    source.channel)
@@ -47,6 +53,19 @@ class LinkDBAdminPlugin(Item, Plugin, _LinkDBHelperMixin):
 
     dummy = integer()
 
+    def getLinkStore(self, source):
+        # XXX: mmm...
+        return source.protocol.appStore
+
+    @usage(u'discard <entryID>')
+    def cmd_discard(self, source, entryID):
+        """
+        Discards entry <entryID>.
+        """
+        entry = self.getEntryByID(source, entryID)
+        entry.isDiscarded = True
+        source.reply(u'Discarded entry %s.' % (entry.canonical,))
+
     @usage(u'undiscard <entryID>')
     def cmd_undiscard(self, source, entryID):
         """
@@ -55,6 +74,15 @@ class LinkDBAdminPlugin(Item, Plugin, _LinkDBHelperMixin):
         entry = self.getEntryByID(source, entryID)
         entry.isDiscarded = False
         source.reply(u'Undiscarded entry %s.' % (entry.canonical,))
+
+    @usage(u'delete <entryID>')
+    def cmd_delete(self, source, entryID):
+        """
+        Deletes entry <entryID>.
+        """
+        entry = self.getEntryByID(source, entryID)
+        entry.isDeleted = True
+        source.reply(u'Deleted entry %s.' % (entry.canonical,))
 
     @usage(u'undelete <entryID>')
     def cmd_undelete(self, source, entryID):
@@ -82,6 +110,9 @@ class LinkDBPlugin(Item, Plugin, AmbientEventObserver, _LinkDBHelperMixin):
     pluginName = u'LinkDB'
 
     dummy = integer()
+
+    def getLinkStore(self, source):
+        return self.store
 
     def createEntry(self, (title, metadata), source, url, comment):
         """
