@@ -1,9 +1,11 @@
 import datetime, itertools, urllib, re, chardet, gzip, html5lib
+from StringIO import StringIO
 from PIL import Image
 
 from epsilon.extime import Time
 
 from twisted.internet.defer import succeed
+from twisted.python import log
 
 from axiom.item import Item
 from axiom.attributes import (AND, OR, timestamp, integer, reference, text,

@@ -6,7 +6,7 @@ from twisted.plugin import IPlugin
 from axiom.attributes import integer
 from axiom.item import Item
 
-from eridanus import errors, util
+from eridanus import util
 from eridanus.ieridanus import IEridanusPluginProvider, IAmbientEventObserver
 from eridanus.plugin import AmbientEventObserver, Plugin, usage
 
@@ -221,7 +221,7 @@ class LinkDBPlugin(Item, Plugin, AmbientEventObserver, _LinkDBHelperMixin):
         """
         lm = self.getLinkManager(source)
         numEntries, numComments, numContributors, timespan = lm.stats()
-        msg = '%d entries with %d comments from %d contributors over a total time period of %s.' % (numEntries, numComments, numContributors, prettyTimeDelta(timespan))
+        msg = '%d entries with %d comments from %d contributors over a total time period of %s.' % (numEntries, numComments, numContributors, util.prettyTimeDelta(timespan))
         source.reply(msg)
 
     @usage(u'discard <entryID>')
