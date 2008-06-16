@@ -53,7 +53,8 @@ class AuthenticatedAvatar(Item, _AvatarMixin):
         try:
             yield getPluginByName(self.store, name)
         except errors.PluginNotInstalled:
-            yield protocol.locatePlugin(name)
+            pass
+        yield protocol.locatePlugin(name)
 
     def getCommand(self, protocol, params):
         plugins = list(self.locatePlugins(protocol, params.pop(0)))
