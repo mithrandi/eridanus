@@ -211,3 +211,52 @@ class TopicPlugin(Item, Plugin):
 
         return self.getTopics(source
             ).addCallback(removeTopic)
+
+
+class DictPlugin(Item, Plugin):
+    classProvides(IPlugin, IEridanusPluginProvider)
+    schemaVersion = 1
+    typeName = 'eridanus_plugins_dict'
+
+    name = u'dict'
+    pluginName = u'Dict'
+
+    dummy = integer()
+
+    @usage(u'dicts')
+    def cmd_dicts(self, source):
+        """
+        List available dictionaries.
+        """
+        descs = (u'\002%s\002: %s' % (db, desc) for db, desc in dict.getDicts())
+        source.reply(u' '.join(descs))
+
+    @usage(u'define <word> [database]')
+    def cmd_define(self, source, word, database=None):
+        """
+        Define a word from a dictionary.
+
+        Look <word> up in <database>, if <database> is not specified then all
+        available dictionaries are consulted.
+        """
+        defs = (u'\002%s\002: %s' % (db, defn)
+                for db, defn in dict.define(word, database))
+        source.reply(u' '.join(defs))
+
+    @usage(u'spell <word> [language]')
+    def cmd_spell(self, source, word, language=None):
+        """
+        Check the spelling of a word.
+
+        If <word> is spelt incorrectly, a list of suggestions are given.
+        <language> defaults to 'en_GB'.
+        """
+        if language is None:
+            language = 'en_GB'
+
+        suggestions = dict.spell(word, language)
+        if suggestions is None:
+            msg = u'"%s" is spelled correctly.' % (word,)
+        else:
+            msg = u'Suggestions: ' + u', '.join(suggestions)
+        source.reply(msg)
