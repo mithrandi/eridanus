@@ -1,6 +1,6 @@
 from zope.interface import classProvides
 
-from twisted.internet.defer import succeed
+from twisted.internet.defer import gatherResults
 from twisted.plugin import IPlugin
 
 from axiom.attributes import integer
@@ -167,24 +167,24 @@ class LinkDBPlugin(Item, Plugin, AmbientEventObserver, _LinkDBHelperMixin):
             if comment is not None:
                 source.notice(comment.humanReadable)
 
-        lm = self.getLinkManager(source)
+        def fetch():
+            lm = self.getLinkManager(source)
 
-        d = succeed(None)
+            for url, comment in linkdb.extractURLs(text):
+                entry = lm.entryByURL(url)
 
-        for url, comment in linkdb.extractURLs(text):
-            entry = lm.entryByURL(url)
+                # XXX: doesn't this mean we have to fetch in serial?
+                d = linkdb.fetchPageData(url).addErrback(self.fetchFailed, source, url)
+                if entry is None:
+                    d.addCallback(self.createEntry, source, url, comment
+                        ).addCallback(entryCreated)
+                else:
+                    d.addCallback(self.updateEntry, source, entry, comment
+                        ).addCallback(entryUpdated)
 
-            # XXX: doesn't this mean we have to fetch in serial?
-            #d = linkdb.fetchPageData(url).addErrback(self.fetchFailed, source, url)
-            d = d.addCallback(lambda dummy: linkdb.fetchPageData(url).addErrback(self.fetchFailed, source, url))
-            if entry is None:
-                d.addCallback(self.createEntry, source, url, comment
-                    ).addCallback(entryCreated)
-            else:
-                d.addCallback(self.updateEntry, source, entry, comment
-                    ).addCallback(entryUpdated)
+                yield d
 
-        return d
+        return gatherResults(list(fetch()))
 
     @usage(u'get <entryID>')
     def cmd_get(self, source, entryID):
