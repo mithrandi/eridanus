@@ -149,15 +149,22 @@ def extractURLs(text):
         yield url, comment
 
 
-def _decodeText(data, encoding):
+def _decodeText(data, encoding=None):
     """
-    Decode C{data} as text encoded as C{encoding}.
+    Decode C{data} as text.
+
+    If encoding is C{None} or decoding fails, an attempt to detect the encoding
+    is made, finally falling back to the C{ascii} encoding.
 
     @type data: C{str}
+    @param data: The encoded text
 
-    @type encoding: C{str}
+    @type encoding: C{str} or C{None}
+    @param encoding: The encoding to treat data as, or C{None} to attempt to
+        detect the encoding
 
     @rtype: C{unicode}
+    @return: Decoded text
     """
     def detectEncoding(data):
         info = chardet.detect(data)
