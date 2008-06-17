@@ -79,6 +79,19 @@ class AdminPlugin(Item, Plugin):
         """
         source.part(name)
 
+    @usage(u'ignores')
+    def cmd_ignores(self, source):
+        """
+        Show the current ignore list.
+        """
+        # XXX: HACK: abstract this away
+        ignores = source.protocol.config.ignores
+        if ignores:
+            msg = u', '.join(ignores)
+        else:
+            msg = u'Ignore list is empty.'
+        source.reply(msg)
+
     @usage(u'ignore <usermask>')
     def cmd_ignore(self, source, usermask):
         """
@@ -87,7 +100,12 @@ class AdminPlugin(Item, Plugin):
         If <usermask> is a partial mask then it will be normalized. e.g.
         "bob" becomes "bob!*@*".
         """
-        source.ignore(usermask)
+        mask = source.ignore(usermask)
+        if mask is not None:
+            msg = u'Ignoring "%s".' % (mask,)
+        else:
+            msg = u'Already ignoring "%s".' % (usermask,)
+        source.reply(msg)
 
     @usage(u'unignore <usermask>')
     def cmd_unignore(self, source, usermask):
@@ -97,7 +115,12 @@ class AdminPlugin(Item, Plugin):
         If <usermask> is a partial mask then it will be normalized. e.g.
         "bob" becomes "bob!*@*".
         """
-        source.unignore(usermask)
+        removedIgnores = source.unignore(usermask)
+        if removedIgnores is not None:
+            msg = u'Stopped ignoring: ' + u', '.join(removedIgnores)
+        else:
+            msg = u'No ignores matched "%s".' % (usermask,)
+        source.reply(msg)
 
 
 class AuthenticatePlugin(Item, Plugin):
