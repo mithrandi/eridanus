@@ -54,20 +54,9 @@ class AuthenticatedAvatar(Item, _AvatarMixin):
             yield getPluginByName(self.store, name)
         except errors.PluginNotInstalled:
             pass
-        try:
-            yield protocol.locatePlugin(name)
-        except errors.PluginNotInstalled:
-            pass
+        yield protocol.locatePlugin(name)
 
     def getCommand(self, protocol, params):
-        plugins = list(self.locatePlugins(protocol, params.pop(0)))
-
-        while plugins:
-            plugin = plugins.pop(0)
-            try:
-                return self.locateCommand(plugin, params[:])
-            except:
-                if not plugins:
-                    # If there is no chance that this could work in some other
-                    # plugin, then we let the exception go into the wild.
-                    raise
+        plugins = self.locatePlugins(protocol, params.pop(0))
+        for plugin in plugins:
+            return self.locateCommand(plugin, params[:])
