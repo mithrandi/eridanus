@@ -102,3 +102,14 @@ class TestMisc(unittest.TestCase):
                 ['foobar', 'lol', 'zozlasdf']]
         result = '\n'.join(util.tabulate(headers, data, joiner=' | '))
         self.assertEqual(result, output)
+
+    def test_collate(self):
+        """
+        Collating an iterable of pairs results in the correct output.
+        """
+        c = util.collate([
+            (1, 'foo'),
+            (2, 'bar'),
+            (1, 'baz')])
+        self.assertEqual(c, {1: ['foo', 'baz'],
+                             2: ['bar']})

@@ -226,6 +226,13 @@ def getPluginByName(store, name):
     raise errors.PluginNotInstalled(name)
 
 
+def getInstalledPlugins(store):
+    """
+    Get all plugins installed on C{store}.
+    """
+    return store.powerupsFor(IEridanusPlugin)
+
+
 def getPluginProvidersByName(pluginName):
     """
     Get all objects that provide C{IEridanusPluginProvider}.

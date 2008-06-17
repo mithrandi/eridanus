@@ -333,3 +333,23 @@ def tabulate(headers, data, joiner='  '):
 
 def deprecation(msg):
     warnings.warn(msg, DeprecationWarning, stacklevel=2)
+
+
+def collate(it):
+    """
+    Unpack C{(key, value)} pairs from C{it} and collate overlapping keys.
+
+    For example::
+
+        >>> collate([(1, 'foo'), (2, 'bar'), (1, 'baz')])
+        {1: ['foo', 'baz'], 2: ['bar']}
+
+    @type it: C{iterable}
+
+    @rtype: C{dict}
+    """
+    d = {}
+    for key, value in it:
+        d.setdefault(key, []).append(value)
+
+    return d

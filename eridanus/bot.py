@@ -1,4 +1,4 @@
-import shlex
+import shlex, itertools
 
 from zope.interface import implements
 
@@ -361,18 +361,49 @@ class IRCBot(IRCClient, _IRCKeepAliveMixin):
         msg = u' -- '.join(helps)
         source.reply(msg)
 
-    @usage(u'list <name>')
+    @usage(u'list [name] [subname] [...]')
     def cmd_list(self, source, *params):
+        """
+        List commands and sub-commands.
+
+        If no parameters are specified, top-level commands are listed along
+        with installed plugins.
+        """
         params = list(params)
+        avatar = self.getAvatar(source.user.nickname)
         if params:
-            avatar = self.getAvatar(source.user.nickname)
             cmd = avatar.getCommand(self, params)
             names = type(cmd).__dict__.iterkeys()
+            plugins = []
         else:
             names = type(self).__dict__.iterkeys()
+            avStore = getattr(avatar, 'store', None)
+
+            # XXX: Can this really not be made any simpler?
+            # XXX: Perhaps the solution here is making sure that plugins that
+            #      are publically installed cannot be privately installed too.
+
+            # Plugins that are private are marked with a *.  Plugins that are
+            # public are not.  Plugins that are both private and public (?) are
+            # treated as if there were only public.
+            publicPlugins  = set((p.name, p.pluginName)
+                                 for p in plugin.getInstalledPlugins(self.appStore))
+            if avStore is not None:
+                privatePlugins = set((p.name, p.pluginName)
+                                     for p in plugin.getInstalledPlugins(avStore))
+            else:
+                privatePlugins = set()
+
+            plugins = util.collate(itertools.chain(
+                ((n, pn) for n, pn in publicPlugins),
+                ((n, u'*' + pn) for n, pn in privatePlugins - publicPlugins)))
+
+            plugins = sorted(u'%s (%s)' % (name, u', '.join(pluginNames))
+                             for name, pluginNames in plugins.iteritems())
 
         # XXX: this won't always work like this, fix plox
         commands = [name[4:] for name in names if name.startswith('cmd_')]
+        commands += plugins
         source.reply(u', '.join(commands))
 
 
