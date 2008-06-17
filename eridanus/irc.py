@@ -146,13 +146,13 @@ class IRCSource(object):
         """
         Start ignoring a user mask.
         """
-        self.protocol.ignore(mask)
+        return self.protocol.ignore(mask)
 
     def unignore(self, mask):
         """
         Stop ignoring a user mask.
         """
-        self.protocol.unignore(mask)
+        return self.protocol.unignore(mask)
 
     def logFailure(self, f, msg):
         """

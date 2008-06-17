@@ -112,10 +112,10 @@ class IRCBot(IRCClient, _IRCKeepAliveMixin):
         return IRCClient.part(self, encode(channel))
 
     def ignore(self, mask):
-        self.config.addIgnore(mask)
+        return self.config.addIgnore(mask)
 
     def unignore(self, mask):
-        self.config.removeIgnore(mask)
+        return self.config.removeIgnore(mask)
 
     def noticed(self, user, channel, message):
         pass
@@ -444,7 +444,8 @@ class IRCBotConfig(Item):
     def isIgnored(self, mask):
         mask = util.normalizeMask(mask)
         for ignore in self.ignores:
-            if util.hostMatches(ignore, mask):
+            ignore = util.normalizeMask(ignore)
+            if util.hostMatches(mask, ignore):
                 return True
 
         return False
@@ -453,12 +454,21 @@ class IRCBotConfig(Item):
         mask = util.normalizeMask(mask)
         if mask not in self.ignores:
             self.ignores = self.ignores + [mask]
+            return mask
+        return None
 
     def removeIgnore(self, mask):
+        def removeIgnores(mask):
+            for ignore in self.ignores:
+                normalizedIgnore = util.normalizeMask(ignore)
+                if not util.hostMatches(normalizedIgnore, mask):
+                    yield ignore
+
         mask = util.normalizeMask(mask)
-        ignores = self.ignores
-        ignores.remove(mask)
-        self.ignores = ignores
+        newIgnores = list(removeIgnores(mask))
+        diff = set(self.ignores) - set(newIgnores)
+        self.ignores = newIgnores
+        return list(diff) or None
 
 def ircbotconfig1to2(old):
     return old.upgradeVersion(
