@@ -20,14 +20,16 @@ class _LinkDBHelperMixin(object):
         """
         raise NotImplementedError()
 
-    def getLinkManager(self, source):
+    def getLinkManager(self, source, channel=None):
         """
         Get the link manager for C{source}.
         """
+        if channel is None:
+            channel=source.channel
         serviceID = source.protocol.serviceID
         return linkdb.getLinkManager(self.getLinkStore(source),
                                      serviceID,
-                                     source.channel)
+                                     channel)
 
     def getEntryByID(self, source, entryID):
         """
@@ -194,15 +196,12 @@ class LinkDBPlugin(Item, Plugin, AmbientEventObserver, _LinkDBHelperMixin):
         entry = self.getEntryByID(source, entryID)
         source.reply(entry.completeHumanReadable)
 
-    @usage(u'find <term> [term ...]')
-    def cmd_find(self, source, term, *terms):
+    def find(self, linkManager, terms, limit=25):
         """
-        Search for entries whose title, URL or comment contain any <term>.
+        Search for <terms> in entries on <linkManager> up to a maximum of <limit>.
         """
-        terms = [term] + list(terms)
-        lm = self.getLinkManager(source)
-        # XXX: don't hardcode this
-        entries = list(lm.search(terms, limit=25))
+        # XXX: don't hardcode the limit
+        entries = list(linkManager.search(terms, limit=limit))
 
         if not entries:
             msg = u'No results found for: %s.' % (u'; '.join(terms),)
@@ -212,6 +211,29 @@ class LinkDBPlugin(Item, Plugin, AmbientEventObserver, _LinkDBHelperMixin):
             msg = u'%d results. ' % (len(entries,))
             msg += u'  '.join([u'\002#%d\002: \037%s\037' % (e.eid, util.truncate(e.displayTitle, 30)) for e in entries])
 
+        return msg
+
+    @usage(u'find <term> [term ...]')
+    def cmd_find(self, source, term, *terms):
+        """
+        Search for entries whose title, URL or comment contain any <term>.
+
+        This search assumes the channel where the command was invoked, it can
+        also not be used in private.  See the "findfor" command.
+        """
+        terms = [term] + list(terms)
+        lm = self.getLinkManager(source)
+        msg = self.find(lm, terms)
+        source.reply(msg)
+
+    @usage(u'findfor <channel> <term> [term ...]')
+    def cmd_findfor(self, source, channel, term, *terms):
+        """
+        Search <channel> for entries whose title, URL or comment contain any <term>.
+        """
+        terms = [term] + list(terms)
+        lm = self.getLinkManager(source, channel)
+        msg = self.find(lm, terms)
         source.reply(msg)
 
     @usage(u'stats')
