@@ -83,7 +83,8 @@ def getLinkManager(store, serviceID, channel):
 
     @rtype: C{LinkManager}
     """
-    assert channel.startswith(u'#')
+    # XXX: maybe fix this one day?
+    assert channel.startswith(u'#'), u'Channels must start with a "#"'
     global _managerCache
     em = _managerCache.get(channel)
     if em is None:
