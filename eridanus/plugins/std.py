@@ -237,6 +237,12 @@ class TopicPlugin(Item, Plugin):
 
 
 class DictPlugin(Item, Plugin):
+    """
+    Dictionary functionality.
+
+    Provides commands for performing tasks such  as defining words and
+    checking the spelling of a word.
+    """
     classProvides(IPlugin, IEridanusPluginProvider)
     schemaVersion = 1
     typeName = 'eridanus_plugins_dict'
