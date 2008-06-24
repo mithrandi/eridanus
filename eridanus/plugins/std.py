@@ -10,7 +10,7 @@ from eridanus import errors
 from eridanus.ieridanus import IEridanusPluginProvider
 from eridanus.plugin import Plugin, usage
 
-from eridanusstd import dict, timeutil
+from eridanusstd import dict, timeutil, google, defertools
 
 
 class AdminPlugin(Item, Plugin):
@@ -331,3 +331,49 @@ class TimePlugin(Item, Plugin):
 
         dt = timeutil.convert(timeString, timezoneName)
         source.reply(timeutil.format(dt, self.timeFormat))
+
+
+class GooglePlugin(Item, Plugin):
+    """
+    Google services.
+    """
+    classProvides(IPlugin, IEridanusPluginProvider)
+    schemaVersion = 1
+    typeName = 'eridanus_plugins_google'
+
+    name = u'google'
+    pluginName = u'Google'
+
+    searchAPIKey = text()
+
+    def websearch(self, source, terms, count):
+        """
+        Perform a Google web search.
+        """
+        def formatResults(results):
+            for title, url in results:
+                yield u'\002%s\002: <%s>;' % (title, url)
+
+        def displayResults(formattedResults):
+            source.reply(u' '.join(formattedResults))
+
+        q = google.WebSearchQuery(terms)
+        return defertools.slice(q.queue, count
+            ).addCallback(formatResults
+            ).addCallback(displayResults)
+
+    @usage(u'search <term> [term ...]')
+    def cmd_search(self, source, term, *terms):
+        """
+        Perform a Google web search.
+        """
+        terms = [term] + list(terms)
+        return self.websearch(source, terms, 4)
+
+    @usage(u'lucky <term> [term ...]')
+    def cmd_lucky(self, source, term, *terms):
+        """
+        Perform an "I'm feeling lucky" Google web search.
+        """
+        terms = [term] + list(terms)
+        return self.websearch(source, terms, 1)

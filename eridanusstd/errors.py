@@ -22,6 +22,12 @@ class InvalidLanguage(ValueError):
     """
 
 
+class NoSearchResults(ValueError):
+    """
+    A search yielded zero results.
+    """
+
+
 class NoMoreItems(RuntimeError):
     """
     A deferred-iterator has no more items.
