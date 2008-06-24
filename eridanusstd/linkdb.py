@@ -291,11 +291,11 @@ class LinkManager(Item):
 
     serviceID = bytes(doc="""
     The ID of the service this manager operates under.
-    """)
+    """, indexed=True)
 
     channel = text(doc="""
     The channel this manager is responsible for.
-    """, allowNone=False)
+    """, indexed=True, allowNone=False)
 
     lastEid = integer(doc="""
     The previously allocated entry ID, starting at 0.
@@ -488,7 +488,7 @@ class LinkEntry(Item):
 
     eid = integer(doc="""
     The ID of this entry.
-    """, allowNone=False)
+    """, indexed=True, allowNone=False)
 
     created = timestamp(doc="""
     Timestamp of when this entry was created.
@@ -500,7 +500,7 @@ class LinkEntry(Item):
 
     channel = text(doc="""
     The channel where this entry was first submitted.
-    """, allowNone=False)
+    """, indexed=True, allowNone=False)
 
     nick = text(doc=u"""
     The nickname of the person who submitted this entry first.
@@ -508,7 +508,7 @@ class LinkEntry(Item):
 
     url = text(doc=u"""
     Entry's URL.
-    """, allowNone=False)
+    """, indexed=True, allowNone=False)
 
     title = text(doc=u"""
     Optional title for this entry.
@@ -687,7 +687,7 @@ class LinkEntryComment(Item):
 
     parent = reference(doc="""
     L{LinkEntry} item this comment refers to.
-    """, allowNone=False, reftype=LinkEntry)
+    """, indexed=True, allowNone=False, reftype=LinkEntry)
 
     nick = text(doc="""
     The nickname of the person who commented on L{parent}.
@@ -725,7 +725,7 @@ class LinkEntryMetadata(Item):
 
     entry = reference(doc="""
     L{LinkEntry} item this metadata is related to.
-    """, reftype=LinkEntry)
+    """, indexed=True, reftype=LinkEntry)
 
     kind = text(doc="""
     The kind of metadata this is.  e.g. contentType, size, dimensions, etc.
