@@ -20,3 +20,9 @@ class InvalidLanguage(ValueError):
     """
     An invalid dictionary language was specified.
     """
+
+
+class NoMoreItems(RuntimeError):
+    """
+    A deferred-iterator has no more items.
+    """
