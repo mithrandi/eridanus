@@ -12,9 +12,14 @@ from eridanusstd import errors, defertools
 # http://code.google.com/apis/ajaxsearch/documentation/#fonje
 
 
-SEARCH_URL = URL.fromString('http://ajax.googleapis.com/ajax/services/search/web?v=1.0')
+HEADERS = {
+    'Referrer': 'http://trac.slipgate.za.net/Eridanus'
+    }
+
+SEARCH_URL = URL.fromString('http://ajax.googleapis.com/ajax/services/search/')
 
 
+# XXX: this should require an API key
 class WebSearchQuery(object):
     """
     Encapsulate a Google web search query.
@@ -44,7 +49,9 @@ class WebSearchQuery(object):
             contain a space will be quoted
         """
         self.terms = list(self._quoteTerms(terms))
-        self.url = SEARCH_URL.add('q', u' '.join(self.terms))
+        self.url = SEARCH_URL.child('web'
+            ).add('v', '1.0'
+            ).add('q', u' '.join(self.terms))
         self.pages = None
         self.queue = defertools.LazyQueue(self.getMoreResults)
 
@@ -102,5 +109,5 @@ class WebSearchQuery(object):
                 return defer.succeed([])
 
         url = self.url.add('start', start)
-        return util.PerseverantDownloader(url).go(
+        return util.PerseverantDownloader(url, headers=HEADERS).go(
             ).addCallback(self.parseResults)
