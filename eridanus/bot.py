@@ -225,6 +225,7 @@ class IRCBot(IRCClient, _IRCKeepAliveMixin):
         Find and invoke the C{ICommand} provider from C{message}.
         """
         params = self.splitMessage(message)
+        # XXX: this sucks, having to call the command two different ways is just stupid
         cmd = self.locateBuiltinCommand(params)
 
         if cmd is not None:
@@ -347,13 +348,16 @@ class IRCBot(IRCClient, _IRCKeepAliveMixin):
         Retrieve help for a given command or plugin.
         """
         params = list(params)
-        if params:
+        if not params:
+            params = [u'help']
+
+        # XXX: blehblehbleh, locateBuiltinCommand is pure fail
+        cmd = self.locateBuiltinCommand(params)
+        if cmd is None:
             avatar = self.getAvatar(source.user.nickname)
             cmd = avatar.getCommand(self, params)
-        else:
-            # XXX: kind of a hack
-            cmd = ICommand(self.cmd_help)
 
+        cmd = ICommand(cmd)
         helps = [cmd.help]
         if cmd.usage is not None:
             helps.insert(0, cmd.usage)
