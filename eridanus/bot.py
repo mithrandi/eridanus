@@ -420,6 +420,7 @@ class IRCBotFactory(ReconnectingClientFactory):
         # XXX: should this be here?
         appStore = service.loginSystem.accountByAddress(u'Eridanus', None).avatars.open()
         self.bot = self.protocol(appStore, service.serviceID, self, portal, config)
+        self.connector = service.connector
 
     def buildProtocol(self, addr=None):
         return self.bot
