@@ -253,6 +253,7 @@ def _extractTitle(data):
 
     if data:
         try:
+            # XXX: this should use lxml as soon as html5lib gets a clue
             parser = html5lib.HTMLParser(tree=html5lib.treebuilders.getTreeBuilder('etree', etree))
             tree = etree.ElementTree(parser.parse(data))
             titleElem = tree.find('//title')
