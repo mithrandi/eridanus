@@ -2,7 +2,7 @@ from zope.interface import classProvides
 
 from twisted.plugin import IPlugin
 
-from axiom.attributes import integer, text
+from axiom.attributes import integer
 from axiom.item import Item
 from axiom.userbase import getAccountNames
 
@@ -181,9 +181,10 @@ class TopicPlugin(Item, Plugin):
     name = u'topic'
     pluginName = u'Topic'
 
-    separator = text(doc="""
-    String assumed to seperate sub-topics from one another.
-    """, default=u' | ')
+    dummy = integer()
+
+    # XXX: should be a channel config variable
+    separator = u' | '
 
     def getTopics(self, source):
         def splitTopic(topic):
@@ -302,9 +303,11 @@ class TimePlugin(Item, Plugin):
     name = u'time'
     pluginName = u'Time'
 
-    timeFormat = '%a, %Y-%m-%d %H:%M:%S %Z (%z)'
+    dummy = integer()
 
-    defaultTimezoneName = text(default=u'Africa/Johannesburg')
+    # XXX: should be a network config variables probably
+    timeFormat = '%a, %Y-%m-%d %H:%M:%S %Z (%z)'
+    defaultTimezoneName = u'Africa/Johannesburg'
 
     @usage(u'now [timezoneName]')
     def cmd_now(self, source, timezoneName=None):
@@ -344,7 +347,7 @@ class GooglePlugin(Item, Plugin):
     name = u'google'
     pluginName = u'Google'
 
-    searchAPIKey = text()
+    dummy = integer()
 
     def websearch(self, source, terms, count):
         """
