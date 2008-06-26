@@ -287,14 +287,15 @@ class LinkDBPlugin(Item, Plugin, AmbientEventObserver, _LinkDBHelperMixin):
         """
         Updates the title of <entryID>.
         """
-        def entryUpdated((entry, comment)):
+        def entryUpdated(entry):
             source.notice(entry.humanReadable)
 
         entry = self.getEntryByID(source, entryID)
         return linkdb.fetchPageData(entry.url
             ).addCallback(self.updateEntry, source, entry
             ).addErrback(self.fetchFailed, source, entry.url
-            ).addCallback(entryUpdated)
+            # XXX: it might be nice if self.fetchFailed could return the right thing for us
+            ).addCallback(lambda *a: entryUpdated(entry))
 
     ### IAmbientEventObserver
 
