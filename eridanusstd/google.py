@@ -1,5 +1,9 @@
 """
 Utilities for querying Google's APIs.
+
+The following documentation may be useful::
+
+    http://code.google.com/apis/ajaxsearch/documentation/#fonje
 """
 import simplejson
 
@@ -7,9 +11,6 @@ from nevow.url import URL
 
 from eridanus import util
 from eridanusstd import errors, defertools
-
-# Documentation available at:
-# http://code.google.com/apis/ajaxsearch/documentation/#fonje
 
 
 HEADERS = {
@@ -19,7 +20,6 @@ HEADERS = {
 SEARCH_URL = URL.fromString('http://ajax.googleapis.com/ajax/services/search/')
 
 
-# XXX: this should require an API key
 class WebSearchQuery(object):
     """
     Encapsulate a Google web search query.
@@ -40,18 +40,26 @@ class WebSearchQuery(object):
     @type queue: C{defertools.LazyQueue}
     @ivar queue: The queue where results are lazily accumulated
     """
-    def __init__(self, terms):
+    def __init__(self, terms, apiKey=None):
         """
         Initialise a query.
 
         @type terms: C{iterable} of C{unicode}
         @param terms: An iterable of search terms to query for, terms that
             contain a space will be quoted
+
+        @type apiKey: C{unicode} or C{None}
+        @param apiKey: A valid Google AJAX Search API key or C{None}
         """
         self.terms = list(self._quoteTerms(terms))
-        self.url = SEARCH_URL.child('web'
+        url = SEARCH_URL.child('web'
             ).add('v', '1.0'
             ).add('q', u' '.join(self.terms))
+
+        if apiKey is not None:
+            url = url.add('key', apiKey)
+
+        self.url = url
         self.pages = None
         self.queue = defertools.LazyQueue(self.getMoreResults)
 

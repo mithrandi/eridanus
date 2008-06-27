@@ -2,11 +2,11 @@ from zope.interface import classProvides
 
 from twisted.plugin import IPlugin
 
-from axiom.attributes import integer
+from axiom.attributes import integer, inmemory
 from axiom.item import Item
 from axiom.userbase import getAccountNames
 
-from eridanus import errors
+from eridanus import errors, util as eutil
 from eridanus.ieridanus import IEridanusPluginProvider
 from eridanus.plugin import Plugin, usage, SubCommand
 
@@ -362,6 +362,8 @@ class TimePlugin(Item, Plugin):
 class GooglePlugin(Item, Plugin):
     """
     Google services.
+
+    It is recommended you set an API key for `googleAjaxSearch`.
     """
     classProvides(IPlugin, IEridanusPluginProvider)
     schemaVersion = 1
@@ -371,6 +373,11 @@ class GooglePlugin(Item, Plugin):
     pluginName = u'Google'
 
     dummy = integer()
+
+    apiKey = inmemory()
+
+    def activate(self):
+        self.apiKey = eutil.getAPIKey(self.store, u'googleAjaxSearch', default=None)
 
     def websearch(self, source, terms, count):
         """
@@ -383,7 +390,7 @@ class GooglePlugin(Item, Plugin):
         def displayResults(formattedResults):
             source.reply(u' '.join(formattedResults))
 
-        q = google.WebSearchQuery(terms)
+        q = google.WebSearchQuery(terms, apiKey=self.apiKey)
         return defertools.slice(q.queue, count
             ).addCallback(formatResults
             ).addCallback(displayResults)
