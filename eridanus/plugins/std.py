@@ -8,9 +8,30 @@ from axiom.userbase import getAccountNames
 
 from eridanus import errors
 from eridanus.ieridanus import IEridanusPluginProvider
-from eridanus.plugin import Plugin, usage
+from eridanus.plugin import Plugin, usage, SubCommand
 
 from eridanusstd import dict, timeutil, google, defertools
+
+
+class APICommand(SubCommand):
+    """
+    Manage API keys.
+    """
+    @usage(u'get <apiName>')
+    def cmd_get(self, source, apiName):
+        """
+        Get the API key for <apiName>.
+        """
+        apiKey = eutil.getAPIKey(self.parent.store, apiName)
+        source.reply(apiKey)
+
+    @usage(u'set <apiName> <key>')
+    def cmd_set(self, source, apiName, key):
+        """
+        Set the API key for <apiName>.
+        """
+        apiKey = eutil.setAPIKey(self.parent.store, apiName, key)
+        source.reply(u'Set key for "%s".' % (apiName,))
 
 
 class AdminPlugin(Item, Plugin):
@@ -28,6 +49,8 @@ class AdminPlugin(Item, Plugin):
     pluginName = u'Admin'
 
     dummy = integer()
+
+    cmd_api = APICommand()
 
     @usage(u'install <pluginName>')
     def cmd_install(self, source, pluginName):
