@@ -10,7 +10,7 @@ from eridanus import errors, util as eutil
 from eridanus.ieridanus import IEridanusPluginProvider
 from eridanus.plugin import Plugin, usage, SubCommand
 
-from eridanusstd import dict, timeutil, google, defertools
+from eridanusstd import dict, timeutil, google, defertools, urbandict
 
 
 class APICommand(SubCommand):
@@ -410,3 +410,56 @@ class GooglePlugin(Item, Plugin):
         """
         terms = [term] + list(terms)
         return self.websearch(source, terms, 1)
+
+
+class UrbanDict(Item, Plugin):
+    """
+    Urban Dictionary.
+
+    An API key for `urbandict` is required in order for this plugin to work.
+    """
+    classProvides(IPlugin, IEridanusPluginProvider)
+    schemaVersion = 1
+    typeName = 'eridanus_plugins_urbandict'
+
+    name = u'urbandict'
+    pluginName = u'UrbanDict'
+
+    dummy = integer()
+
+    S = inmemory()
+
+    def activate(self):
+        apiKey = eutil.getAPIKey(self.store, u'urbandict')
+        self.S = urbandict.UrbanDictService(apiKey)
+
+    @usage(u'define <term>')
+    def cmd_define(self, source, term):
+        """
+        Get all definitions for <term> on Urban Dictionary.
+        """
+        def formatResults(results):
+            for i, result in enumerate(results):
+                word = result[u'word']
+                # XXX: this should be a paginated/multiline output
+                dfn = u' '.join(result[u'definition'].splitlines())
+                yield u'\002%d. %s\002: %s;' % (i + 1, word, dfn)
+
+        def displayResults(formattedResults):
+            source.reply(u' '.join(formattedResults))
+
+        return self.S.lookup(term
+            ).addCallback(formatResults
+            ).addCallback(displayResults)
+
+    @usage(u'verifyKey')
+    def cmd_verifykey(self, source):
+        """
+        Verify that the currently set API key is valid.
+        """
+        def gotResult(isValid):
+            result = (u'is not', 'is')[isValid]
+            msg = u'The API key %s valid.' % (result,)
+            source.reply(msg)
+
+        return self.S.verify_key().addCallback(gotResult)
