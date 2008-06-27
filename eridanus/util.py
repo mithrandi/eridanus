@@ -367,7 +367,7 @@ def getSiteStore(store):
     return siteStore
 
 
-def getAPIKey(store, apiName):
+def getAPIKey(store, apiName, **kw):
     """
     Get the API key for C{apiName}.
 
@@ -376,10 +376,15 @@ def getAPIKey(store, apiName):
     @rtype: C{unicode}
     @return: The API key for C{apiName}
     """
+    hasDefault = 'default' in kw
     siteStore = getSiteStore(store)
     key = website.APIKey.getKeyForAPI(siteStore, apiName)
     if key is None:
-        raise errors.MissingAPIKey(u'No API key available for "%s"' % (apiName,))
+        if hasDefault:
+            return kw['default']
+        else:
+            raise errors.MissingAPIKey(u'No API key available for "%s"' % (apiName,))
+
     return key.apiKey
 
 
