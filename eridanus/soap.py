@@ -37,6 +37,7 @@ def getqname(namespaces, qname):
     for p, url in namespaces:
         if prefix == p:
             return '{%s}%s' % (url, local)
+
     raise ValueError('Unknown namespace prefix: "%s"' % (prefix,))
 
 
@@ -45,14 +46,24 @@ def fixqname(element, namespaces):
     return element
 
 
-def Namespace(ns, prefix=None):
-    if prefix is not None:
-        nsmap = {prefix: ns}
-    else:
-        nsmap = None
-    return builder.ElementMaker(namespace=ns, nsmap=nsmap)
+class Namespace(builder.ElementMaker):
+    """
+    Extend C{builder.ElementMaker}.
 
-Local = builder.ElementMaker()
+    The primary purpose of this subclass is the __add__ method.
+    """
+    def __init__(self, namespace=None, prefix=None):
+        if prefix is not None and namespace is not None:
+            nsmap = {prefix: namespace}
+        else:
+            nsmap = None
+
+        super(Namespace, self).__init__(namespace=namespace, nsmap=nsmap)
+
+    def __add__(self, name):
+        return self._namespace + name
+
+Local = Namespace()
 
 
 SOAP_ENV = Namespace('http://schemas.xmlsoap.org/soap/envelope/', 'SOAP-ENV')
@@ -62,6 +73,7 @@ XSI = Namespace('http://www.w3.org/1999/XMLSchema-instance', 'xsi')
 XSI2001 = Namespace('http://www.w3.org/2001/XMLSchema-instance', 'xsi')
 XSD = Namespace('http://www.w3.org/1999/XMLSchema', 'xsd')
 WSDL = Namespace('http://schemas.xmlsoap.org/wsdl/', 'wsdl')
+
 
 def parseSOAPFault(f):
     """
@@ -86,7 +98,7 @@ def parseSOAPFault(f):
             else:
                 if elem.tag == 'faultcode':
                     fixqname(elem, namespaces)
-                elif elem.tag == SOAP_ENV._namespace + 'Fault':
+                elif elem.tag == SOAP_ENV + 'Fault':
                     return (elem.findtext('faultcode'),
                             elem.findtext('faultstring'),
                             elem.findtext('faultactor'),
@@ -123,7 +135,7 @@ class Surfactant(object):
     def call(self, action, request):
         envelope = SOAP_ENV.Envelope(
             SOAP_ENV.Body(request,
-                **{SOAP_ENV._namespace + 'encodingStyle': 'http://schemas.xmlsoap.org/soap/encoding/'}))
+                **{SOAP_ENV + 'encodingStyle': 'http://schemas.xmlsoap.org/soap/encoding/'}))
 
         data = etree.tostring(envelope, encoding='utf-8')
         file('soap_req.xml', 'wb').write(data)
@@ -141,7 +153,7 @@ class Surfactant(object):
     def parseResult(self, data):
         file('soap_res.xml', 'wb').write(data)
         envelope = etree.fromstring(data)
-        return envelope.find(SOAP_ENV._namespace + 'Body')
+        return envelope.find(SOAP_ENV + 'Body')
 
     def parseFault(self, f):
         f.trap(eweb.Error)
@@ -186,21 +198,35 @@ def boolean(b):
 
 
 def getXSIType(elem):
-    xsiType = elem.get(XSI._namespace + 'type')
+    """
+    Retrieve the value of the C{xsi:type} attribute.
+
+    Both XSI 1999 and XSI 2001 are attempted.
+
+    @raise ValueError: If no XSI type information could be found
+
+    @rtype: C{unicode}
+    @return: The XSI type string
+    """
+    xsiType = elem.get(XSI + 'type')
     if xsiType is None:
-        xsiType = elem.get(XSI2001._namespace + 'type')
+        xsiType = elem.get(XSI2001 + 'type')
 
     if xsiType is not None:
-        return xsiType
+        return unicode(xsiType, 'ascii')
 
     raise ValueError(u'"%s" has no XSI type information' % (elem.tag,))
 
 
 _xsiTypes = {
-    'xsd:string': unicode,
-    'xsd:int': int,
+    u'xsd:string': unicode,
+    u'xsd:int': int,
+    u'xsd:boolean': lambda t: t.lower() == 'true',
     }
 
 def getValueFromXSIType(elem):
+    """
+    Convert C{elem} to it's Python value based on it's C{xsi:type} attriubte.
+    """
     xsiType = getXSIType(elem)
     return _xsiTypes[xsiType](elem.text)
