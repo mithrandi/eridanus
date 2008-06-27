@@ -62,3 +62,8 @@ class InvalidSOAPFault(ValueError):
         ValueError.__init__(self, detail)
         self.detail = detail
 
+
+class MissingAPIKey(ValueError):
+    """
+    The key for the requested API is missing.
+    """

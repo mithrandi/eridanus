@@ -7,6 +7,7 @@ from twisted.python import log
 from nevow.url import URL
 from nevow.rend import Page, Fragment
 
+from xmantissa import website
 from xmantissa.webtheme import _ThemedMixin, SiteTemplateResolver
 
 from eridanus import const, errors
@@ -353,3 +354,38 @@ def collate(it):
         d.setdefault(key, []).append(value)
 
     return d
+
+
+def getSiteStore(store):
+    """
+    Given C{store} find the site store.
+    """
+    siteStore = store
+    while siteStore.parent:
+        siteStore = siteStore.parent
+
+    return siteStore
+
+
+def getAPIKey(store, apiName):
+    """
+    Get the API key for C{apiName}.
+
+    @raise errors.MissingAPIKey: If there is no key stored for C{apiName}
+
+    @rtype: C{unicode}
+    @return: The API key for C{apiName}
+    """
+    siteStore = getSiteStore(store)
+    key = website.APIKey.getKeyForAPI(siteStore, apiName)
+    if key is None:
+        raise errors.MissingAPIKey(u'No API key available for "%s"' % (apiName,))
+    return key.apiKey
+
+
+def setAPIKey(store, apiName, key):
+    """
+    Store an API key for C{apiName}.
+    """
+    siteStore = getSiteStore(store)
+    return website.APIKey.setKeyForAPI(siteStore, apiName, key)
