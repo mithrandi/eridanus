@@ -81,7 +81,11 @@ class CommandLookupMixin(object):
             msg = 'Unknown command "%s"' % (cmd,)
             raise errors.UsageError(msg)
 
-        return ICommand(method), params
+        cmd = ICommand(method)
+        # XXX: This might not be the best route.  Primarily useful for making
+        # SubCommand not quite so useless (access to the parent's store etc.)
+        cmd.parent = self
+        return cmd, params
 
     def invoke(self, source):
         raise errors.UsageError('Not a command')

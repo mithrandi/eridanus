@@ -20,6 +20,10 @@ class ICommand(Interface):
     behaviour and any related information.
     """)
 
+    parent = Attribute("""
+    The parent object of this command.
+    """)
+
     def locateCommand(params):
         """
         Find the C{ICommand} handler responsible for a given command.
