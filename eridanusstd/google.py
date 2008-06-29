@@ -7,6 +7,8 @@ The following documentation may be useful::
 """
 import simplejson
 
+from twisted.internet import defer
+
 from nevow.url import URL
 
 from eridanus import util
