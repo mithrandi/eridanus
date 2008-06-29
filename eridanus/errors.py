@@ -67,3 +67,9 @@ class MissingAPIKey(ValueError):
     """
     The key for the requested API is missing.
     """
+
+
+class MalformedRegex(ValueError):
+    """
+    The regular expression is not well-formed.
+    """
