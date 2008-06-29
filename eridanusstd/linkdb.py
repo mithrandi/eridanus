@@ -11,8 +11,8 @@ from axiom.item import Item
 from axiom.attributes import (AND, OR, timestamp, integer, reference, text,
     boolean, bytes)
 
-from eridanus import const, util
-from eridanusstd import errors, iriparse, etree
+from eridanus import const, util, iriparse
+from eridanusstd import errors, etree
 
 
 def parseEntryID(eid):
