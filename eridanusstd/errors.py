@@ -32,3 +32,15 @@ class NoMoreItems(RuntimeError):
     """
     A deferred-iterator has no more items.
     """
+
+
+class NoSuchFactoid(ValueError):
+    """
+    No factoid exists for the given key or number.
+    """
+
+
+class TooManyFactoids(ValueError):
+    """
+    Too many factoids were returned.
+    """
