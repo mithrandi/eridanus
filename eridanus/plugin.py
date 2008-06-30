@@ -93,7 +93,7 @@ class CommandLookupMixin(object):
 
 class SubCommand(CommandLookupMixin):
     def invoke(self, source):
-        raise errors.UsageError('Too few parameters')
+        raise errors.UsageError('Too few parameters -- ' + self.help)
 
 
 class MethodCommand(object):
@@ -190,9 +190,9 @@ class MethodCommand(object):
         numargs = len(self.params)
 
         if numargs < self.minargs:
-            raise errors.UsageError('Not enough arguments')
+            raise errors.UsageError('Not enough arguments -- ' + self.usage)
         if self.maxargs is not None and numargs > self.maxargs:
-            raise errors.UsageError('Too many arguments')
+            raise errors.UsageError('Too many arguments -- ' + self.usage)
 
         return self.method(source, *self.params)
 
