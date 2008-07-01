@@ -12,7 +12,8 @@ from eridanus import errors, util as eutil, reparse
 from eridanus.ieridanus import IEridanusPluginProvider
 from eridanus.plugin import Plugin, usage, SubCommand
 
-from eridanusstd import dict, timeutil, google, defertools, urbandict, factoid
+from eridanusstd import (dict, timeutil, google, defertools, urbandict,
+    factoid, calc)
 
 
 class APICommand(SubCommand):
@@ -566,3 +567,27 @@ class FactoidPlugin(Item, Plugin):
                                             subst)
         source.reply(u'Changed %d factoid(s).' % (numChanged,))
 
+
+# XXX: This really should not be a command itself but until some kind of
+# command aliasing is available this is the most convenient.
+class CalcPlugin(Item, Plugin):
+    """
+    calc <\002expression\002> [...] -- Evaluate a simple mathematical expression.
+    """
+    classProvides(IPlugin, IEridanusPluginProvider)
+    schemaVersion = 1
+    typeName = 'eridanus_plugins_calc'
+
+    name = u'calc'
+    pluginName = u'Calc'
+
+    dummy = integer()
+
+    expn = inmemory()
+
+    def locateCommand(self, params):
+        self.expn = u' '.join(params)
+        return self, []
+
+    def invoke(self, source):
+        source.reply(calc.evaluate(self.expn))
