@@ -209,6 +209,13 @@ class Plugin(CommandLookupMixin):
     pluginName = None
 
 
+def getAllPlugins():
+    """
+    Get all plugins.
+    """
+    return getPlugins(IEridanusPluginProvider, plugins)
+
+
 def getPluginByName(store, name):
     """
     Get an C{IEridanusPlugin} provider by name.

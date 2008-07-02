@@ -342,6 +342,23 @@ class IRCBot(IRCClient, _IRCKeepAliveMixin):
             store = self.getAuthenticatedAvatar(nickname).store
         plugin.uninstallPlugin(store, pluginName)
 
+    def getAvailablePlugins(self, nickname):
+        """
+        Get an iterable of names of plugins that can still be installed.
+        """
+        def pluginTypes(it):
+            return (type(plugin) for plugin in it)
+
+        installedPlugins = set(pluginTypes(plugin.getInstalledPlugins(self.appStore)))
+        avatar = self.getAvatar(nickname)
+        # XXX: This is a crap way to tell the difference between authenticated
+        # users and plebs.  Fix it!
+        if hasattr(avatar, 'store'):
+            installedPlugins.update(pluginTypes(plugin.getInstalledPlugins(avatar.store)))
+
+        allPlugins = set(plugin.getAllPlugins())
+        return (plugin.pluginName for plugin in allPlugins - installedPlugins)
+
     @usage(u'help <name>')
     def cmd_help(self, source, *params):
         """
