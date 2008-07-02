@@ -270,7 +270,7 @@ class IRCBot(IRCClient, _IRCKeepAliveMixin):
     def getAuthenticatedAvatar(self, nickname):
         avatar, logout = self._getAvatar(nickname)
         if avatar is None:
-            raise errors.AuthenticationError(u'No avatar available for "%s"' % (nickname,))
+            raise errors.AuthenticationError(u'"%s" is not authenticated or has no avatar' % (nickname,))
         return avatar
 
     def logout(self, nickname):
