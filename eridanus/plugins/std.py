@@ -148,6 +148,20 @@ class AdminPlugin(Item, Plugin):
             msg = u'No ignores matched "%s".' % (usermask,)
         source.reply(msg)
 
+    @usage(u'plugins')
+    def cmd_plugins(self, source):
+        """
+        List plugins available to install.
+
+        Not all plugins should be installed with the `install` command, plugins
+        that end with the word `Admin` should be granted (`admin grant`) to a
+        particular user instead of installed for the whole world.
+        """
+        msg = u', '.join(source.protocol.getAvailablePlugins(source.user.nickname))
+        if not msg:
+            msg = u'No available plugins'
+        source.reply(msg)
+
 
 class AuthenticatePlugin(Item, Plugin):
     """
