@@ -58,7 +58,7 @@ class AdminPlugin(Item, Plugin):
     @usage(u'install <pluginName>')
     def cmd_install(self, source, pluginName):
         """
-        Install a plugin.
+        Globally install a plugin.
         """
         source.protocol.grantPlugin(None, pluginName)
         source.reply(u'Installed plugin "%s".' % (pluginName,))
@@ -66,7 +66,7 @@ class AdminPlugin(Item, Plugin):
     @usage(u'uninstall <pluginName>')
     def cmd_uninstall(self, source, pluginName):
         """
-        Uninstall a plugin.
+        Uninstall a globally installed plugin.
         """
         if pluginName == self.pluginName:
             msg = u'Can\'t uninstall "%s".' % (pluginName,)
