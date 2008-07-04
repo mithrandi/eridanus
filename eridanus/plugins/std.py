@@ -298,8 +298,11 @@ class DictPlugin(Item, Plugin):
         """
         List available dictionaries.
         """
-        descs = (u'\002%s\002: %s' % (db, desc) for db, desc in dict.getDicts())
-        source.reply(u' '.join(descs))
+        def gotDicts(dicts):
+            descs = (u'\002%s\002: %s' % (db, desc) for db, desc in dicts)
+            source.reply(u' '.join(descs))
+
+        return dict.getDicts().addCallback(gotDicts)
 
     @usage(u'define <word> [database]')
     def cmd_define(self, source, word, database=None):
@@ -309,9 +312,12 @@ class DictPlugin(Item, Plugin):
         Look <word> up in <database>, if <database> is not specified then all
         available dictionaries are consulted.
         """
-        defs = (u'\002%s\002: %s' % (db, defn)
-                for db, defn in dict.define(word, database))
-        source.reply(u' '.join(defs))
+        def gotDefs(result):
+            defs = (u'\002%s\002: %s' % (db, defn)
+                    for db, defn in result)
+            source.reply(u' '.join(defs))
+
+        return dict.define(word, database).addCallback(gotDefs)
 
     @usage(u'spell <word> [language]')
     def cmd_spell(self, source, word, language=None):
