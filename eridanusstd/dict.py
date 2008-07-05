@@ -1,4 +1,4 @@
-import enchant, dictclient
+import enchant
 
 from twisted.internet import protocol, defer
 from twisted.protocols import dict as tpdict
