@@ -96,6 +96,15 @@ class IRCBot(IRCClient, _IRCKeepAliveMixin):
         self.isupported = {}
         self.authenticatedUsers = {}
 
+    def maxMessageLength(self):
+        # XXX: This should probably take into account the prefix we are about
+        # to use or something.
+        return 510 - int(self.isupported['NICKLEN'][0]) - int(self.isupported['CHANNELLEN'][0])
+
+    def msg(self, user, message, length=None):
+        message = message[:self.maxMessageLength()]
+        return IRCClient.msg(self, user, message, length)
+
     def irc_RPL_BOUNCE(self, prefix, params):
         # 005 is doubly assigned.  Piece of crap dirty trash protocol.
         if params[-1] in self.isupportStrings:
