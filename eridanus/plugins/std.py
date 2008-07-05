@@ -13,7 +13,7 @@ from eridanus.ieridanus import IEridanusPluginProvider
 from eridanus.plugin import Plugin, usage, SubCommand
 
 from eridanusstd import (dict, timeutil, google, defertools, urbandict,
-    factoid, calc)
+    factoid, calc, fortune)
 
 
 class APICommand(SubCommand):
@@ -611,3 +611,48 @@ class CalcPlugin(Item, Plugin):
 
     def invoke(self, source):
         source.reply(calc.evaluate(self.expn))
+
+
+class FortunePlugin(Item, Plugin):
+    classProvides(IPlugin, IEridanusPluginProvider)
+    schemaVersion = 1
+    typeName = 'eridanus_plugins_fortune'
+
+    name = u'fortune'
+    pluginName = u'Fortune'
+
+    dummy = integer()
+
+    def outputFortunes(self, fortunes, source):
+        fortunes = (u'\002%s\002: %s' % (db, u' '.join(msg))
+                    for db, msg in fortunes)
+        source.reply(u' '.join(fortunes))
+
+    def fortune(self, source, **kw):
+        if kw.get('db') == u'*':
+            kw['db'] = None
+
+        return fortune.fortune(**kw).addCallback(self.outputFortunes, source)
+
+    @usage(u'short [db] [match]')
+    def cmd_short(self, source, db=u'*', match=None):
+        """
+        Retrieve a short fortune.
+
+        <db> can be "*" to match all available fortune databases.
+        """
+        return self.fortune(source,
+                            short=True,
+                            db=db,
+                            match=match)
+
+    @usage(u'fortune [db] [match]')
+    def cmd_fortune(self, source, db=u'*', match=None):
+        """
+        Retrieve a fortune.
+
+        <db> can be "*" to match all available fortune databases.
+        """
+        return self.fortune(source,
+                            db=db,
+                            match=match)

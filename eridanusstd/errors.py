@@ -44,3 +44,15 @@ class TooManyFactoids(ValueError):
     """
     Too many factoids were returned.
     """
+
+
+class MissingBinary(ValueError):
+    """
+    An external process' binary was not found.
+    """
+
+
+class NoFortunes(ValueError):
+    """
+    No fortunes were found with the specified criteria.
+    """
