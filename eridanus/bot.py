@@ -57,6 +57,7 @@ class _IRCKeepAliveMixin(object):
         """
         log.msg('PONG not received within %s seconds, asploding.' % (self.pingTimeoutInterval,))
         self.quit()
+        self.factory.connector.disconnect()
         self.factory.retry()
 
     def rawPing(self):
