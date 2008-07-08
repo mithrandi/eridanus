@@ -100,7 +100,7 @@ class IRCBot(IRCClient, _IRCKeepAliveMixin):
     def maxMessageLength(self):
         # XXX: This should probably take into account the prefix we are about
         # to use or something.
-        return 510 - int(self.isupported['NICKLEN'][0]) - int(self.isupported['CHANNELLEN'][0])
+        return 500 - int(self.isupported['NICKLEN'][0]) - int(self.isupported['CHANNELLEN'][0])
 
     def msg(self, user, message, length=None):
         message = message[:self.maxMessageLength()]
