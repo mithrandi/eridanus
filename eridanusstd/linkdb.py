@@ -176,7 +176,7 @@ def _decodeText(data, encoding=None):
 
     try:
         return data.decode(encoding, 'replace')
-    except LookupError:
+    except (ValueError, LookupError):
         newEncoding = detectEncoding(data)
         log.msg('Decoding text with %r failed, detected data as %r.' % (encoding, newEncoding))
         return data.decode(newEncoding, 'replace')
