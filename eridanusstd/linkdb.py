@@ -171,7 +171,7 @@ def _decodeText(data, encoding=None):
         info = chardet.detect(data)
         return info.get('encoding') or 'ascii'
 
-    if encoding is None:
+    if not encoding:
         encoding = detectEncoding(data)
 
     try:
