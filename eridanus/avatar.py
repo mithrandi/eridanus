@@ -57,6 +57,12 @@ class AuthenticatedAvatar(Item, _AvatarMixin):
         yield protocol.locatePlugin(name)
 
     def getCommand(self, protocol, params):
-        plugins = self.locatePlugins(protocol, params.pop(0))
-        for plugin in plugins:
-            return self.locateCommand(plugin, params[:])
+        plugins = list(self.locatePlugins(protocol, params.pop(0)))
+        while plugins:
+            try:
+                plugin = plugins.pop()
+                return self.locateCommand(plugin, params[:])
+            except errors.UsageError:
+                # XXX: this isn't great
+                if not plugins:
+                    raise
