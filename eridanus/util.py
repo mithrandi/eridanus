@@ -156,17 +156,17 @@ def handle206(f):
     return f
 
 
-# XXX: a copy from twisted.web.client because their getPage sucks badly.
+# XXX: a copy from twisted.web.client because we need the useful stuff
 def getPage(url, contextFactory=None, *args, **kwargs):
-    scheme, host, port, path = client._parse(url)
-    factory = client.HTTPClientFactory(url, *args, **kwargs)
-    if scheme == 'https':
-        from twisted.internet import ssl
-        if contextFactory is None:
-            contextFactory = ssl.ClientContextFactory()
-        reactor.connectSSL(host, port, factory, contextFactory)
-    else:
-        reactor.connectTCP(host, port, factory)
+    if 'agent' not in kwargs:
+        kwargs['agent'] = 'Eridanus Page Fetcher'
+
+    factory = client._makeGetterFactory(
+        url,
+        HTTPClientFactory,
+        contextFactory=contextFactory,
+        *args, **kwargs)
+
     return factory.deferred.addErrback(handle206), factory
 
 
