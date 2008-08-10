@@ -357,7 +357,7 @@ class IRCBot(IRCClient, _IRCKeepAliveMixin):
         Get an iterable of names of plugins that can still be installed.
         """
         def pluginTypes(it):
-            return (type(plugin) for plugin in it)
+            return (type(p) for p in it)
 
         installedPlugins = set(pluginTypes(plugin.getInstalledPlugins(self.appStore)))
         avatar = self.getAvatar(nickname)
@@ -367,7 +367,7 @@ class IRCBot(IRCClient, _IRCKeepAliveMixin):
             installedPlugins.update(pluginTypes(plugin.getInstalledPlugins(avatar.store)))
 
         allPlugins = set(plugin.getAllPlugins())
-        return (plugin.pluginName for plugin in allPlugins - installedPlugins)
+        return (p.pluginName for p in allPlugins - installedPlugins)
 
     @usage(u'help <name>')
     def cmd_help(self, source, *params):
