@@ -163,7 +163,7 @@ def getPage(url, contextFactory=None, *args, **kwargs):
 
     factory = client._makeGetterFactory(
         url,
-        HTTPClientFactory,
+        client.HTTPClientFactory,
         contextFactory=contextFactory,
         *args, **kwargs)
 
