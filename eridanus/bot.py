@@ -47,7 +47,7 @@ class _IRCKeepAliveMixin(object):
         unless a response is received
     """
     pingInterval = 120.0
-    pingTimeoutInterval = 60.0
+    pingTimeoutInterval = 120.0
 
     pingTimeout = None
 
@@ -58,7 +58,6 @@ class _IRCKeepAliveMixin(object):
         log.msg('PONG not received within %s seconds, asploding.' % (self.pingTimeoutInterval,))
         self.quit()
         self.factory.connector.disconnect()
-        self.factory.retry()
 
     def rawPing(self):
         """
@@ -444,10 +443,15 @@ class IRCBotFactory(ReconnectingClientFactory):
     noisy = True
 
     def __init__(self, service, portal, config):
+        self.service = service
+
         # XXX: should this be here?
         appStore = service.loginSystem.accountByAddress(u'Eridanus', None).avatars.open()
         self.bot = self.protocol(appStore, service.serviceID, self, portal, config)
-        self.connector = service.connector
+
+    @property
+    def connector(self):
+        return self.service.connector
 
     def buildProtocol(self, addr=None):
         return self.bot
