@@ -47,7 +47,7 @@ class _IRCKeepAliveMixin(object):
         unless a response is received
     """
     pingInterval = 120.0
-    pingTimeoutInterval = 120.0
+    pingTimeoutInterval = 240.0
 
     pingTimeout = None
 
@@ -56,8 +56,13 @@ class _IRCKeepAliveMixin(object):
         It's over, reconnect.
         """
         log.msg('PONG not received within %s seconds, asploding.' % (self.pingTimeoutInterval,))
-        self.quit()
+        self.quit('No PING response')
         self.factory.connector.disconnect()
+
+    def cancelTimeout(self):
+        if self.pingTimeout is not None:
+            self.pingTimeout.cancel()
+            self.pingTimeout = None
 
     def rawPing(self):
         """
@@ -65,15 +70,14 @@ class _IRCKeepAliveMixin(object):
         """
         # XXX: self.config.hostname is REALLY not great
         self.sendLine('PING ' + self.config.hostname)
+        self.cancelTimeout()
         self.pingTimeout = reactor.callLater(self.pingTimeoutInterval, self.die)
 
     def irc_PONG(self, *args):
         """
         PING response handler for IRCClient.
         """
-        if self.pingTimeout is not None:
-            self.pingTimeout.cancel()
-
+        self.cancelTimeout()
         reactor.callLater(self.pingInterval, self.rawPing)
 
 
@@ -187,11 +191,11 @@ class IRCBot(IRCClient, _IRCKeepAliveMixin):
 
     def signedOn(self):
         log.msg('Signed on.')
+        self.factory.resetDelay()
 
         self.setModes()
 
         self.rawPing()
-        self.factory.resetDelay()
         channels = self.config.channels
         for channel in channels:
             self.join(encode(channel))
