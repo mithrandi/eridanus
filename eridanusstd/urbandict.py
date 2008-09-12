@@ -9,6 +9,8 @@ The following documentation may be useful::
 """
 from eridanus import soap
 
+from eridanusstd import errors
+
 
 URBANDICT = soap.Namespace('urn:UrbanSearch')
 
@@ -53,7 +55,14 @@ class UrbanDictService(soap.Surfactant):
         kw = {soap.XSI + 'type': 'xsd:string'}
         request = request(URBANDICT.key(self.apiKey, **kw),
                           URBANDICT.term(term, **kw))
-        return request, lambda response: self.parseLookupResponse(response)
+
+        def handleResponse(response):
+            results = list(self.parseLookupResponse(response))
+            if results:
+                return results
+            raise errors.NoDefinitions('No definitions for "%s"' % (term,))
+
+        return request, handleResponse
 
     @soap.simpleMethod(URBANDICT)
     def verify_key(self, request):
