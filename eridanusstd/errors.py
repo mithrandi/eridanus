@@ -56,3 +56,9 @@ class NoFortunes(ValueError):
     """
     No fortunes were found with the specified criteria.
     """
+
+
+class InvalidGamertag(ValueError):
+    """
+    The specified Xbox Live gamertag is invalid.
+    """
