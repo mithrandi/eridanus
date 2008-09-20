@@ -208,6 +208,11 @@ class Plugin(CommandLookupMixin):
     name = None
     pluginName = None
 
+    def getCommands(self):
+        for name in dir(self):
+            if name.startswith('cmd_'):
+                yield ICommand(getattr(self, name))
+
 
 def getAllPlugins():
     """

@@ -372,6 +372,11 @@ class IRCBot(IRCClient, _IRCKeepAliveMixin):
         allPlugins = set(plugin.getAllPlugins())
         return (p.pluginName for p in allPlugins - installedPlugins)
 
+    def getCommands(self):
+        for name in dir(self):
+            if name.startswith('cmd_'):
+                yield ICommand(getattr(self, name))
+
     @usage(u'help <name>')
     def cmd_help(self, source, *params):
         """
@@ -406,11 +411,11 @@ class IRCBot(IRCClient, _IRCKeepAliveMixin):
         params = list(params)
         avatar = self.getAvatar(source.user.nickname)
         if params:
-            cmd = avatar.getCommand(self, params)
-            names = type(cmd).__dict__.iterkeys()
+            plugins = avatar.locatePlugins(self, params[0])
+            commands = itertools.chain(*(p.getCommands() for p in plugins))
             plugins = []
         else:
-            names = type(self).__dict__.iterkeys()
+            commands = self.getCommands()
             avStore = getattr(avatar, 'store', None)
 
             # XXX: Can this really not be made any simpler?
@@ -435,8 +440,7 @@ class IRCBot(IRCClient, _IRCKeepAliveMixin):
             plugins = sorted(u'%s (%s)' % (name, u', '.join(pluginNames))
                              for name, pluginNames in plugins.iteritems())
 
-        # XXX: this won't always work like this, fix plox
-        commands = [name[4:] for name in names if name.startswith('cmd_')]
+        commands = sorted((cmd.name for cmd in commands))
         commands += plugins
         source.reply(u', '.join(commands))
 
