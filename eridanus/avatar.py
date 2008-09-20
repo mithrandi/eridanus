@@ -60,7 +60,12 @@ class AuthenticatedAvatar(Item, _AvatarMixin):
             pass
 
     def getCommand(self, protocol, params):
-        plugins = list(self.locatePlugins(protocol, params.pop(0)))
+        pluginName = params.pop(0)
+        plugins = list(self.locatePlugins(protocol, pluginName))
+        # XXX: this would appear to be a hack
+        if not plugins:
+            raise errors.PluginNotInstalled(pluginName)
+
         while plugins:
             try:
                 plugin = plugins.pop()
