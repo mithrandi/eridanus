@@ -134,7 +134,7 @@ class MethodCommand(object):
 
         self.method = method
         self.params = []
-        self.name = method.__name__.strip('cmd_')
+        self.name = method.__name__[4:]
         self.usage = usage
         self.shortHelp, self.help = formatHelp(help)
 
