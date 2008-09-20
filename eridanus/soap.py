@@ -3,6 +3,8 @@ from xml.parsers.expat import ExpatError
 
 from lxml import etree, builder
 
+from epsilon.extime import Time
+
 from twisted.python import util
 from twisted.web import client, error as eweb
 
@@ -222,11 +224,13 @@ _xsiTypes = {
     u'xsd:string': unicode,
     u'xsd:int': int,
     u'xsd:boolean': lambda t: t.lower() == 'true',
+    u'xsd:dateTime': lambda t: Time.fromISO8601TimeAndDate(t),
     }
 
-def getValueFromXSIType(elem):
+def getValueFromXSIType(elem, xsiType=None):
     """
     Convert C{elem} to it's Python value based on it's C{xsi:type} attriubte.
     """
-    xsiType = getXSIType(elem)
+    if xsiType is None:
+        xsiType = getXSIType(elem)
     return _xsiTypes[xsiType](elem.text)
