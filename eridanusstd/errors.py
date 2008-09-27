@@ -62,3 +62,9 @@ class InvalidGamertag(ValueError):
     """
     The specified Xbox Live gamertag is invalid.
     """
+
+
+class InvalidCurrency(ValueError):
+    """
+    The specified currency code is invalid.
+    """
