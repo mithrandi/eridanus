@@ -228,7 +228,7 @@ def humanReadableFileSize(size):
     @returns: A human readable string
     @rtype: C{unicode}
     """
-    index = int(math.log(size, 1024))
+    index = min(int(math.log(size, 1024)), len(sizePrefixes) - 1)
     size = size / (1024.0 ** index)
     prefix = sizePrefixes[index]
     if index == 0:
