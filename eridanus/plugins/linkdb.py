@@ -243,7 +243,7 @@ class LinkDBPlugin(Item, Plugin, AmbientEventObserver, _LinkDBHelperMixin):
         """
         lm = self.getLinkManager(source)
         numEntries, numComments, numContributors, timespan = lm.stats()
-        msg = '%d entries with %d comments from %d contributors over a total time period of %s.' % (numEntries, numComments, numContributors, util.prettyTimeDelta(timespan))
+        msg = '%d entries with %d comments from %d contributors over a total time period of %s.' % (numEntries, numComments, numContributors, util.humanReadableTimeDelta(timespan))
         source.reply(msg)
 
     @usage(u'discard <entryID>')
