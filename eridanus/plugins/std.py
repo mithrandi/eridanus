@@ -719,10 +719,12 @@ class XboxLivePlugin(Item, Plugin):
             def _getFields():
                 yield u'Gamertag', overview['Gamertag']
                 yield u'Gamerscore', overview['GamerScore']
-                game = overview['RecentGames'][0]
-                yield u'Last played', u'%s (%s/%s gamerscore from %s/%s achievements)' % (
-                    game['Name'], game['GamerScore'], game['TotalGamerScore'],
-                    game['Achievements'], game['TotalAchievements'])
+                recentGames = overview['RecentGames']
+                if recentGames:
+                    game = recenGames[0]
+                    yield u'Last played', u'%s (%s/%s gamerscore from %s/%s achievements)' % (
+                        game['Name'], game['GamerScore'], game['TotalGamerScore'],
+                        game['Achievements'], game['TotalAchievements'])
 
             msg = u'; '.join(u'\002%s\002: %s' % (key, value) for key, value in _getFields())
             source.reply(msg)
