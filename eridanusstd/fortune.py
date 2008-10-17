@@ -6,7 +6,8 @@ from twisted.python.procutils import which
 from eridanusstd import errors
 
 
-fortuneBinary = (which('fortune') or [None])[0]
+def getFortuneBinary():
+    return (which('fortune') or [None])[0]
 
 
 def parseOutput(out):
@@ -61,6 +62,8 @@ def fortune(db=None, match=None, short=None):
 
     @return: C{Deferred} firing with the results of L{parseOutput} 
     """
+    fortuneBinary = getFortuneBinary()
+
     if fortuneBinary is None:
         raise errors.MissingBinary(u'No binary for fortune could be found')
 
