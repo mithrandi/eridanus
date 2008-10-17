@@ -21,6 +21,8 @@ class APICommand(SubCommand):
     """
     Manage API keys.
     """
+    name = u'api'
+
     @usage(u'get <apiName>')
     def cmd_get(self, source, apiName):
         """
