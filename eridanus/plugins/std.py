@@ -158,7 +158,7 @@ class AdminPlugin(Item, Plugin):
         that end with the word `Admin` should be granted (`admin grant`) to a
         particular user instead of installed for the whole world.
         """
-        msg = u', '.join(source.protocol.getAvailablePlugins(source.user.nickname))
+        msg = u', '.join(sorted(source.protocol.getAvailablePlugins(source.user.nickname)))
         if not msg:
             msg = u'No available plugins'
         source.reply(msg)
