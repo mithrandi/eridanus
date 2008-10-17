@@ -24,7 +24,7 @@ from eridanus import util, errors, plugin
 from eridanus.avatar import AnonymousAvatar
 from eridanus.irc import IRCSource, IRCUser
 from eridanus.ieridanus import ICommand, IIRCAvatar
-from eridanus.plugin import usage
+from eridanus.plugin import usage, SubCommand
 from eridanus.util import encode, decode
 
 
@@ -411,8 +411,8 @@ class IRCBot(IRCClient, _IRCKeepAliveMixin):
         params = list(params)
         avatar = self.getAvatar(source.user.nickname)
         if params:
-            plugins = avatar.locatePlugins(self, params[0])
-            commands = itertools.chain(*(p.getCommands() for p in plugins))
+            parents = avatar.getAllCommands(self, params)
+            commands = itertools.chain(*(p.getCommands() for p in parents))
             plugins = []
         else:
             commands = self.getCommands()
@@ -440,7 +440,12 @@ class IRCBot(IRCClient, _IRCKeepAliveMixin):
             plugins = sorted(u'%s (%s)' % (name, u', '.join(pluginNames))
                              for name, pluginNames in plugins.iteritems())
 
-        commands = sorted((cmd.name for cmd in commands))
+        def commandName(cmd):
+            if isinstance(cmd, SubCommand):
+                return u'@' + cmd.name
+            return cmd.name
+
+        commands = sorted((commandName(cmd) for cmd in commands))
         commands += plugins
         source.reply(u', '.join(commands))
 

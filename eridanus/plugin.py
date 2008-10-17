@@ -72,6 +72,13 @@ class CommandLookupMixin(object):
             return 'No additional help.'
         return formatHelp(help)[1]
 
+    def getCommands(self):
+        for name in dir(self):
+            if name.startswith('cmd_'):
+                yield ICommand(getattr(self, name))
+
+    ### ICommand
+
     def locateCommand(self, params):
         cmd = params.pop(0).lower()
         method = getattr(self,
@@ -207,11 +214,6 @@ class Plugin(CommandLookupMixin):
 
     name = None
     pluginName = None
-
-    def getCommands(self):
-        for name in dir(self):
-            if name.startswith('cmd_'):
-                yield ICommand(getattr(self, name))
 
 
 def getAllPlugins():

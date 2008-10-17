@@ -21,6 +21,11 @@ class _AvatarMixin(object):
 
         return cmd
 
+    def getAllCommands(self, protocol, params):
+        pluginName = params.pop(0)
+        for plugin in self.locatePlugins(protocol, pluginName):
+            yield self.locateCommand(plugin, params[:])
+
 
 class AnonymousAvatar(_AvatarMixin):
     """
@@ -50,21 +55,25 @@ class AuthenticatedAvatar(Item, _AvatarMixin):
     dummy = integer()
 
     def locatePlugins(self, protocol, name):
-        try:
-            yield getPluginByName(self.store, name)
-        except errors.PluginNotInstalled:
-            pass
-        try:
-            yield protocol.locatePlugin(name)
-        except errors.PluginNotInstalled:
-            pass
+        def _plugins():
+            try:
+                yield getPluginByName(self.store, name)
+            except errors.PluginNotInstalled:
+                pass
+            try:
+                yield protocol.locatePlugin(name)
+            except errors.PluginNotInstalled:
+                pass
+
+        plugins = list(_plugins())
+        if not plugins:
+            raise errors.PluginNotInstalled(name)
+
+        return plugins
 
     def getCommand(self, protocol, params):
         pluginName = params.pop(0)
         plugins = list(self.locatePlugins(protocol, pluginName))
-        # XXX: this would appear to be a hack
-        if not plugins:
-            raise errors.PluginNotInstalled(pluginName)
 
         while plugins:
             try:
