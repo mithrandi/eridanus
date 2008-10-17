@@ -2,10 +2,7 @@ from axiom import userbase
 
 from xmantissa import website, offering
 
-#from artemis import publicpage, theme, news
-#from artemis.admin import NewsReporter
-
-from eridanus import publicpage, theme
+from eridanus import theme
 
 plugin = offering.Offering(
     name = u'Eridanus',
@@ -17,12 +14,9 @@ plugin = offering.Offering(
         ],
 
     appPowerups = [
-        publicpage.EridanusPublicPage,
-        #news.Newspaper,
         ],
 
     installablePowerups = [
-        #(u'Reporter', u'Report news', NewsReporter),
         ],
 
     loginInterfaces = [],

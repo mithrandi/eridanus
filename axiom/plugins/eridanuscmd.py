@@ -9,7 +9,7 @@ from axiom.attributes import AND
 
 from xmantissa import publicweb
 
-from eridanus import publicpage, plugin, util
+from eridanus import plugin, util
 from eridanus.bot import IRCBotService, IRCBotFactoryFactory, IRCBotConfig
 
 
@@ -123,32 +123,6 @@ class ManageServices(axiomatic.AxiomaticSubCommand):
 
     def getAppStore(self):
         return self.parent.getAppStore()
-
-
-class SetupCommands(axiomatic.AxiomaticSubCommand):
-    longdesc = 'Setup stuff'
-
-    optFlags = [
-        ('vhost', None, 'Setup vhost stuff'),
-        ]
-
-    def postOptions(self):
-        s = self.parent.getStore()
-        s.transact(self.replaceFrontPage, s)
-
-        if self['vhost']:
-            s.transact(self.setupVHost, s)
-
-    def setupVHost(self, store):
-        store.query(publicpage.VHost).deleteFromStore()
-        vh = store.findOrCreate(publicpage.VHost)
-        installOn(vh, store)
-
-    def replaceFrontPage(self, store):
-        store.query(publicweb.FrontPage).deleteFromStore()
-
-        fp = store.findOrCreate(publicpage.FrontPage, prefixURL=u'')
-        installOn(fp, store)
 
 
 # XXX: this shouldn't be anywhere near here
@@ -461,7 +435,6 @@ class Eridanus(axiomatic.AxiomaticCommand):
 
     subCommands = [
         ('service', None, ManageServices, 'Manage services'),
-        ('setup',   None, SetupCommands,  'Setup stuff'),
         ('export',  None, ExportEntries,  'Export entries'),
         ('import',  None, ImportEntries,  'Import entries'),
         ('plugins', None, ManagePlugins,  'Manage plugins'),
