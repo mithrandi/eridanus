@@ -723,7 +723,7 @@ class XboxLivePlugin(Item, Plugin):
                 yield u'Gamerscore', overview['GamerScore']
                 recentGames = overview['RecentGames']
                 if recentGames:
-                    game = recenGames[0]
+                    game = recentGames[0]
                     yield u'Last played', u'%s (%s/%s gamerscore from %s/%s achievements)' % (
                         game['Name'], game['GamerScore'], game['TotalGamerScore'],
                         game['Achievements'], game['TotalAchievements'])
