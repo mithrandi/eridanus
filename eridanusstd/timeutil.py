@@ -74,11 +74,14 @@ def now(timezoneName):
     return Time().asDatetime(tzinfo=pytz.timezone(timezoneName))
 
 
-def convert(timeString, timezoneName):
+def convert(timeString, timezoneName, defaultTimezoneName):
     """
     Convert C{timeString} to the timezone named C{timezoneName}.
 
     @rtype: C{datetime.datetime}
     """
     timezone = pytz.timezone(timezoneName)
-    return dateutil.parser.parse(timeString, tzinfos=TZINFOS).astimezone(timezone)
+    dt = dateutil.parser.parse(timeString, tzinfos=TZINFOS)
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=pytz.timezone(defaultTimezoneName))
+    return dt.astimezone(timezone)

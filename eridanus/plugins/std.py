@@ -381,7 +381,7 @@ class TimePlugin(Item, Plugin):
         if timezoneName is None:
             timezoneName = self.defaultTimezoneName
 
-        dt = timeutil.convert(timeString, timezoneName)
+        dt = timeutil.convert(timeString, timezoneName, self.defaultTimezoneName)
         source.reply(timeutil.format(dt, self.timeFormat))
 
 
