@@ -57,11 +57,14 @@ class IRCSource(object):
     """
     def __init__(self, protocol, channel, user):
         self.protocol = protocol
-        self.channel = channel
         self.user = user
 
         # XXX: somewhat of a hack, something else should probably be doing this
         self.isPrivate = self.protocol.nickname == channel
+        if self.isPrivate:
+            channel = user.nickname
+
+        self.channel = channel
 
     def __repr__(self):
         return '<%s %s %s>' % (type(self).__name__, self.channel, self.user)
