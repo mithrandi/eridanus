@@ -75,29 +75,17 @@ class IRCSource(object):
 
         return None
 
-    def _getTarget(self, privateSay, publicSay):
-        if self.isPrivate:
-            f = privateSay
-            target = encode(self.user.nickname)
-        else:
-            f = publicSay
-            target = encode(self.channel)
-
-        return f, target
-
     def notice(self, text):
         """
         Notice C{text} to the current channel.
         """
-        f, target = self._getTarget(self.protocol.notice, self.protocol.notice)
-        f(target, encode(text))
+        self.protocol.notice(encode(self.channel), encode(text))
 
     def say(self, text):
         """
         Say C{text} in the current channel (or private) over the protocol.
         """
-        f, target = self._getTarget(self.protocol.msg, self.protocol.say)
-        f(target, encode(text))
+        self.protocol.msg(encode(self.channel), encode(text))
 
     def reply(self, text):
         """
