@@ -211,7 +211,7 @@ def humanReadableTimeDelta(delta):
 
     parts = list(getParts())
     if not parts:
-        parts = [u'never']
+        parts = [u'0 seconds']
 
     return u' '.join(parts)
 
