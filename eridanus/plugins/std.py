@@ -14,7 +14,7 @@ from eridanus.ieridanus import IEridanusPluginProvider, IAmbientEventObserver
 from eridanus.plugin import Plugin, usage, SubCommand, AmbientEventObserver
 
 from eridanusstd import (dict, timeutil, google, defertools, urbandict,
-    factoid, calc, fortune, imdb, xboxlive, yahoo, currency, memo)
+    factoid, calc, fortune, imdb, xboxlive, yahoo, currency, memo, weather)
 
 
 class APICommand(SubCommand):
@@ -832,3 +832,24 @@ class MemoPlugin(Item, Plugin, AmbientEventObserver):
         for memo in memos:
             source.tell(source.user.nickname, memo.displayMessage)
             memo.deleteFromStore()
+
+
+class WeatherPlugin(Item, Plugin):
+    classProvides(IPlugin, IEridanusPluginProvider)
+    schemaVersion = 1
+    typeName = 'eridanus_plugins_weatherplugin'
+
+    name = u'weather'
+    pluginName = u'Weather'
+
+    dummy = integer()
+
+    @usage(u'current <location>')
+    def cmd_current(self, source, location):
+        """
+        Get the current weather conditions for <location>.
+        """
+        def gotWeather(cond):
+            source.reply(cond.display)
+
+        return weather.Wunderground.current(location).addCallback(gotWeather)
