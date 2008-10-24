@@ -1,7 +1,5 @@
-import pytz
-from datetime import datetime
+import dateutil.parser
 
-from epsilon.extime import Time
 from epsilon.structlike import record
 
 from nevow.url import URL
@@ -14,7 +12,7 @@ class WundergroundConditions(record('location observationTime condition temperat
     @classmethod
     def fromElement(cls, node):
         location = node.findtext('display_location/full')
-        observationTime = Time.fromRFC2822(node.findtext('observation_time_rfc822'))
+        observationTime = dateutil.parser.parse(node.findtext('observation_time_rfc822'))
         condition = node.findtext('weather')
         temp = int(node.findtext('temp_c'))
         humidity = node.findtext('relative_humidity')
@@ -68,7 +66,7 @@ class WundergroundConditions(record('location observationTime condition temperat
             if self.windChill:
                 yield u'Wind chill', temp(self.windChill)
 
-        timestring = unicode(self.observationTime.asDatetime(tzinfo=pytz.utc).strftime('%H:%M %Z on %d %B %Y'))
+        timestring = unicode(self.observationTime.strftime('%H:%M %Z on %d %B %Y'))
         params = u'; '.join(u'\002%s\002: %s' % (key, value) for key, value in attrs())
         return u'In %s at %s: %s' % (self.location, timestring, params)
 
