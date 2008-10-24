@@ -147,9 +147,9 @@ class IRCBot(IRCClient, _IRCKeepAliveMixin):
 
         if isPrivate:
             self.privateMessage(source, message)
-        elif isDirected:
-            self.directedPublicMessage(source, message)
         else:
+            if isDirected:
+                self.directedPublicMessage(source, message)
             self.publicMessage(source, message)
 
     def topic(self, channel, topic=None):
