@@ -591,29 +591,23 @@ class FactoidPlugin(Item, Plugin):
         source.reply(u'Changed %d factoid(s).' % (numChanged,))
 
 
-# XXX: This really should not be a command itself but until some kind of
-# command aliasing is available this is the most convenient.
-class CalcPlugin(Item, Plugin):
-    """
-    calc <\002expression\002> [...] -- Evaluate a simple mathematical expression.
-    """
+class MathPlugin(Item, Plugin):
     classProvides(IPlugin, IEridanusPluginProvider)
     schemaVersion = 1
-    typeName = 'eridanus_plugins_calc'
+    typeName = 'eridanus_plugins_math'
 
-    name = u'calc'
-    pluginName = u'Calc'
+    name = u'math'
+    pluginName = u'Math'
 
     dummy = integer()
 
-    expn = inmemory()
-
-    def locateCommand(self, params):
-        self.expn = u' '.join(params)
-        return self, []
-
-    def invoke(self, source):
-        source.reply(calc.evaluate(self.expn))
+    @usage(u'calc <expression> [expression ...]')
+    def cmd_calc(self, source, expr, *exprs):
+        """
+        Evaluate a simple mathematical expressions.
+        """
+        expr = u' '.join((expr,) + exprs)
+        source.reply(calc.evaluate(expr))
 
 
 class FortunePlugin(Item, Plugin):
