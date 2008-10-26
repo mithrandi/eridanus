@@ -14,7 +14,8 @@ from eridanus.ieridanus import IEridanusPluginProvider, IAmbientEventObserver
 from eridanus.plugin import Plugin, usage, SubCommand, AmbientEventObserver
 
 from eridanusstd import (dict, timeutil, google, defertools, urbandict,
-    factoid, calc, fortune, imdb, xboxlive, yahoo, currency, memo, weather)
+    factoid, calc, fortune, imdb, xboxlive, yahoo, currency, memo, weather,
+    qdb)
 
 
 class APICommand(SubCommand):
@@ -847,3 +848,41 @@ class WeatherPlugin(Item, Plugin):
             source.reply(cond.display)
 
         return weather.Wunderground.current(location).addCallback(gotWeather)
+
+
+class QDBPlugin(Item, Plugin):
+    """
+    Retrieve quotes from various quote databases.
+    """
+    classProvides(IPlugin, IEridanusPluginProvider)
+    schemaVersion = 1
+    typeName = 'eridanus_plugins_qdb'
+
+    name = u'qdb'
+    pluginName = u'QDB'
+
+    dummy = integer()
+
+    def getQuote(self, source, quoteID, func):
+        def gotQuote(lines):
+            map(source.say, lines)
+
+        return func(quoteID).addCallback(gotQuote)
+
+    @usage(u'qdbus <quoteID>')
+    def cmd_qdbus(self, source, quoteID):
+        """
+        Retrieve <quoteID> from qdb.us.
+        """
+        return self.getQuote(source, quoteID, qdb.qdbUS)
+
+    @usage(u'bash <quoteID>')
+    def cmd_bash(self, source, quoteID):
+        """
+        Retrieve <quoteID> from bash.org.
+        """
+        return self.getQuote(source, quoteID, qdb.bash)
+
+    @usage(u'slipgate <quoteID>')
+    def cmd_slipgate(self, source, quoteID):
+        return self.getQuote(source, quoteID, qdb.slipgate)

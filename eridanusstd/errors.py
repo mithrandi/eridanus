@@ -68,3 +68,9 @@ class InvalidCurrency(ValueError):
     """
     The specified currency code is invalid.
     """
+
+
+class InvalidQuote(ValueError):
+    """
+    This specified quote ID is invalid.
+    """
