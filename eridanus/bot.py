@@ -392,6 +392,8 @@ class IRCBot(IRCClient, _IRCKeepAliveMixin):
         helps = [cmd.help]
         if cmd.usage is not None:
             helps.insert(0, cmd.usage)
+        elif isinstance(cmd, plugin.Plugin):
+            helps.insert(0, u'\002%s\002' % (cmd.pluginName,))
 
         msg = u' -- '.join(helps)
         source.reply(msg)

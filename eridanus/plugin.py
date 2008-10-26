@@ -10,7 +10,7 @@ from eridanus.ieridanus import (ICommand, IEridanusPluginProvider,
     IEridanusPlugin, IAmbientEventObserver)
 
 
-paramPattern = re.compile(r'([<[])(\w+)([>\]])')
+paramPattern = re.compile(r'([<[])(.*?)([>\]])')
 
 def formatUsage(s):
     """
