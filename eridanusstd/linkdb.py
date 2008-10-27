@@ -182,6 +182,13 @@ def _decodeText(data, encoding=None):
         return data.decode(newEncoding, 'replace')
 
 
+def _monkey_read_eof(self):
+    try:
+        self._real_read_eof()
+    except IOError:
+        pass
+
+
 def _decodeData(data, contentType, contentEncoding):
     """
     Decode C{data} handling content encoding and content type.
@@ -203,7 +210,15 @@ def _decodeData(data, contentType, contentEncoding):
     # XXX: this should be done at a lower level, like util.getPage maybe
     if contentEncoding is not None:
         if contentEncoding in ('x-gzip', 'gzip'):
-            data = gzip.GzipFile(fileobj=StringIO(data)).read()
+            gzf = gzip.GzipFile(fileobj=StringIO(data))
+            # Monkey patch `_read_eof` so that it doesn't explode with an
+            # IOError if the CRC doesn't match and break everything. I
+            # believe the main reason for this is that we only request the
+            # first 4096 bytes, which are almost certainly not going to
+            # match the entire data's checksum.
+            gzf._real_read_eof = gzf._read_eof
+            gzf._read_eof = lambda: _monkey_read_eof(gzf)
+            data = gzf.read()
         else:
             raise ValueError(u'Unsupported content encoding: %r' % (contentEncoding,))
 
