@@ -6,7 +6,7 @@ from twisted.application.service import IService, IServiceCollection
 from twisted.cred.checkers import AllowAnonymousAccess
 from twisted.cred.credentials import UsernamePassword
 from twisted.cred.portal import Portal
-from twisted.internet import reactor
+from twisted.internet import reactor, error as ierror
 from twisted.internet.defer import succeed, maybeDeferred, Deferred
 from twisted.internet.protocol import ReconnectingClientFactory
 from twisted.python import log
@@ -61,7 +61,10 @@ class _IRCKeepAliveMixin(object):
 
     def cancelTimeout(self):
         if self.pingTimeout is not None:
-            self.pingTimeout.cancel()
+            try:
+                self.pingTimeout.cancel()
+            except ierror.AlreadyCalled:
+                pass
             self.pingTimeout = None
 
     def rawPing(self):
