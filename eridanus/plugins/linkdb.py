@@ -200,18 +200,20 @@ class LinkDBPlugin(Item, Plugin, AmbientEventObserver, _LinkDBHelperMixin):
         """
         Search for <terms> in entries on <linkManager> up to a maximum of <limit>.
         """
+        def processResults(entries):
+            entries = list(entries)
+            if not entries:
+                msg = u'No results found for: %s.' % (u'; '.join(terms),)
+            elif len(entries) == 1:
+                msg = entries[0].completeHumanReadable
+            else:
+                msg = u'%d results. ' % (len(entries,))
+                msg += u'  '.join([u'\002#%d\002: \037%s\037' % (e.eid, util.truncate(e.displayTitle, 30)) for e in entries])
+            return msg
+
         # XXX: don't hardcode the limit
-        entries = list(linkManager.search(terms, limit=limit))
-
-        if not entries:
-            msg = u'No results found for: %s.' % (u'; '.join(terms),)
-        elif len(entries) == 1:
-            msg = entries[0].completeHumanReadable
-        else:
-            msg = u'%d results. ' % (len(entries,))
-            msg += u'  '.join([u'\002#%d\002: \037%s\037' % (e.eid, util.truncate(e.displayTitle, 30)) for e in entries])
-
-        return msg
+        return linkManager.search(terms, limit=limit
+            ).addCallback(processResults)
 
     @usage(u'find <term> [term ...]')
     def cmd_find(self, source, term, *terms):
@@ -223,8 +225,8 @@ class LinkDBPlugin(Item, Plugin, AmbientEventObserver, _LinkDBHelperMixin):
         """
         terms = [term] + list(terms)
         lm = self.getLinkManager(source)
-        msg = self.find(lm, terms)
-        source.reply(msg)
+        return self.find(lm, terms
+            ).addCallback(source.reply)
 
     @usage(u'findfor <channel> <term> [term ...]')
     def cmd_findfor(self, source, channel, term, *terms):

@@ -1,15 +1,19 @@
 import datetime, itertools, urllib, re, chardet, gzip, html5lib
 from StringIO import StringIO
 from PIL import Image
+from zope.interface import implements
 
 from epsilon.extime import Time
 
 from twisted.internet.defer import succeed
 from twisted.python import log
 
-from axiom.item import Item
+from axiom import batch
 from axiom.attributes import (AND, OR, timestamp, integer, reference, text,
-    boolean, bytes)
+    boolean, bytes, inmemory)
+from axiom.item import Item
+
+from xmantissa.ixmantissa import IFulltextIndexable, IFulltextIndexer
 
 from eridanus import const, util, iriparse
 from eridanusstd import errors, etree
@@ -317,8 +321,13 @@ class LinkManager(Item):
     The previously allocated entry ID, starting at 0.
     """, allowNone=False, default=0)
 
+    searchIndexer = inmemory()
+
     def __repr__(self):
         return '<%s %s>' % (type(self).__name__, self.channel)
+
+    def activate(self):
+        self.searchIndexer = IFulltextIndexer(self.store)
 
     def createEntry(self, nick, url, title=None):
         """
@@ -438,23 +447,19 @@ class LinkManager(Item):
         @rtype: C{iterable}
         @return: All L{LinkEntry}s that matched the search terms
         """
-        def makeCriteria():
-            for term in terms:
-                t = u'%%%s%%' % (term,)
-                yield OR(LinkEntry.title.like(t),
-                         LinkEntry.url.like(t),
-                         AND(LinkEntryComment.parent == LinkEntry.storeID,
-                             LinkEntryComment.comment.like(t)))
+        def getEntries(results):
+            entryIDs = [r.uniqueIdentifier for r in results]
+            return self.store.query(
+                LinkEntry,
+                AND(LinkEntry.channel == self.channel,
+                    LinkEntry.isDiscarded == False,
+                    LinkEntry.isDeleted == False,
+                    LinkEntry.eid.oneOf(entryIDs)),
+                sort=LinkEntry.modified.descending)
 
-        # XXX: limit=limit).distinct() does this *ACTUALLY* limit the right
-        # thing?
-        return self.store.query(LinkEntry,
-            AND(LinkEntry.channel == self.channel,
-                LinkEntry.isDiscarded == False,
-                LinkEntry.isDeleted == False,
-                *makeCriteria()),
-            sort=LinkEntry.modified.descending,
-            limit=limit).distinct()
+        term = u' '.join(terms)
+        return self.searchIndexer.search(term, count=limit
+            ).addCallback(getEntries)
 
     # XXX: should this really be a method?
     def topContributors(self, limit=None):
@@ -499,6 +504,8 @@ class LinkManager(Item):
 
 
 class LinkEntry(Item):
+    implements(IFulltextIndexable)
+
     typeName = 'eridanus_plugins_linkdb_linkentry'
     schemaVersion = 1
 
@@ -544,6 +551,11 @@ class LinkEntry(Item):
 
     def __repr__(self):
         return '<%s %s %s>' % (type(self).__name__, self.canonical, self.url)
+
+    def stored(self):
+        # Tell the batch processor that we have data to index.
+        s = self.store.findUnique(LinkEntrySource)
+        s.itemAdded()
 
     def getComments(self, initial=None):
         criteria = [LinkEntryComment.parent == self]
@@ -691,6 +703,23 @@ class LinkEntry(Item):
         for kind, data in metadata.iteritems():
             md = store.findOrCreate(LinkEntryMetadata, entry=self, kind=kind)
             md.data = data
+
+    # IFulltextIndexable
+
+    def uniqueIdentifier(self):
+        return str(self.eid)
+
+    def textParts(self):
+        yield self.url
+
+        if self.title is not None:
+            yield self.title
+
+        for comment in self.getComments():
+            yield comment.comment
+
+
+LinkEntrySource = batch.processor(LinkEntry)
 
 
 class LinkEntryComment(Item):
