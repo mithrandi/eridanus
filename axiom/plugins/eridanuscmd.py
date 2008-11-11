@@ -429,6 +429,26 @@ class ManagePlugins(axiomatic.AxiomaticSubCommand):
         return self.parent.getLoginSystem()
 
 
+class Hackery(axiomatic.AxiomaticSubCommand):
+    longdesc = 'Beware, thar be hacks!'
+
+    def postOptions(self):
+        from axiom.scheduler import Scheduler
+        from xmantissa.fulltext import SQLiteIndexer
+        from xmantissa.ixmantissa import IFulltextIndexer
+        from eridanusstd.linkdb import LinkEntrySource
+        store = self.parent.getAppStore()
+
+        scheduler = Scheduler(store=store)
+        installOn(scheduler, store)
+        
+        indexer = SQLiteIndexer(store=store)
+        store.powerUp(indexer, IFulltextIndexer)
+
+        source = store.findOrCreate(LinkEntrySource)
+        indexer.addSource(source)
+
+
 class Eridanus(axiomatic.AxiomaticCommand):
     name = 'eridanus'
     description = 'Eridanus mechanic'
@@ -438,6 +458,7 @@ class Eridanus(axiomatic.AxiomaticCommand):
         ('export',  None, ExportEntries,  'Export entries'),
         ('import',  None, ImportEntries,  'Import entries'),
         ('plugins', None, ManagePlugins,  'Manage plugins'),
+        ('hackery', None, Hackery,        'Perform magic'),
         ]
 
     def getStore(self):
