@@ -79,7 +79,9 @@ class PerseverantDownloader(object):
         @type tries: C{int}
         @param tries: The maximum number of retry attempts before giving up
         """
-        if isinstance(url, (str, unicode)):
+        if isinstance(url, unicode):
+            url = url.encode('utf-8')
+        if isinstance(url, str):
             url = URL.fromString(url)
 
         self.url = url.anchor(None)
