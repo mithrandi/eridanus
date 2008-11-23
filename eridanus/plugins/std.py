@@ -1,4 +1,4 @@
-import random
+import random, unicodedata
 from decimal import Decimal
 
 from zope.interface import classProvides
@@ -886,3 +886,26 @@ class QDBPlugin(Item, Plugin):
     @usage(u'slipgate <quoteID>')
     def cmd_slipgate(self, source, quoteID):
         return self.getQuote(source, quoteID, qdb.slipgate)
+
+
+class UnicodePlugin(Item, Plugin):
+    classProvides(IPlugin, IEridanusPluginProvider)
+
+    name = u'unicode'
+    pluginName = u'Unicode'
+
+    dummy = integer()
+
+    @usage(u'name <unicodeCharacter>')
+    def cmd_name(self, source, char):
+        """
+        Get the Unicode name for <unicodeCharacter>.
+        """
+        source.reply(unicodedata.name(char))
+
+    @usage(u'lookup <unicodeName>')
+    def cmd_lookup(self, source, name):
+        """
+        Get the Unicode character for <unicodeName>.
+        """
+        source.reply(unicodedata.lookup(name))
