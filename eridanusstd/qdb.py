@@ -66,14 +66,15 @@ def bash(quoteID):
 SLIPGATE_URL = URL.fromString('http://qdb.slipgate.za.net/FlyingCircus/')
 
 def slipgate(quoteID):
-    url = SLIPGATE_URL.child(quoteID).child('raw')
+    quoteURL = SLIPGATE_URL.child(quoteID)
 
     def extractQuote(lines):
         lines = iter(lines)
-        yield '%s -- %s' % (lines.next(), url)
+        yield '%s -- %s' % (lines.next(), quoteURL)
         for line in lines:
             yield line
 
+    url = quoteURL.child('raw')
     return util.PerseverantDownloader(url).go(
         ).addCallback(lambda (data, headers): data.splitlines()
         ).addErrback(handleBadQuoteID, quoteID
