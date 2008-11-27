@@ -1,4 +1,4 @@
-import re, math, fnmatch, itertools, warnings
+import re, math, fnmatch, itertools, warnings, htmlentitydefs
 
 from twisted.internet import reactor, task, error as ineterror
 from twisted.web import client, http, error as weberror
@@ -396,3 +396,24 @@ def setAPIKey(store, apiName, key):
     """
     siteStore = getSiteStore(store)
     return website.APIKey.setKeyForAPI(siteStore, apiName, key)
+
+
+_entityPattern = re.compile(ur'&(\w+);')
+_entityNames = dict(htmlentitydefs.name2codepoint)
+_entityNames.update({
+    'apos': ord(u"'"),
+    })
+
+def replaceHTMLEntities(s):
+    """
+    Replace HTML entity definitions with their corresponding character.
+    """
+    def repl(m):
+        name = m.group(1)
+        codepoint = _entityNames.get(name)
+        if codepoint is None:
+            return name
+
+        return unichr(codepoint)
+
+    return _entityPattern.sub(repl, s)
