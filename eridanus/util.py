@@ -47,18 +47,21 @@ class PerseverantDownloader(object):
     @type url: C{nevow.url.URL}
     @ivar url: The HTTP URL to attempt to download
 
-    @type maxDelay: C{numeric}
+    @type maxDelay: C{float}
     @cvar maxDelay: Maximum delay, in seconds, between retry attempts
 
-    @type initialDelay: C{numeric}
+    @type initialDelay: C{float}
     @cvar initialDelay: The delay before the first retry attempt
 
-    @type factor: C{numeric}
+    @type factor: C{float}
     @cvar factor: The factor to increase the delay by after each attempt
 
     @type retryableHTTPCodes: C{list}
     @cvar retryableHTTPCodes: HTTP error codes that suggest the error is
         intermittent and that a retry should be attempted
+
+    @type defaultTimeout: C{float}
+    @cvar defaultTimeout: Default fetch timeout value
     """
     maxDelay = 3600
     initialDelay = 1.0
@@ -66,7 +69,9 @@ class PerseverantDownloader(object):
 
     retryableHTTPCodes = [408, 500, 502, 503, 504]
 
-    def __init__(self, url, tries=10, *a, **kw):
+    defaultTimeout = 300.0
+
+    def __init__(self, url, tries=10, timeout=defaultTimeout, *a, **kw):
         """
         Prepare the download information.
 
@@ -78,6 +83,10 @@ class PerseverantDownloader(object):
 
         @type tries: C{int}
         @param tries: The maximum number of retry attempts before giving up
+
+        @type timeout: C{float}
+        @param timeout: Timeout value, in seconds, for the page fetch;
+            defaults to L{defaultTimeout}
         """
         if isinstance(url, unicode):
             url = url.encode('utf-8')
@@ -89,6 +98,7 @@ class PerseverantDownloader(object):
         self.kwargs = kw
         self.delay = self.initialDelay
         self.tries = tries
+        self.timeout = timeout
 
     def __repr__(self):
         return '<%s %s>' % (type(self).__name__, self.url)
@@ -97,7 +107,7 @@ class PerseverantDownloader(object):
         """
         Attempt to download L{self.url}.
         """
-        d, f = getPage(str(self.url), *self.args, **self.kwargs)
+        d, f = getPage(str(self.url), timeout=self.timeout, *self.args, **self.kwargs)
         return d.addErrback(self.retryWeb
                ).addCallback(lambda data: (data, f.response_headers))
 
