@@ -7,17 +7,21 @@ from eridanus import errors, reparse
 
 class TestREParse(unittest.TestCase):
     def test_parseRegex(self):
-        f, g = reparse.parseRegex('s/foo/bar/g')
-        self.assertEqual(f('quuxfooquux'), 'quuxbarquux')
-        self.assertNotEqual(f('quuxFooquux'), 'quuxbarquux')
-        self.assertTrue(g)
+        """
+        Parsing substitution regex syntax should result in something that
+        correctly performs substitution and obeys the flags passed in.
+        """
+        s = reparse.parseRegex('s/foo/bar/g')
+        self.assertEqual(s.sub('quuxfooquux'), 'quuxbarquux')
+        self.assertNotEqual(s.sub('quuxFooquux'), 'quuxbarquux')
+        self.assertTrue(s.globalFlag)
 
-        f, g = reparse.parseRegex('s/foo\/baz/bar/')
-        self.assertEqual(f('quuxfoo/bazquux'), 'quuxbarquux')
+        s = reparse.parseRegex('s/foo\/baz/bar/')
+        self.assertEqual(s.sub('quuxfoo/bazquux'), 'quuxbarquux')
 
-        f, g = reparse.parseRegex('s/foo/bar/i')
-        self.assertEqual(f('QUUXFOOQUUX'), 'QUUXbarQUUX')
-        self.assertFalse(g)
+        s = reparse.parseRegex('s/foo/bar/i')
+        self.assertEqual(s.sub('QUUXFOOQUUX'), 'QUUXbarQUUX')
+        self.assertFalse(s.globalFlag)
 
         self.assertRaises(errors.MalformedRegex, reparse.parseRegex, 's/foo/baz/quux')
         self.assertRaises(errors.MalformedRegex, reparse.parseRegex, 's/foo/baz/bar/g')

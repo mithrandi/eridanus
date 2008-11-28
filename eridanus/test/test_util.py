@@ -8,7 +8,7 @@ from eridanus import util, errors
 
 class TestMisc(unittest.TestCase):
     def test_humanReadableTimeDelta(self):
-        self.assertEqual(util.humanReadableTimeDelta(timedelta()), u'never')
+        self.assertEqual(util.humanReadableTimeDelta(timedelta()), u'0 seconds')
         self.assertEqual(util.humanReadableTimeDelta(timedelta(days=1)), u'1 day')
         self.assertEqual(util.humanReadableTimeDelta(timedelta(days=1, hours=3)), u'1 day 3 hours')
         self.assertEqual(util.humanReadableTimeDelta(timedelta(days=1, hours=3, minutes=5)), u'1 day 3 hours 5 minutes')
