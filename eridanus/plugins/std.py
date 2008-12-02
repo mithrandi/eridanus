@@ -645,12 +645,22 @@ class FortunePlugin(Item, Plugin):
                             db=db,
                             match=match)
 
-    @usage(u'fortune [db] [match]')
-    def cmd_fortune(self, source, db=u'*', match=None):
+    @usage(u'fortune [db]')
+    def cmd_fortune(self, source, db=u'*'):
         """
         Retrieve a fortune.
 
-        <db> can be "*" to match all available fortune databases.
+        <db> defaults to "*" to match all available fortune databases.
+        """
+        return self.fortune(source,
+                            db=db)
+
+    @usage(u'match <match> [db]')
+    def cmd_match(self, source, match, db=u'*'):
+        """
+        Match fortunes.
+
+        <db> defaults to "*" to match all available fortune databases.
         """
         return self.fortune(source,
                             db=db,
