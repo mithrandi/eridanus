@@ -24,7 +24,9 @@ def parseOutput(out):
         if out[0].startswith('(') and out[0].endswith(')'):
             dbName = out.pop(0)[1:-1] # Remove ()s from DB name
             dbName = os.path.split(dbName)[-1]
-        out.pop(0) # Pop the '%'
+
+        if out[0] == u'%':
+            out.pop(0)
 
         quote = []
         while True:
@@ -34,7 +36,7 @@ def parseOutput(out):
             if len(out) == 0:
                 quote.append(line)
                 break
-            elif line == u'%' :
+            elif line == u'%':
                 break
             quote.append(line)
 
