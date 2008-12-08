@@ -287,6 +287,16 @@ def _extractTitle(data):
 
 
 def fetchPageData(url):
+    def _doFetch(headers={}):
+        return util.PerseverantDownloader(url, headers=headers).go()
+
+    def maybeBadBehaviour(f):
+        # Once upon a time retards invaded Earth and invented
+        # <http://www.bad-behavior.ioerror.us/>.  The end.
+        if f.value.args[1] == 'Bad Behavior':
+            return _doFetch()
+        return f
+
     def gotData((data, headers)):
         metadata = dict(_buildMetadata(data, headers))
 
@@ -301,7 +311,8 @@ def fetchPageData(url):
         return succeed((title, metadata))
 
     headers = dict(range='bytes=0-4095')
-    return util.PerseverantDownloader(url, headers=headers).go(
+    return _doFetch(headers
+        ).addErrback(maybeBadBehaviour
         ).addCallback(gotData)
 
 
