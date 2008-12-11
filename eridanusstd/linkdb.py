@@ -7,6 +7,7 @@ from epsilon.extime import Time
 
 from twisted.internet.defer import succeed
 from twisted.python import log
+from twisted.web import error as weberror
 
 from axiom import batch
 from axiom.attributes import (AND, OR, timestamp, integer, reference, text,
@@ -293,6 +294,7 @@ def fetchPageData(url):
     def maybeBadBehaviour(f):
         # Once upon a time retards invaded Earth and invented
         # <http://www.bad-behavior.ioerror.us/>.  The end.
+        f.trap(weberror.Error)
         if f.value.args[1] == 'Bad Behavior':
             return _doFetch()
         return f
