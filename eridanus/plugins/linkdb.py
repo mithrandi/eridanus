@@ -8,7 +8,7 @@ from axiom.item import Item
 
 from eridanus import util
 from eridanus.ieridanus import IEridanusPluginProvider, IAmbientEventObserver
-from eridanus.plugin import AmbientEventObserver, Plugin, usage
+from eridanus.plugin import AmbientEventObserver, Plugin, usage, alias
 
 from eridanusstd import linkdb
 
@@ -227,6 +227,8 @@ class LinkDBPlugin(Item, Plugin, AmbientEventObserver, _LinkDBHelperMixin):
         lm = self.getLinkManager(source)
         return self.find(lm, terms
             ).addCallback(source.reply)
+
+    cmd_search = alias(cmd_find, 'cmd_search')
 
     @usage(u'findfor <channel> <term> [term ...]')
     def cmd_findfor(self, source, channel, term, *terms):
