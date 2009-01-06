@@ -4,6 +4,7 @@ from zope.interface import implements
 
 from twisted.plugin import getPlugins
 from twisted.python.components import registerAdapter
+from twisted.python.util import mergeFunctionMetadata
 
 from eridanus import plugins, errors
 from eridanus.ieridanus import (ICommand, IEridanusPluginProvider,
@@ -48,6 +49,40 @@ def usage(desc):
         f.help = f.__doc__
         return f
     return fact
+
+
+def alias(f, name=None):
+    """
+    Create an alias of another command.
+    """
+    newCmd = mergeFunctionMetadata(f, lambda *a, **kw: f(*a, **kw))
+    newCmd.alias = True
+    if name is not None:
+        newCmd.func_name = name
+    newCmd.arglimits = getCommandArgLimits(f)
+    return newCmd
+
+
+def getCommandArgLimits(method, minargs=None, maxargs=None):
+    """
+    Find the argument limits on an ICommand method.
+    """
+    args, vararg, varkw, defaults = inspect.getargspec(method)
+    # Exclude self and source parameters.
+    normArgCount = len(args) - 2
+
+    if minargs is None:
+        # Exclude default arguments from impacting the minimum number of
+        # required arguments.
+        minargs = normArgCount - len(defaults or [])
+
+    if maxargs is None:
+        if vararg is None:
+            maxargs = normArgCount
+        else:
+            maxargs = None
+
+    return minargs, maxargs
 
 
 class CommandLookupMixin(object):
@@ -169,23 +204,11 @@ class MethodCommand(object):
         @rtype: C{(min, max)}
         """
         minargs, maxargs = arglimits = getattr(self.method, 'arglimits', (None, None))
+        return getCommandArgLimits(self.method, minargs, maxargs)
 
-        args, vararg, varkw, defaults = inspect.getargspec(self.method)
-        # Exclude self and source parameters.
-        normArgCount = len(args) - 2
-
-        if minargs is None:
-            # Exclude default arguments from impacting the minimum number of
-            # required arguments.
-            minargs = normArgCount - len(defaults or [])
-
-        if maxargs is None:
-            if vararg is None:
-                maxargs = normArgCount
-            else:
-                maxargs = None
-
-        return minargs, maxargs
+    @property
+    def alias(self):
+        return getattr(self.method, 'alias', False)
 
     ### ICommand
 

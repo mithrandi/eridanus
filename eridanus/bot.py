@@ -452,7 +452,10 @@ class IRCBot(IRCClient, _IRCKeepAliveMixin):
                 return u'@' + cmd.name
             return cmd.name
 
-        commands = sorted((commandName(cmd) for cmd in commands))
+        commands = sorted(
+            (commandName(cmd)
+             for cmd in itertools.ifilter(lambda cmd: not cmd.alias, commands)))
+
         commands += plugins
         source.reply(u', '.join(commands))
 
