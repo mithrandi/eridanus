@@ -299,6 +299,23 @@ class LinkDBPlugin(Item, Plugin, AmbientEventObserver, _LinkDBHelperMixin):
             # XXX: it might be nice if self.fetchFailed could return the right thing for us
             ).addCallback(lambda *a: entryUpdated(entry))
 
+    @usage(u'recent [nickname]')
+    def cmd_recent(self, source, nickname=None):
+        """
+        Get recent URL entries.
+        """
+        lm = self.getLinkManager(source)
+        entries = list(lm.recent(3, nickname))
+        if entries:
+            for e in entries:
+                source.notice(e.displayCompleteHumanReadable(modified=True))
+        else:
+            if nickname is None:
+                msg = u'No recent entries.'
+            else:
+                msg = u'No recent entries for \002%s\002.' % (nickname,)
+            source.reply(msg)
+
     ### IAmbientEventObserver
 
     def publicMessageReceived(self, source, message):

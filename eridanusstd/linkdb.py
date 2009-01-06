@@ -366,7 +366,7 @@ class LinkManager(Item):
                          title=title)
 
     # XXX: this function needs work, it does way too many things
-    def getEntries(self, limit=None, discarded=False, deleted=False):
+    def getEntries(self, limit=None, discarded=False, deleted=False, sort=None, criteria=None):
         """
         Retrieve all L{Entry}s given certain criteria.
 
@@ -384,16 +384,21 @@ class LinkManager(Item):
         @rtype: C{iterable}
         @return: Entries that matching the specified criteria
         """
-        criteria = [LinkEntry.channel == self.channel]
+        if criteria is None:
+            criteria = []
+
+        criteria.append(LinkEntry.channel == self.channel)
         if discarded is not None:
             criteria.append(LinkEntry.isDiscarded == discarded)
         if deleted is not None:
             criteria.append(LinkEntry.isDeleted == deleted)
+        if sort is None:
+            sort = LinkEntry.modified.descending
 
         return self.store.query(LinkEntry,
                                 AND(*criteria),
                                 limit=limit,
-                                sort=LinkEntry.modified.descending)
+                                sort=sort)
 
     def _entryBy(self, eid=None, url=None, evenDeleted=False):
         """
@@ -494,6 +499,14 @@ class LinkManager(Item):
         # XXX: other seems a bit of a pointless thing
         #if limit is not None and contributors > limit:
         #    yield 'Other', totalEntries - runningTotal
+
+    def recent(self, count, nickname):
+        if nickname is not None:
+            criteria = [LinkEntry.nick == nickname]
+        else:
+            criteria = None
+        return self.getEntries(limit=count,
+                               criteria=criteria)
 
     # XXX: should this really be a method?
     def stats(self):
@@ -643,9 +656,18 @@ class LinkEntry(Item):
     def displayModifiedTimestamp(self):
         return self.modified.asHumanly(tzinfo=const.timezone)
 
+    def displayCompleteHumanReadable(self, modified=False):
+        if modified:
+            timestamp = u'modified %s' % (self.displayModifiedTimestamp,)
+        else:
+            timestamp = u'posted %s' % (self.displayTimestamp,)
+        return u'#%d: \037%s\037%s @ %s %s by \002%s\002.' % (self.eid, self.displayTitle, self.displayComment, self.url, timestamp, self.nick)
+
+    # XXX: these properties suck, they should all be replaced with functions
+    #      and the some of them merged
     @property
     def completeHumanReadable(self):
-        return u'#%d: \037%s\037%s @ %s posted %s by \002%s\002.' % (self.eid, self.displayTitle, self.displayComment, self.url, self.displayTimestamp, self.nick)
+        return self.displayCompleteHumanReadable()
 
     @property
     def humanReadable(self):
