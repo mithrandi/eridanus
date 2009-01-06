@@ -141,8 +141,14 @@ class IRCBot(IRCClient, _IRCKeepAliveMixin):
         message = decode(message)
 
         isPrivate = channel == self.nickname
-        directedText = decode(self.nickname.lower() + ':')
-        isDirected = message.lower().startswith(directedText)
+
+        directedTextSuffixes = (':', ',', ' ')
+        isDirected = False
+        for suffix in directedTextSuffixes:
+            directedText = decode(self.nickname.lower()) + suffix
+            if message.lower().startswith(directedText):
+                isDirected = True
+                break
 
         if isDirected:
             # Remove our nickname from the beginning of the addressed text.
