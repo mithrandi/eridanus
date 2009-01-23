@@ -68,9 +68,10 @@ term_op      ::= <spaces>
 product      ::= <pow>:a <product_elem>*:b => reduce(operate, [(operator.mul, a)] + b, 1)
 product_elem ::= <product_op>:op <pow>:a => (op, a)
 product_op   ::= <spaces>
-                 ('*' => operator.mul
-                 |'/' => operator.div
-                 |'%' => operator.mod):product => product
+                 ('*'     => operator.mul
+                 |'/' '/' => operator.floordiv
+                 |'/'     => operator.truediv
+                 |'%'     => operator.mod):product => product
 
 pow          ::= (<atom>:a '*' '*' => a)*:xs <atom>:z => foldr(operator.pow, z, xs)
 
