@@ -4,6 +4,11 @@ from decimal import Decimal
 from pymeta.grammar import OMeta
 from pymeta.runtime import ParseError
 
+from twisted.protocols import amp
+from twisted.internet.error import ProcessTerminated
+
+from ampoule import child, pool, main
+
 
 def operate(res, (op, value)):
     return op(res, value)
@@ -104,3 +109,38 @@ def evaluate(expn):
         return CalcGrammar(expn).apply('expn')
     except ParseError:
         raise SyntaxError(u'Could not evaluate the provided mathematical expression')
+
+
+class Evaluate(amp.Command):
+    arguments = [('expn', amp.Unicode())]
+    response = [('result', amp.Unicode())]
+    errors = {decimal.Overflow:       'OVERFLOW',
+              decimal.DivisionByZero: 'ZERO_DIVISION',
+              SyntaxError:            'SYNTAX'}
+
+
+class EvaluateChild(child.AMPChild):
+    @Evaluate.responder
+    def result(self, expn):
+        return {'result': unicode(evaluate(expn))}
+
+
+# XXX: self.pool.stop() is supposed to be called at some point?
+class Calculator(object):
+    def __init__(self):
+        starter = main.ProcessStarter(
+            packages=['twisted', 'ampoule', 'eridanusstd', 'pymeta'])
+        self.pool = pool.ProcessPool(EvaluateChild,
+                                     min=1, max=3,
+                                     timeout=5,
+                                     starter=starter)
+        self.pool.start()
+
+    def evaluate(self, expn):
+        def err(f):
+            f.trap(ProcessTerminated)
+            raise ValueError('Calculation timeout expired')
+
+        return self.pool.doWork(Evaluate, expn=expn
+            ).addErrback(err
+            ).addCallback(lambda result: result['result'])

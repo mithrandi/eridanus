@@ -603,13 +603,19 @@ class MathPlugin(Item, Plugin):
 
     dummy = integer()
 
+    calculator = inmemory()
+
+    def activate(self):
+        self.calculator = calc.Calculator()
+
     @usage(u'calc <expression> [expression ...]')
     def cmd_calc(self, source, expr, *exprs):
         """
         Evaluate a simple mathematical expressions.
         """
         expr = u' '.join((expr,) + exprs)
-        source.reply(calc.evaluate(expr))
+        return self.calculator.evaluate(expr
+            ).addCallback(source.reply)
 
 
 class FortunePlugin(Item, Plugin):
