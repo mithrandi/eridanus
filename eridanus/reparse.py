@@ -15,7 +15,7 @@ regex        ::= 's' '/' <expn>:a '/' <expn>:b '/' <flag>*:c <end> => (''.join(a
 flag         ::= 'i' | 'g'
 
 printable    ::= :x ?(x in string.printable.replace('/', '')) => x
-escapedSlash ::= '\\' '/'
+escapedSlash ::= '\\\\' '/'
 expn         ::= (<escapedSlash> | <printable>)+
 """
 
