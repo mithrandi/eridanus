@@ -1,4 +1,5 @@
-import math, operator
+import math, operator, decimal
+from decimal import Decimal
 
 from pymeta.grammar import OMeta
 from pymeta.runtime import ParseError
@@ -42,8 +43,8 @@ NAMES = {
     'tanh':    math.tanh,
 
     # Constants
-    'e':       math.e,
-    'pi':      math.pi,
+    'e':       Decimal(str(math.e)),
+    'pi':      Decimal(str(math.pi)),
 }
 
 def func(name):
@@ -80,11 +81,11 @@ atom         ::= <spaces>
                  |<decimal>
                  |<integer>):atom <spaces> => atom
 
-func         ::= <name>:n '(' <sum>:e ')' => func(n)(e)
+func         ::= <name>:n '(' <sum>:e ')' => Decimal(str(func(n)(e)))
 constant     ::= <name>:n => func(n)
 name         ::= <letter>:x <letterOrDigit>*:xs !(xs.insert(0, x)) => ''.join(xs)
-integer      ::= <digit>+:a => int(''.join(a))
-decimal      ::= (<digit>*:a ('.' <digit>*):b) => float(''.join(a) + '.' + ''.join(b))
+integer      ::= <digit>+:a => Decimal(''.join(a))
+decimal      ::= (<digit>*:a ('.' <digit>*):b) => Decimal(''.join(a) + '.' + ''.join(b))
 """
 
 
@@ -95,6 +96,8 @@ class CalcGrammar(OMeta.makeGrammar(calcGrammar, globals())):
 def evaluate(expn):
     """
     Evaluate a simple mathematical expression.
+
+    @rtype: C{Decimal}
     """
     try:
         return CalcGrammar(expn).apply('expn')
