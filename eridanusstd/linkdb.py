@@ -136,7 +136,7 @@ def getEntryByID(store, serviceID, entryID, defaultChannel):
     return entry
 
 
-_commentPattern = re.compile(ur'\s+(?:\[(.*?)\]|<?--\s+(.*))')
+_commentPattern = re.compile(ur'\s+(?:\[(.*?)\]|<?--\s+(.+))')
 
 def extractURLs(text):
     """
