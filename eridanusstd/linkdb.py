@@ -303,7 +303,8 @@ def fetchPageData(url):
         metadata = dict(_buildMetadata(data, headers))
 
         contentType = metadata.get('contentType', u'application/octet-stream')
-        if contentType.startswith(u'text'):
+        major, minor = util.padIterable(contentType.split(u'/', 1), 2)
+        if major == u'text' or u'html' in minor:
             contentEncoding = headers.get('content-encoding', [None])[0]
             data = _decodeData(data, contentType, contentEncoding)
             title = _extractTitle(data)
