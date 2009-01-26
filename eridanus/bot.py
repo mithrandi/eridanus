@@ -386,6 +386,10 @@ class IRCBot(IRCClient, _IRCKeepAliveMixin):
     def cmd_help(self, source, *params):
         """
         Retrieve help for a given command or plugin.
+
+        Most commands will provide a reasonable description of what it is they
+        do and how to use them.  Commands and subcommands can be listed with
+        the "list" command.
         """
         params = list(params)
         if not params:
