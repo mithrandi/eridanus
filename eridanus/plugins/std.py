@@ -469,7 +469,7 @@ class UrbanDict(Item, Plugin):
             for i, result in enumerate(results):
                 word = result[u'word']
                 # XXX: this should be a paginated/multiline output
-                dfn = eutil.replaceHTMLEntities(result[u'definition'])
+                dfn = eutil.unescapeEntities(result[u'definition'])
                 dfn = u' '.join(dfn.splitlines())
                 yield u'\002%d. %s\002: %s;' % (i + 1, word, dfn)
 
