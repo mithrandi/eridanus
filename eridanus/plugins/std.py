@@ -603,10 +603,13 @@ class MathPlugin(Item, Plugin):
 
     dummy = integer()
 
-    calculator = inmemory()
+    _calculator = inmemory()
 
-    def activate(self):
-        self.calculator = calc.Calculator()
+    @property
+    def calculator(self):
+        if self._calculator is None:
+            self._calculator = calc.Calculator()
+        return self._calculator
 
     @usage(u'calc <expression> [expression ...]')
     def cmd_calc(self, source, expr, *exprs):
