@@ -31,7 +31,9 @@ def formatHelp(help, sep=' '):
     @returns: A "short help" and the complete help
     @rtype: C{(shortHelp, help)}
     """
-    lines = [line for line in dedent(help).splitlines() if line]
+    lines = [line.strip()
+             for line in dedent(help).splitlines()
+             if line.strip()]
     return lines[0], sep.join(lines)
 
 
