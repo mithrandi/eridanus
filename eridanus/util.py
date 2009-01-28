@@ -408,22 +408,28 @@ def setAPIKey(store, apiName, key):
     return website.APIKey.setKeyForAPI(siteStore, apiName, key)
 
 
-_entityPattern = re.compile(ur'&(\w+);')
-_entityNames = dict(htmlentitydefs.name2codepoint)
-_entityNames.update({
-    'apos': ord(u"'"),
-    })
+_entityPattern = re.compile(ur'&#?\w+;')
+htmlentitydefs.name2codepoint['apos'] = ord(u"'")
 
-def replaceHTMLEntities(s):
+def unescapeEntities(text):
     """
-    Replace HTML entity definitions with their corresponding character.
+    Replace HTML or XML character references and entities in a string.
     """
-    def repl(m):
-        name = m.group(1)
-        codepoint = _entityNames.get(name)
-        if codepoint is None:
-            return name
+    def fixup(m):
+        text = m.group(0)
+        if text[:2] == '&#':
+            try:
+                if text[:3] == '&#x':
+                    return unichr(int(text[3:-1], 16))
+                else:
+                    return unichr(int(text[2:-1]))
+            except ValueError:
+                pass
+        else:
+            try:
+                text = unichr(htmlentitydefs.name2codepoint[text[1:-1]])
+            except KeyError:
+                pass
+        return text
 
-        return unichr(codepoint)
-
-    return _entityPattern.sub(repl, s)
+    return _entityPattern.sub(fixup, text)

@@ -113,3 +113,12 @@ class TestMisc(unittest.TestCase):
             (1, 'baz')])
         self.assertEqual(c, {1: ['foo', 'baz'],
                              2: ['bar']})
+
+    def test_unescapeEntities(self):
+        self.assertEqual(util.unescapeEntities(u'&amp;'), u'&')
+        self.assertEqual(util.unescapeEntities(u'&apos;'), u"'")
+        self.assertEqual(util.unescapeEntities(u'&#39;'), u"'")
+        self.assertEqual(util.unescapeEntities(u'&#x27;'), u"'")
+
+        self.assertEqual(util.unescapeEntities(u'bob'), u'bob')
+        self.assertEqual(util.unescapeEntities(u'&bob;'), u'&bob;')
