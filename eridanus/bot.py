@@ -396,9 +396,9 @@ class IRCBot(IRCClient, _IRCKeepAliveMixin):
             params = [u'help']
 
         # XXX: blehblehbleh, locateBuiltinCommand is pure fail
+        avatar = self.getAvatar(source.user.nickname)
         cmd = self.locateBuiltinCommand(params)
         if cmd is None:
-            avatar = self.getAvatar(source.user.nickname)
             cmd = avatar.getCommand(self, params)
 
         cmd = ICommand(cmd)
@@ -406,26 +406,29 @@ class IRCBot(IRCClient, _IRCKeepAliveMixin):
         if cmd.usage is not None:
             helps.insert(0, cmd.usage)
         elif isinstance(cmd, plugin.Plugin):
+            # XXX: argh, this is so horrible
+            # XXX: as soon as multiline responses are implemented this must
+            # be the first thing to get fixed
             helps.insert(0, u'\002%s\002' % (cmd.pluginName,))
+            msg = u' -- '.join(helps)
+            source.reply(msg)
+            commands = self.listCommands(avatar, [cmd.name])
+            helps = [u'\002%s\002' % (cmd.pluginName,),
+                     u', '.join(commands)]
 
         msg = u' -- '.join(helps)
         source.reply(msg)
 
-    @usage(u'list [name] [subname] [...]')
-    def cmd_list(self, source, *params):
+    def listCommands(self, avatar, params):
         """
-        List commands and sub-commands.
-
-        If no parameters are specified, top-level commands are listed along
-        with installed plugins.
+        Retrieve a list of subcommands.
         """
-        params = list(params)
-        avatar = self.getAvatar(source.user.nickname)
         if params:
             parents = avatar.getAllCommands(self, params)
             commands = itertools.chain(*(p.getCommands() for p in parents))
             plugins = []
         else:
+            # List top-level commands and plugins.
             commands = self.getCommands()
             avStore = getattr(avatar, 'store', None)
 
@@ -460,7 +463,20 @@ class IRCBot(IRCClient, _IRCKeepAliveMixin):
             (commandName(cmd)
              for cmd in itertools.ifilter(lambda cmd: not cmd.alias, commands)))
 
-        commands += plugins
+        return commands + plugins
+
+    @usage(u'list [name] [subname] [...]')
+    def cmd_list(self, source, *params):
+        """
+        List commands and sub-commands.
+
+        If no parameters are specified, top-level commands are listed along
+        with installed plugins.
+
+        Private plugins are marked with an *, subcommands are marked with an @.
+        """
+        avatar = self.getAvatar(source.user.nickname)
+        commands = self.listCommands(avatar, list(params))
         source.reply(u', '.join(commands))
 
 
