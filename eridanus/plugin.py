@@ -134,6 +134,9 @@ class CommandLookupMixin(object):
 
 
 class SubCommand(CommandLookupMixin):
+    # XXX: maybe this could actually work?
+    alias = False
+
     def invoke(self, source):
         raise errors.UsageError('Too few parameters -- ' + self.help)
 
