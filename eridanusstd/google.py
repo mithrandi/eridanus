@@ -103,7 +103,7 @@ class WebSearchQuery(object):
             raise errors.NoSearchResults(
                 u'No results for the search terms: ' + u'; '.join(self.terms))
 
-        return ((result[u'titleNoFormatting'], result[u'url'])
+        return ((util.unescapeEntities(result[u'titleNoFormatting']), result[u'url'])
                 for result in results)
 
     def getMoreResults(self, start=None):
