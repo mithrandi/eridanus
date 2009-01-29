@@ -594,6 +594,9 @@ class FactoidPlugin(Item, Plugin):
 
 
 class MathPlugin(Item, Plugin):
+    """
+    Various mathematics related services.
+    """
     classProvides(IPlugin, IEridanusPluginProvider)
     schemaVersion = 1
     typeName = 'eridanus_plugins_math'
@@ -614,7 +617,7 @@ class MathPlugin(Item, Plugin):
     @usage(u'calc <expression> [expression ...]')
     def cmd_calc(self, source, expr, *exprs):
         """
-        Evaluate a simple mathematical expressions.
+        Evaluate simple mathematical expressions.
         """
         expr = u' '.join((expr,) + exprs)
         return self.calculator.evaluate(expr
@@ -622,6 +625,9 @@ class MathPlugin(Item, Plugin):
 
 
 class FortunePlugin(Item, Plugin):
+    """
+    Provides access to the system's `fortune` command.
+    """
     classProvides(IPlugin, IEridanusPluginProvider)
     schemaVersion = 1
     typeName = 'eridanus_plugins_fortune'
@@ -718,6 +724,9 @@ class IMDBPlugin(Item, Plugin):
 
 
 class XboxLivePlugin(Item, Plugin):
+    """
+    XBOX Live related services.
+    """
     classProvides(IPlugin, IEridanusPluginProvider)
     schemaVersion = 1
     typeName = 'eridanus_plugins_xboxliveplugin'
@@ -751,6 +760,9 @@ class XboxLivePlugin(Item, Plugin):
 
 
 class CurrencyPlugin(Item, Plugin):
+    """
+    Simple currency services.
+    """
     classProvides(IPlugin, IEridanusPluginProvider)
     schemaVersion = 1
     typeName = 'eridanus_plugins_currencyplugin'
@@ -792,6 +804,12 @@ class CurrencyPlugin(Item, Plugin):
 
 
 class MemoPlugin(Item, Plugin, AmbientEventObserver):
+    """
+    A simple memo service.
+
+    Memos are left with the bot for a specific nickname, when the matching
+    nickname becomes active all stored memos for that nickname are recited.
+    """
     classProvides(IPlugin, IEridanusPluginProvider, IAmbientEventObserver)
     schemaVersion = 1
     typeName = 'eridanus_plugins_memoplugin'
@@ -814,6 +832,7 @@ class MemoPlugin(Item, Plugin, AmbientEventObserver):
         Memos will be given to <nickname> when they are next active in the
         channel where the memo was left.
         """
+        # XXX: this probably breaks when source.channel is a private message
         self.manager.leaveMemo(source.channel,
                                source.user.nickname,
                                nickname,
@@ -909,6 +928,9 @@ class QDBPlugin(Item, Plugin):
 
 
 class UnicodePlugin(Item, Plugin):
+    """
+    Basic Unicode related services.
+    """
     classProvides(IPlugin, IEridanusPluginProvider)
 
     name = u'unicode'
