@@ -951,3 +951,18 @@ class UnicodePlugin(Item, Plugin):
         Get the Unicode character for <unicodeName>.
         """
         source.reply(unicodedata.lookup(name))
+
+
+class RandomPlugin(Item, Plugin):
+    classProvides(IPlugin, IEridanusPluginProvider)
+
+    name = u'random'
+    pluginName = u'Random'
+
+    dummy = integer()
+
+    @usage(u'sample <count> <option1> [option2] [...]')
+    def cmd_sample(self, source, count, option1, *options):
+        count = int(count)
+        options = [option1] + list(options)
+        source.reply(u', '.join(random.sample(options, count)))
