@@ -142,7 +142,7 @@ class IRCBot(IRCClient, _IRCKeepAliveMixin):
 
         isPrivate = channel == self.nickname
 
-        directedTextSuffixes = (':', ',', ' ')
+        directedTextSuffixes = (':', ',')
         isDirected = False
         for suffix in directedTextSuffixes:
             directedText = decode(self.nickname.lower()) + suffix
