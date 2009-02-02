@@ -91,15 +91,16 @@ class WebSearchQuery(object):
         """
         response = simplejson.loads(data)[u'responseData']
 
-        cursor = response[u'cursor']
-        currentPageIndex = cursor[u'currentPageIndex']
-        pages = cursor[u'pages']
+        cursor = response.get(u'cursor')
+        currentPageIndex = cursor.get(u'currentPageIndex')
+        pages = cursor.get(u'pages')
 
         if self.pages is None:
             self.pages = pages
-        self.pages.pop(0)
+        if self.pages:
+            self.pages.pop(0)
 
-        results = response[u'results']
+        results = response.get(u'results')
         if not results:
             raise errors.NoSearchResults(
                 u'No results for the search terms: ' + u'; '.join(self.terms))
