@@ -77,7 +77,8 @@ class WebSearchQuery(object):
         for term in terms:
             if u' ' in term:
                 yield u'"%s"' % (term,)
-            yield term
+            else:
+                yield term
 
     def parseResults(self, (data, headers)):
         """
