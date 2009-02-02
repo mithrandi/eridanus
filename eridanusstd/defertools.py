@@ -88,7 +88,7 @@ class LazyQueue(object):
                 while output:
                     output.pop().errback(errors.NoMoreItems())
             elif not self.filling:
-                self.fill()
+                self.fill().addErrback(lambda f: output.pop().errback(f))
 
     def next(self):
         """
@@ -148,8 +148,11 @@ def slice(queue, n):
         f.trap(errors.NoMoreItems)
         return []
 
-    d = defer.gatherResults(
-        [d.addCallbacks(_cb, _eb)
-         for d in itertools.islice(queue, n)])
+    def _gatherErr(f):
+        f.trap(defer.FirstError)
+        return f.value.subFailure
 
-    return d.addCallback(lambda results: sum(results, []))
+    return defer.gatherResults([d.addCallbacks(_cb, _eb)
+                                for d in itertools.islice(queue, n)]
+        ).addErrback(_gatherErr
+        ).addCallback(lambda results: sum(results, []))
