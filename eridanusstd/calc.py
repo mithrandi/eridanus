@@ -87,7 +87,8 @@ atom         ::= <spaces>
                  |<decimal>
                  |<integer>):atom <spaces> => atom
 
-func         ::= <name>:n '(' <sum>:e ')' => Decimal(str(func(n)(e)))
+func         ::= <name>:n '(' <func_params>:p ')' => Decimal(str(func(n)(*p)))
+func_params  ::= <sum>:a (<spaces> ',' <spaces> <sum>)*:b => [a] + b
 constant     ::= <name>:n => func(n)
 name         ::= <letter>:x <letterOrDigit>*:xs !(xs.insert(0, x)) => ''.join(xs)
 integer      ::= <digit>+:a => Decimal(''.join(a))
