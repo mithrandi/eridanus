@@ -25,6 +25,20 @@ def foldr(op, end, seq):
     else:
         return op(head, foldr(op, end, tail))
 
+DIGITS = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+def base(n, b):
+    n = int(n)
+    b = int(b)
+    if b < 2 or b > 36:
+        raise ValueError(u'Base must be between 2 and 36, inclusively')
+
+    digits = ''
+    while n:
+        n, r = divmod(n, b)
+        digits = DIGITS[r] + digits
+
+    return digits
+
 
 NAMES = {
     # Functions
@@ -46,6 +60,7 @@ NAMES = {
     'sqrt':    math.sqrt,
     'tan':     math.tan,
     'tanh':    math.tanh,
+    'base':    base,
 
     # Constants
     'e':       Decimal(str(math.e)),
