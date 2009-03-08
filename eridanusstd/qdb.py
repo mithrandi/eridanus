@@ -29,8 +29,8 @@ def qdbUS(quoteID):
 
     def extractQuote(tree):
         quote = tree.find('//form/table/tbody')
-        header = unicode(''.join(quote.find('tr/td').itertext()), 'ascii').strip()
-        text = unicode(''.join(quote.find('tr/td/p').itertext()), 'ascii').strip()
+        header = unicode(''.join(quote.find('tr/td').itertext())).strip()
+        text = unicode(''.join(quote.find('tr/td/p').itertext())).strip()
 
         yield u'%s -- %s' % (header, url)
         for line in text.splitlines():
@@ -51,7 +51,7 @@ def bash(quoteID):
         header = (t for t in tree.find('//p[@class="quote"]').itertext()
                   if t not in ('+', '-', '[X]'))
         header = unicode(''.join(header), 'ascii').strip()
-        text = unicode(''.join(tree.find('//p[@class="qt"]').itertext()), 'ascii').strip()
+        text = unicode(''.join(tree.find('//p[@class="qt"]').itertext())).strip()
 
         yield u'%s -- %s' % (header, url)
         for line in text.splitlines():
