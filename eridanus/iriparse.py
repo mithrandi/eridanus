@@ -22,13 +22,13 @@ def checkIPv6(xs):
 iriGrammar = """
 hexdigit       ::= :x ?(x in string.hexdigits) => x
 
-IRI            ::= !(self.markURLStart()) <scheme> ':' <ihier_part> ('?' <iquery>)? ('#' <ifragment>)? !(self.markURLEnd()) => self.input.original[self.urlStart:self.urlEnd]
+IRI            ::= !(self.markURLStart()) <scheme> ':' <ihier_part> ('?' <iquery>)? ('#' <ifragment>)? !(self.markURLEnd()) => ''.join(self.input.data[self.urlStart:self.urlEnd])
 
 ihier_part     ::= '/' '/' <iauthority> (<ipath_abempty> | <ipath_absolute> | <ipath_rootless>)?
 
 IRI_reference  ::= <IRI> | <irelative_ref>
 
-absolute_IRI   ::= !(self.markURLStart()) <scheme> ':' <ihier_part> ('?' <iquery>)? !(self.markURLEnd()) => self.input.original[self.urlStart:self.urlEnd]
+absolute_IRI   ::= !(self.markURLStart()) <scheme> ':' <ihier_part> ('?' <iquery>)? !(self.markURLEnd()) => ''.join(self.input.data[self.urlStart:self.urlEnd])
 
 irelative_ref  ::= <irelative_part> ('?' <iquery>)? ('#' <ifragment>)?
 irelative_part ::= '/' '/' <iauthority> (<ipath_abempty> | <ipath_absolute> | <ipath_noscheme>)
