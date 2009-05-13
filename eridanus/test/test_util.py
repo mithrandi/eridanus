@@ -16,6 +16,8 @@ class TestMisc(unittest.TestCase):
         self.assertEqual(util.humanReadableTimeDelta(timedelta(seconds=60)), u'1 minute')
         self.assertEqual(util.humanReadableTimeDelta(timedelta(minutes=60)), u'1 hour')
         self.assertEqual(util.humanReadableTimeDelta(timedelta(hours=24)), u'1 day')
+        self.assertEqual(util.humanReadableTimeDelta(timedelta(days=365)), u'1 year')
+        self.assertEqual(util.humanReadableTimeDelta(timedelta(days=400)), u'1 year 35 days')
 
     def test_humanReadableFileSize(self):
         """

@@ -198,6 +198,9 @@ def humanReadableTimeDelta(delta):
     """
     days = delta.days
 
+    years = days // 365
+    days -= years * 365
+
     seconds = delta.seconds
 
     hours = seconds // 3600
@@ -212,6 +215,8 @@ def humanReadableTimeDelta(delta):
         return s % (value,)
 
     def getParts():
+        if years:
+            yield makeText(u'%d years', years)
         if days:
             yield makeText(u'%d days', days)
         if hours:
