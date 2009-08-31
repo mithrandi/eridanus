@@ -20,10 +20,7 @@ def foldr(op, end, seq):
 
     head = seq[0]
     tail = seq[1:]
-    if not tail:
-        return op(head, end)
-    else:
-        return op(head, foldr(op, end, tail))
+    return op(head, foldr(op, end, tail))
 
 DIGITS = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ'
 def base(n, b):
