@@ -57,7 +57,10 @@ def createService(siteStore, serviceID):
     svc = siteStore.findOrCreate(IRCBotService,
                              serviceID=serviceID,
                              factory=fact)
-    installOn(svc, siteStore)
+    try:
+        installOn(svc, siteStore)
+    except:
+        pass
     return svc
 
 
