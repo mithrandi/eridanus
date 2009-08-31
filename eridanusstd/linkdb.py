@@ -467,13 +467,14 @@ class LinkManager(Item):
         @return: All L{LinkEntry}s that matched the search terms
         """
         def getEntries(results):
-            entryIDs = [r.uniqueIdentifier for r in results]
+            entryIDs = [int(r.uniqueIdentifier) for r in results]
             return self.store.query(
                 LinkEntry,
                 AND(LinkEntry.channel == self.channel,
                     LinkEntry.isDiscarded == False,
                     LinkEntry.isDeleted == False,
-                    LinkEntry.eid.oneOf(entryIDs)),
+                    # XXX: maybe just do the sorting and filtering in Python?
+                    LinkEntry.storeID.oneOf(entryIDs)),
                 sort=LinkEntry.modified.descending)
 
         term = u' '.join(terms)
@@ -743,7 +744,7 @@ class LinkEntry(Item):
     # IFulltextIndexable
 
     def uniqueIdentifier(self):
-        return str(self.eid)
+        return str(self.storeID)
 
     def textParts(self):
         yield self.url
