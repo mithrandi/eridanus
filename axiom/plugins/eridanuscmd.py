@@ -316,6 +316,10 @@ class ExportEntries(axiomatic.AxiomaticSubCommand):
 class ImportEntries(axiomatic.AxiomaticSubCommand):
     longdesc = 'Import linkdb entries from an export'
 
+    optFlags = [
+        ('clear', None, 'Remove existing entries before performing the import'),
+        ]
+
     optParameters = [
         ('path', 'p', None, 'Path to read export data from'),
         ]
@@ -333,6 +337,12 @@ class ImportEntries(axiomatic.AxiomaticSubCommand):
         inroot = FilePath(self['path'])
 
         availableModes = ['service', 'config', 'entrymanager', 'entry', 'comment', 'metadata']
+
+        if self['clear']:
+            appStore.query(LinkEntryComment).deleteFromStore()
+            appStore.query(LinkEntryMetadata).deleteFromStore()
+            appStore.query(LinkEntry).deleteFromStore()
+            appStore.query(LinkManager).deleteFromStore()
 
         mode = None
         service = None
