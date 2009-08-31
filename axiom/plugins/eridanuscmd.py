@@ -131,8 +131,9 @@ from eridanusstd.linkdb import LinkManager, LinkEntry, LinkEntryComment, LinkEnt
 class ImportExportFile(object):
     encoding = 'utf-8'
 
-    def __init__(self, fd):
+    def __init__(self, fd, appStore):
         self.fd = fd
+        self.appStore = appStore
         self.eof = False
         self.count = 0
         self._typeConverters = {'bytes':     (self.writeline, self.readline),
@@ -217,7 +218,7 @@ class ImportExportFile(object):
 
         self.writeConfig(service.config)
 
-        for manager in linkdb.getAllLinkManagers(service.store, service.serviceID):
+        for manager in linkdb.getAllLinkManagers(self.appStore, service.serviceID):
             self.writeEntryManager(manager)
 
     def readService(self):
@@ -250,10 +251,10 @@ class ImportExportFile(object):
         self.writeline('entry')
         self.writeItem(entry, self.entryAttrs)
 
-        for comment in entry.allComments:
+        for comment in entry.getComments():
             self.writeComment(comment)
 
-        for metadata in entry.getAllMetadata():
+        for metadata in entry._getMetadata():
             self.writeMetadata(metadata)
 
     def readEntry(self):
@@ -295,18 +296,16 @@ class ExportEntries(axiomatic.AxiomaticSubCommand):
     def postOptions(self):
         appStore = self.getAppStore()
         store = self.getStore()
-        # XXX: old stuff is in the wrong damn store
-        appStore = store
 
         outroot = FilePath(self['path'])
         if not outroot.exists():
             outroot.makedirs()
 
-        for i, service in enumerate(appStore.query(IRCBotService)):
+        for i, service in enumerate(store.query(IRCBotService)):
             print 'Processing service %r...' % (service.serviceID,)
 
             fd = outroot.child(str(i)).open('wb')
-            ief = ImportExportFile(fd)
+            ief = ImportExportFile(fd, appStore)
             ief.writeService(service)
 
 
@@ -340,7 +339,7 @@ class ImportEntries(axiomatic.AxiomaticSubCommand):
 
         for fp in inroot.globChildren('*'):
             fd = fp.open()
-            ief = ImportExportFile(fd)
+            ief = ImportExportFile(fd, appStore)
 
             while True:
                 line = ief.readline()
