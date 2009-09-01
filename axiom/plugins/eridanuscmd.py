@@ -373,6 +373,8 @@ class ImportEntries(axiomatic.AxiomaticSubCommand):
                     kw = ief.readEntryManager()
                     print 'Creating entry manager for %(channel)s...' % kw
                     entryManager = LinkManager(store=appStore, serviceID=service.serviceID, **kw)
+                    if self['clear']:
+                        entryManager.searchIndexer.reset()
                 elif mode == 'entry':
                     assert entryManager is not None
                     kw = ief.readEntry()
