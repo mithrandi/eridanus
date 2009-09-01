@@ -467,19 +467,16 @@ class LinkManager(Item):
         @return: All L{LinkEntry}s that matched the search terms
         """
         def getEntries(results):
-            entryIDs = [int(r.uniqueIdentifier) for r in results]
-            return self.store.query(
-                LinkEntry,
-                AND(LinkEntry.channel == self.channel,
-                    LinkEntry.isDiscarded == False,
-                    LinkEntry.isDeleted == False,
-                    # XXX: maybe just do the sorting and filtering in Python?
-                    LinkEntry.storeID.oneOf(entryIDs)),
-                sort=LinkEntry.modified.descending)
+            def _validEntry(e):
+                return e.channel == self.channel and not (e.isDiscarded or e.isDeleted)
+
+            entries = (self.store.getItemByID(r.uniqueIdentifier)
+                       for r in results)
+            entries = itertools.islice(itertools.ifilter(_validEntry, entries), limit)
+            return sorted(entries, key=lambda e: e.modified, reverse=True)
 
         term = u' '.join(terms)
-        return self.searchIndexer.search(term, count=limit
-            ).addCallback(getEntries)
+        return self.searchIndexer.search(term).addCallback(getEntries)
 
     # XXX: should this really be a method?
     def topContributors(self, limit=None):
