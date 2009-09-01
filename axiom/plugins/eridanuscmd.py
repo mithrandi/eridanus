@@ -371,11 +371,12 @@ class ImportEntries(axiomatic.AxiomaticSubCommand):
                 elif mode == 'entrymanager':
                     assert service is not None
                     kw = ief.readEntryManager()
+                    print 'Creating entry manager for %(channel)s...' % kw
                     entryManager = LinkManager(store=appStore, serviceID=service.serviceID, **kw)
                 elif mode == 'entry':
                     assert entryManager is not None
                     kw = ief.readEntry()
-                    print 'Creating entry #%(eid)s for %(channel)s...' % kw
+                    #print 'Creating entry #%(eid)s for %(channel)s...' % kw
                     entry = LinkEntry(store=appStore, **kw)
                 elif mode == 'comment':
                     assert entry is not None
