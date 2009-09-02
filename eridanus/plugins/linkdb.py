@@ -203,13 +203,14 @@ class LinkDBPlugin(Item, Plugin, AmbientEventObserver, _LinkDBHelperMixin):
         def processResults(entries):
             entries = list(entries)
             if not entries:
-                msg = u'No results found for: %s.' % (u'; '.join(terms),)
-            elif len(entries) == 1:
-                msg = entries[0].completeHumanReadable
+                yield u'No results found for: %s.' % (u'; '.join(terms),)
+            elif len(entries) <= 3:
+                for e in entries:
+                    yield e.completeHumanReadable
             else:
                 msg = u'%d results. ' % (len(entries,))
                 msg += u'  '.join([u'\002#%d\002: \037%s\037' % (e.eid, util.truncate(e.displayTitle, 30)) for e in entries])
-            return msg
+                yield msg
 
         # XXX: don't hardcode the limit
         return linkManager.search(terms, limit=limit
@@ -225,8 +226,12 @@ class LinkDBPlugin(Item, Plugin, AmbientEventObserver, _LinkDBHelperMixin):
         """
         terms = [term] + list(terms)
         lm = self.getLinkManager(source)
+
+        def gotResults(results):
+            map(source.reply, results)
+
         return self.find(lm, terms
-            ).addCallback(source.reply)
+            ).addCallback(gotResults)
 
     cmd_search = alias(cmd_find, 'cmd_search')
 
