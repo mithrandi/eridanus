@@ -451,17 +451,22 @@ class Hackery(axiomatic.AxiomaticSubCommand):
         from axiom.scheduler import Scheduler
         from xmantissa.fulltext import SQLiteIndexer
         from xmantissa.ixmantissa import IFulltextIndexer
-        from eridanusstd.linkdb import LinkEntrySource
+        from eridanusstd.linkdb import LinkEntrySource, LinkEntryCommentSource
         store = self.parent.getAppStore()
 
-        scheduler = Scheduler(store=store)
-        installOn(scheduler, store)
+        #scheduler = Scheduler(store=store)
+        #installOn(scheduler, store)
         
+        print 'Deleting old indexers...'
+        store.query(SQLiteIndexer).deleteFromStore()
+        print 'Creating new indexer...'
         indexer = SQLiteIndexer(store=store)
         store.powerUp(indexer, IFulltextIndexer)
 
-        source = store.findOrCreate(LinkEntrySource)
-        indexer.addSource(source)
+        entrySource = store.findOrCreate(LinkEntrySource)
+        indexer.addSource(entrySource)
+        commentSource = store.findOrCreate(LinkEntryCommentSource)
+        indexer.addSource(commentSource)
 
 
 class Eridanus(axiomatic.AxiomaticCommand):
