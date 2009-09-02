@@ -467,11 +467,13 @@ class LinkManager(Item):
         @return: All L{LinkEntry}s that matched the search terms
         """
         def getEntries(results):
+            def getEntryItemByID(storeID):
+                return self.store.getItemByID(storeID).getEntry()
+
             def _validEntry(e):
                 return e.channel == self.channel and not (e.isDiscarded or e.isDeleted)
 
-            entries = (self.store.getItemByID(r.uniqueIdentifier)
-                       for r in results)
+            entries = (getEntryItemByID(r.uniqueIdentifier) for r in results)
             entries = itertools.islice(itertools.ifilter(_validEntry, entries), limit)
             return sorted(entries, key=lambda e: e.modified, reverse=True)
 
@@ -581,6 +583,11 @@ class LinkEntry(Item):
         # Tell the batch processor that we have data to index.
         s = self.store.findUnique(LinkEntrySource)
         s.itemAdded()
+
+
+    def getEntry(self):
+        return self
+
 
     def getComments(self, initial=None):
         criteria = [LinkEntryComment.parent == self]
@@ -749,14 +756,15 @@ class LinkEntry(Item):
         if self.title is not None:
             yield self.title
 
-        for comment in self.getComments():
-            yield comment.comment
 
 
 LinkEntrySource = batch.processor(LinkEntry)
 
 
+
 class LinkEntryComment(Item):
+    implements(IFulltextIndexable)
+
     typeName = 'eridanus_plugins_linkdb_linkentrycomment'
     schemaVersion = 1
 
@@ -783,6 +791,17 @@ class LinkEntryComment(Item):
     def __repr__(self):
         return '<%s %s: %r>' % (type(self).__name__, self.nick, self.comment)
 
+
+    def stored(self):
+        # Tell the batch processor that we have data to index.
+        s = self.store.findUnique(LinkEntryCommentSource)
+        s.itemAdded()
+
+
+    def getEntry(self):
+        return self.parent
+
+
     @property
     def displayTimestamp(self):
         """
@@ -790,12 +809,28 @@ class LinkEntryComment(Item):
         """
         return self.created.asHumanly(tzinfo=const.timezone)
 
+
     @property
     def humanReadable(self):
         """
         Display this comment's information in a concise, human-readble string.
         """
         return u'#%d: %s -- \002%s\002 (%s)' % (self.parent.eid, self.comment, self.nick, self.displayTimestamp)
+
+
+    # IFulltextIndexable
+
+    def uniqueIdentifier(self):
+        return str(self.storeID)
+
+
+    def textParts(self):
+        yield self.comment
+
+
+
+LinkEntryCommentSource = batch.processor(LinkEntryComment)
+
 
 
 class LinkEntryMetadata(Item):
