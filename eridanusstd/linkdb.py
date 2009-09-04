@@ -467,18 +467,22 @@ class LinkManager(Item):
         @return: All L{LinkEntry}s that matched the search terms
         """
         def getEntries(results):
-            seen = set()
-
             def getEntryItemByID(storeID):
-                item = self.store.getItemByID(storeID).getEntry()
-                seen.add(item)
-                return item
+                return self.store.getItemByID(storeID).getEntry()
 
             def _validEntry(e):
-                return e.channel == self.channel and not (e.isDiscarded or e.isDeleted) and e not in seen
+                return e.channel == self.channel and not (e.isDiscarded or e.isDeleted)
+
+            def _removeDuplicates(entries):
+                seen = set()
+                for entry in entries:
+                    if entry not in seen:
+                        seen.add(entry)
+                        yield entry
 
             entries = (getEntryItemByID(r.uniqueIdentifier) for r in results)
-            entries = itertools.islice(itertools.ifilter(_validEntry, entries), limit)
+            entries = _removeDuplicates(itertools.ifilter(_validEntry, entries))
+            entries = itertools.islice(entries, limit)
             return sorted(entries, key=lambda e: e.modified, reverse=True)
 
         term = u' '.join(terms)
