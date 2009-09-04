@@ -467,11 +467,15 @@ class LinkManager(Item):
         @return: All L{LinkEntry}s that matched the search terms
         """
         def getEntries(results):
+            seen = set()
+
             def getEntryItemByID(storeID):
-                return self.store.getItemByID(storeID).getEntry()
+                item = self.store.getItemByID(storeID).getEntry()
+                seen.add(item)
+                return item
 
             def _validEntry(e):
-                return e.channel == self.channel and not (e.isDiscarded or e.isDeleted)
+                return e.channel == self.channel and not (e.isDiscarded or e.isDeleted) and e not in seen
 
             entries = (getEntryItemByID(r.uniqueIdentifier) for r in results)
             entries = itertools.islice(itertools.ifilter(_validEntry, entries), limit)
