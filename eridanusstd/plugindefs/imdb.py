@@ -15,9 +15,6 @@ class IMDB(Item, Plugin):
     schemaVersion = 1
     typeName = 'eridanus_plugins_imdb'
 
-    name = u'imdb'
-    pluginName = u'IMDB'
-
     dummy = integer()
 
     @usage(u'search <title>')

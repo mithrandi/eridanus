@@ -19,7 +19,6 @@ class Authenticate(Item, Plugin):
     typeName = 'eridanus_plugins_authenticate'
 
     name = u'auth'
-    pluginName = u'Authenticate'
 
     dummy = integer()
 

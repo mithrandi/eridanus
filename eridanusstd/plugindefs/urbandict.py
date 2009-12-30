@@ -21,9 +21,6 @@ class UrbanDict(Item, Plugin):
     schemaVersion = 1
     typeName = 'eridanus_plugins_urbandict'
 
-    name = u'urbandict'
-    pluginName = u'UrbanDict'
-
     dummy = integer()
 
     S = inmemory()

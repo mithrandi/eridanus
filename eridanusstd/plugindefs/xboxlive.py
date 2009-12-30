@@ -19,7 +19,6 @@ class XboxLive(Item, Plugin):
     typeName = 'eridanus_plugins_xboxliveplugin'
 
     name = u'xbl'
-    pluginName = u'XboxLive'
 
     dummy = integer()
 

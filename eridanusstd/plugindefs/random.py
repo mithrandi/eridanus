@@ -13,9 +13,6 @@ from eridanus.plugin import Plugin, usage
 class Random(Item, Plugin):
     classProvides(IPlugin, IEridanusPluginProvider)
 
-    name = u'random'
-    pluginName = u'Random'
-
     dummy = integer()
 
     @usage(u'sample <count> <option1> [option2] [...]')

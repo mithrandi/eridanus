@@ -15,9 +15,6 @@ class Weather(Item, Plugin):
     schemaVersion = 1
     typeName = 'eridanus_plugins_weatherplugin'
 
-    name = u'weather'
-    pluginName = u'Weather'
-
     dummy = integer()
 
     @usage(u'current <location>')

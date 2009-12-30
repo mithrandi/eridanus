@@ -22,9 +22,6 @@ class Memo(Item, Plugin, AmbientEventObserver):
     schemaVersion = 1
     typeName = 'eridanus_plugins_memoplugin'
 
-    name = u'memo'
-    pluginName = u'Memo'
-
     dummy = integer()
 
     manager = inmemory()

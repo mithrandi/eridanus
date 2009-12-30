@@ -21,9 +21,6 @@ class Dict(Item, Plugin):
     schemaVersion = 1
     typeName = 'eridanus_plugins_dict'
 
-    name = u'dict'
-    pluginName = u'Dict'
-
     dummy = integer()
 
     @usage(u'dicts')

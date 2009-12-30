@@ -18,9 +18,6 @@ class Factoid(Item, Plugin):
     schemaVersion = 1
     typeName = 'eridanus_plugins_factoid'
 
-    name = u'factoid'
-    pluginName = u'Factoid'
-
     dummy = integer()
 
     @usage(u'list <key>')

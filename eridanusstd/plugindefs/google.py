@@ -21,9 +21,6 @@ class Google(Item, Plugin):
     schemaVersion = 1
     typeName = 'eridanus_plugins_google'
 
-    name = u'google'
-    pluginName = u'Google'
-
     dummy = integer()
 
     apiKey = inmemory()

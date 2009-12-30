@@ -16,9 +16,6 @@ class Unicode(Item, Plugin):
     """
     classProvides(IPlugin, IEridanusPluginProvider)
 
-    name = u'unicode'
-    pluginName = u'Unicode'
-
     dummy = integer()
 
     @usage(u'name <unicodeCharacter>')

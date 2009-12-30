@@ -21,9 +21,6 @@ class Currency(Item, Plugin):
     schemaVersion = 1
     typeName = 'eridanus_plugins_currencyplugin'
 
-    name = u'currency'
-    pluginName = u'Currency'
-
     dummy = integer()
 
     @usage(u'convert <amount> <from> <to>')

@@ -18,9 +18,6 @@ class Math(Item, Plugin):
     schemaVersion = 1
     typeName = 'eridanus_plugins_math'
 
-    name = u'math'
-    pluginName = u'Math'
-
     dummy = integer()
 
     _calculator = inmemory()

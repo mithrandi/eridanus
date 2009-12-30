@@ -44,9 +44,6 @@ class Admin(Item, Plugin):
     schemaVersion = 1
     typeName = 'eridanus_plugins_admin'
 
-    name = u'admin'
-    pluginName = u'Admin'
-
     dummy = integer()
 
     cmd_api = APICommand()

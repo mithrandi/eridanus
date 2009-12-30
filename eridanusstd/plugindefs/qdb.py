@@ -18,9 +18,6 @@ class QDB(Item, Plugin):
     schemaVersion = 1
     typeName = 'eridanus_plugins_qdb'
 
-    name = u'qdb'
-    pluginName = u'QDB'
-
     dummy = integer()
 
     def getQuote(self, source, quoteID, func):

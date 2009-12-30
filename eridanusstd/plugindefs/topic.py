@@ -16,9 +16,6 @@ class Topic(Item, Plugin):
     schemaVersion = 1
     typeName = 'eridanus_plugins_topic'
 
-    name = u'topic'
-    pluginName = u'Topic'
-
     dummy = integer()
 
     # XXX: should be a channel config variable

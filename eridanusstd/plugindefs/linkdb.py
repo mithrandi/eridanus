@@ -51,7 +51,6 @@ class LinkDBAdmin(Item, Plugin, _LinkDBHelperMixin):
     typeName = 'eridanus_plugins_linkdbadmin'
 
     name = u'url'
-    pluginName = u'LinkDBAdmin'
 
     dummy = integer()
 
@@ -109,7 +108,6 @@ class LinkDB(Item, Plugin, AmbientEventObserver, _LinkDBHelperMixin):
     typeName = 'eridanus_plugins_linkdb'
 
     name = u'url'
-    pluginName = u'LinkDB'
 
     dummy = integer()
 

@@ -18,9 +18,6 @@ class Fortune(Item, Plugin):
     schemaVersion = 1
     typeName = 'eridanus_plugins_fortune'
 
-    name = u'fortune'
-    pluginName = u'Fortune'
-
     dummy = integer()
 
     def outputFortunes(self, fortunes, source):

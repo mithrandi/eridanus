@@ -18,9 +18,6 @@ class Time(Item, Plugin):
     schemaVersion = 1
     typeName = 'eridanus_plugins_time'
 
-    name = u'time'
-    pluginName = u'Time'
-
     dummy = integer()
 
     # XXX: should be a network config variables probably
