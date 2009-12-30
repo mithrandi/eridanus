@@ -13,6 +13,14 @@ from eridanus.ieridanus import (ICommand, IEridanusPluginProvider,
 
 paramPattern = re.compile(r'([<[])(.*?)([>\]])')
 
+def safePluginImport(name, globals):
+    mod, pin = name.rsplit('.', 1)
+    try:
+        imported = __import__(mod, globals, locals(), [pin])
+        globals[pin] = getattr(imported, pin)
+    except ImportError, ie:
+        print ie
+
 def formatUsage(s):
     """
     Add some IRC formatting to defined parameters.
