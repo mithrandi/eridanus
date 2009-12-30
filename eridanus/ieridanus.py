@@ -54,11 +54,12 @@ class IEridanusPlugin(Interface):
 
     name = Attribute("""
     A C{unicode} value that specifies how the plugin is addressed in a command.
+    Defaults to the name of the plugin class lowercased.
     """)
 
     pluginName = Attribute("""
-    A C{unicode} value that specifies hwo the plugin is addressed outside
-    of commands.
+    A C{unicode} value that specifies how the plugin is addressed outside
+    of commands. Defaults to the name of the plugin class.
     """)
 
 

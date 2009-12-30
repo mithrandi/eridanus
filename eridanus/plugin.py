@@ -252,14 +252,28 @@ class MethodCommand(object):
 registerAdapter(MethodCommand, types.MethodType, ICommand)
 
 
+class _PluginNameDescriptor(object):
+    """
+    A descriptor class to default pluginName to the plugin's class name.
+    """
+    def __get__(self, instance, owner):
+        return owner.__name__
+
+class _NameDescriptor(object):
+    """
+    A descriptor class to default name to the plugin's class name lowercased.
+    """
+    def __get__(self, instance, owner):
+        return owner.__name__.lower()
+
 class Plugin(CommandLookupMixin):
     """
     Simple plugin mixin.
     """
     implements(IEridanusPlugin)
 
-    name = None
-    pluginName = None
+    name = _NameDescriptor()
+    pluginName = _PluginNameDescriptor()
 
 
 def getAllPlugins():
