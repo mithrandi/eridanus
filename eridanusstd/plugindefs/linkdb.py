@@ -6,11 +6,294 @@ from twisted.plugin import IPlugin
 from axiom.attributes import integer
 from axiom.item import Item
 
+from axiom.scripts import axiomatic
+
 from eridanus import util
 from eridanus.ieridanus import IEridanusPluginProvider, IAmbientEventObserver
 from eridanus.plugin import AmbientEventObserver, Plugin, usage, alias
 
 from eridanusstd import linkdb
+
+
+class ImportExportFile(object):
+    encoding = 'utf-8'
+
+    def __init__(self, fd, appStore):
+        self.fd = fd
+        self.appStore = appStore
+        self.eof = False
+        self.count = 0
+        self._typeConverters = {'bytes':     (self.writeline, self.readline),
+                                'text':      (self.writeText, self.readText),
+                                'timestamp': (self.writeTimestamp, self.readTimestamp),
+                                'integer':   (self.writeInteger, self.readInteger),
+                                'textlist':  (self.writeTextList, self.readTextList),
+                                'boolean':   (self.writeBoolean, self.readBoolean)}
+
+    def write(self, s):
+        self.fd.write(s)
+
+    def writeline(self, s):
+        self.write(s + '\n')
+
+    def readline(self):
+        self.count += 1
+        line = self.fd.readline()
+        if not line:
+            self.eof = True
+
+        return line.rstrip()
+
+    def writeInteger(self, value):
+        self.writeline(str(value))
+
+    def readInteger(self):
+        return int(self.readline())
+
+    def writeTimestamp(self, value):
+        self.writeline(str(value.asPOSIXTimestamp()))
+
+    def readTimestamp(self):
+        return Time.fromPOSIXTimestamp(float(self.readline()))
+
+    def writeText(self, value):
+        if value is None:
+            data = ''
+        else:
+            data = value.encode(self.encoding)
+        self.writeline(data)
+
+    def readText(self):
+        data = self.readline()
+        if not data:
+            return None
+        return data.decode(self.encoding)
+
+    def writeBoolean(self, value):
+        return self.writeline(str(int(value)))
+
+    def readBoolean(self):
+        return bool(int(self.readline()))
+
+    def writeTextList(self, value):
+        data = '\1'.join(t.encode(self.encoding) for t in value)
+        self.writeline(data)
+
+    def readTextList(self):
+        return [t.decode(self.encoding) for t in self.readline().split('\1')]
+
+    def writeItem(self, item, attrs):
+        for attrName in attrs:
+             typeName = getattr(type(item), attrName).__class__.__name__
+             writer = self._typeConverters[typeName][0]
+             writer(getattr(item, attrName))
+
+    def readItem(self, itemType, attrs):
+        def _readAttributes():
+            for attrName in attrs:
+                typeName = getattr(itemType, attrName).__class__.__name__
+                reader = self._typeConverters[typeName][1]
+                yield attrName, reader()
+
+        return dict(_readAttributes())
+
+    serviceAttrs = ['serviceID']
+
+    def writeService(self, service):
+        self.writeline('service')
+        self.writeItem(service, self.serviceAttrs)
+
+        self.writeConfig(service.config)
+
+        for manager in linkdb.getAllLinkManagers(self.appStore, service.serviceID):
+            self.writeEntryManager(manager)
+
+    def readService(self):
+        return self.readItem(IRCBotService, self.serviceAttrs)
+
+    configAttrs = ['name', 'hostname', 'portNumber', 'nickname', 'channels', 'ignores']
+
+    def writeConfig(self, config):
+        self.writeline('config')
+        self.writeItem(config, self.configAttrs)
+
+    def readConfig(self):
+        return self.readItem(IRCBotConfig, self.configAttrs)
+
+    entryManagerAttrs = ['channel', 'lastEid']
+
+    def writeEntryManager(self, entryManager):
+        self.writeline('entrymanager')
+        self.writeItem(entryManager, self.entryManagerAttrs)
+
+        for entry in entryManager.getEntries(discarded=None, deleted=None):
+            self.writeEntry(entry)
+
+    def readEntryManager(self):
+        return self.readItem(linkdb.LinkManager, self.entryManagerAttrs)
+
+    entryAttrs = ['eid', 'created', 'modified', 'channel', 'nick', 'url', 'title', 'occurences', 'isDiscarded', 'isDeleted']
+
+    def writeEntry(self, entry):
+        self.writeline('entry')
+        self.writeItem(entry, self.entryAttrs)
+
+        for comment in entry.getComments():
+            self.writeComment(comment)
+
+        for metadata in entry._getMetadata():
+            self.writeMetadata(metadata)
+
+    def readEntry(self):
+        return self.readItem(linkdb.LinkEntry, self.entryAttrs)
+
+    commentAttrs = ['created', 'nick', 'comment', 'initial']
+
+    def writeComment(self, comment):
+        self.writeline('comment')
+        self.writeItem(comment, self.commentAttrs)
+
+    def readComment(self):
+        return self.readItem(linkbd.LinkEntryComment, self.commentAttrs)
+
+    metadataAttrs = ['kind', 'data']
+
+    def writeMetadata(self, metadata):
+        self.writeline('metadata')
+        self.writeItem(metadata, self.metadataAttrs)
+
+    def readMetadata(self):
+        return self.readItem(linkdb.LinkEntryMetadata, self.metadataAttrs)
+
+
+class ExportEntries(axiomatic.AxiomaticSubCommand):
+    longdesc = 'Export linkdb entries to disk'
+
+    optParameters = [
+        ('path', 'p', None, 'Path to output export data to'),
+        ]
+
+    def getStore(self):
+        return self.parent.getStore()
+
+    def getAppStore(self):
+        return self.parent.getAppStore()
+
+    def postOptions(self):
+        appStore = self.getAppStore()
+        store = self.getStore()
+
+        outroot = FilePath(self['path'])
+        if not outroot.exists():
+            outroot.makedirs()
+
+        for i, service in enumerate(store.query(IRCBotService)):
+            print 'Processing service %r...' % (service.serviceID,)
+
+            fd = outroot.child(str(i)).open('wb')
+            ief = ImportExportFile(fd, appStore)
+            ief.writeService(service)
+
+
+class ImportEntries(axiomatic.AxiomaticSubCommand):
+    longdesc = 'Import linkdb entries from an export'
+
+    optFlags = [
+        ('clear', None, 'Remove existing entries before performing the import'),
+        ]
+
+    optParameters = [
+        ('path', 'p', None, 'Path to read export data from'),
+        ]
+
+    def getStore(self):
+        return self.parent.getStore()
+
+    def getAppStore(self):
+        return self.parent.getAppStore()
+
+    def postOptions(self):
+        appStore = self.getAppStore()
+        siteStore = self.getStore()
+
+        inroot = FilePath(self['path'])
+
+        availableModes = ['service', 'config', 'entrymanager', 'entry', 'comment', 'metadata']
+
+        if self['clear']:
+            appStore.query(linkdb.LinkEntryComment).deleteFromStore()
+            appStore.query(linkdb.LinkEntryMetadata).deleteFromStore()
+            appStore.query(linkdb.LinkEntry).deleteFromStore()
+            appStore.query(linkdb.LinkManager).deleteFromStore()
+
+        mode = None
+        service = None
+        config = None
+        entryManager = None
+        entry = None
+
+        for fp in inroot.globChildren('*'):
+            fd = fp.open()
+            ief = ImportExportFile(fd, appStore)
+
+            while True:
+                line = ief.readline()
+                if ief.eof:
+                    break
+
+                if line in availableModes:
+                    mode = line
+
+                if mode == 'service':
+                    kw = ief.readService()
+                    service = createService(siteStore, **kw)
+                elif mode == 'config':
+                    kw = ief.readConfig()
+                    service.config = config = IRCBotConfig(store=siteStore, **kw)
+                elif mode == 'entrymanager':
+                    assert service is not None
+                    kw = ief.readEntryManager()
+                    print 'Creating entry manager for %(channel)s...' % kw
+                    entryManager = linkdb.LinkManager(store=appStore, serviceID=service.serviceID, **kw)
+                    if self['clear']:
+                        entryManager.searchIndexer.reset()
+                elif mode == 'entry':
+                    assert entryManager is not None
+                    kw = ief.readEntry()
+                    #print 'Creating entry #%(eid)s for %(channel)s...' % kw
+                    entry = linkdb.LinkEntry(store=appStore, **kw)
+                elif mode == 'comment':
+                    assert entry is not None
+                    kw = ief.readComment()
+                    linkdb.LinkEntryComment(store=appStore, parent=entry, **kw)
+                elif mode == 'metadata':
+                    assert entry is not None
+                    kw = ief.readMetadata()
+                    linkdb.LinkEntryMetadata(store=appStore, entry=entry, **kw)
+
+
+class Hackery(axiomatic.AxiomaticSubCommand):
+    longdesc = 'Beware, thar be hacks!'
+
+    def postOptions(self):
+        #from axiom.scheduler import Scheduler
+        from xmantissa.fulltext import SQLiteIndexer
+        from xmantissa.ixmantissa import IFulltextIndexer
+        store = self.parent.getAppStore()
+
+        #scheduler = Scheduler(store=store)
+        #installOn(scheduler, store)
+        
+        print 'Deleting old indexers...'
+        store.query(SQLiteIndexer).deleteFromStore()
+        print 'Creating new indexer...'
+        indexer = SQLiteIndexer(store=store)
+        store.powerUp(indexer, IFulltextIndexer)
+
+        entrySource = store.findOrCreate(linkdb.LinkEntrySource)
+        indexer.addSource(entrySource)
+        commentSource = store.findOrCreate(linkdb.LinkEntryCommentSource)
+        indexer.addSource(commentSource)
 
 
 class _LinkDBHelperMixin(object):
@@ -107,6 +390,11 @@ class LinkDB(Item, Plugin, AmbientEventObserver, _LinkDBHelperMixin):
     schemaVersion = 1
     typeName = 'eridanus_plugins_linkdb'
 
+    axiomCommands = [
+        ('export',  None, ExportEntries,  'Export entries'),
+        ('import',  None, ImportEntries,  'Import entries'),
+        ('hackery', None, Hackery,        'Perform magic'),
+        ]
     name = u'url'
 
     dummy = integer()
