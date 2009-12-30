@@ -2,14 +2,13 @@ import inspect, types, re
 from textwrap import dedent
 from zope.interface import implements
 
-from twisted.plugin import getPlugins
+from twisted.plugin import getPlugins, IPlugin
 from twisted.python.components import registerAdapter
 from twisted.python.util import mergeFunctionMetadata
 
 from eridanus import plugins, errors
 from eridanus.ieridanus import (ICommand, IEridanusPluginProvider,
     IEridanusPlugin, IAmbientEventObserver)
-
 
 paramPattern = re.compile(r'([<[])(.*?)([>\]])')
 
@@ -18,8 +17,9 @@ def safePluginImport(name, globals):
     try:
         imported = __import__(mod, globals, locals(), [pin])
         globals[pin] = getattr(imported, pin)
-    except ImportError, ie:
-        print ie
+    except ImportError:
+        from eridanus import brokenplugin
+        globals[pin] = brokenplugin.brokenPlugin(pin)
 
 def formatUsage(s):
     """
