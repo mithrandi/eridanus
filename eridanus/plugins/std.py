@@ -1,10 +1,7 @@
+from eridanus import plugin
+
 def safePluginImport(name):
-    mod, pin = name.rsplit('.', 1)
-    try:
-        imported = __import__(mod, globals(), locals(), [pin])
-        globals()[pin] = getattr(imported, pin)
-    except ImportError, ie:
-        print ie
+    plugin.safePluginImport(name, globals())
 
 safePluginImport('eridanusstd.plugindefs.google.GooglePlugin')
 safePluginImport('eridanusstd.plugindefs.admin.AdminPlugin')
