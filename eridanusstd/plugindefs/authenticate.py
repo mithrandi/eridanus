@@ -10,7 +10,7 @@ from eridanus import errors
 from eridanus.ieridanus import IEridanusPluginProvider
 from eridanus.plugin import Plugin, usage
 
-class AuthenticatePlugin(Item, Plugin):
+class Authenticate(Item, Plugin):
     """
     Authentication related commands.
     """

@@ -10,7 +10,7 @@ from eridanus.plugin import Plugin, usage
 
 from eridanusstd import qdb
 
-class QDBPlugin(Item, Plugin):
+class QDB(Item, Plugin):
     """
     Retrieve quotes from various quote databases.
     """

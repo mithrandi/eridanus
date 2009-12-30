@@ -10,7 +10,7 @@ from eridanus.plugin import Plugin, usage
 
 from eridanusstd import dict
 
-class DictPlugin(Item, Plugin):
+class Dict(Item, Plugin):
     """
     Dictionary functionality.
 

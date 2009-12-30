@@ -8,7 +8,7 @@ from axiom.item import Item
 from eridanus.ieridanus import IEridanusPluginProvider
 from eridanus.plugin import Plugin, usage
 
-class TopicPlugin(Item, Plugin):
+class Topic(Item, Plugin):
     """
     Manage channel topics in a structured fashion.
     """

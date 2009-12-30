@@ -11,7 +11,7 @@ from eridanus.plugin import Plugin, usage
 
 from eridanusstd import google
 
-class GooglePlugin(Item, Plugin):
+class Google(Item, Plugin):
     """
     Google services.
 

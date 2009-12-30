@@ -10,7 +10,7 @@ from eridanus.plugin import Plugin, usage
 
 from eridanusstd import calc
 
-class MathPlugin(Item, Plugin):
+class Math(Item, Plugin):
     """
     Various mathematics related services.
     """

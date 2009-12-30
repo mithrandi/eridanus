@@ -10,7 +10,7 @@ from eridanus.plugin import Plugin, usage
 
 from eridanusstd import weather
 
-class WeatherPlugin(Item, Plugin):
+class Weather(Item, Plugin):
     classProvides(IPlugin, IEridanusPluginProvider)
     schemaVersion = 1
     typeName = 'eridanus_plugins_weatherplugin'

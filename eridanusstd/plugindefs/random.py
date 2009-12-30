@@ -10,7 +10,7 @@ from axiom.item import Item
 from eridanus.ieridanus import IEridanusPluginProvider
 from eridanus.plugin import Plugin, usage
 
-class RandomPlugin(Item, Plugin):
+class Random(Item, Plugin):
     classProvides(IPlugin, IEridanusPluginProvider)
 
     name = u'random'

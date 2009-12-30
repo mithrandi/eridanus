@@ -13,7 +13,7 @@ from eridanus.plugin import Plugin, usage
 
 from eridanusstd import currency
 
-class CurrencyPlugin(Item, Plugin):
+class Currency(Item, Plugin):
     """
     Simple currency services.
     """

@@ -11,7 +11,7 @@ from eridanus.plugin import Plugin, usage
 
 from eridanusstd import urbandict
 
-class UrbanDictPlugin(Item, Plugin):
+class UrbanDict(Item, Plugin):
     """
     Urban Dictionary.
 

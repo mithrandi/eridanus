@@ -10,7 +10,7 @@ from eridanus.plugin import Plugin, usage
 
 from eridanusstd import timeutil
 
-class TimePlugin(Item, Plugin):
+class Time(Item, Plugin):
     """
     Time-related functions.
     """

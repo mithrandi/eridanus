@@ -42,7 +42,7 @@ class _LinkDBHelperMixin(object):
                                    source.channel)
 
 
-class LinkDBAdminPlugin(Item, Plugin, _LinkDBHelperMixin):
+class LinkDBAdmin(Item, Plugin, _LinkDBHelperMixin):
     """
     Provides functionality for managing the LinkDB plugin.
     """
@@ -96,7 +96,7 @@ class LinkDBAdminPlugin(Item, Plugin, _LinkDBHelperMixin):
         source.reply(u'Undeleted entry %s.' % (entry.canonical,))
 
 
-class LinkDBPlugin(Item, Plugin, AmbientEventObserver, _LinkDBHelperMixin):
+class LinkDB(Item, Plugin, AmbientEventObserver, _LinkDBHelperMixin):
     """
     LinkDB is designed to track HTTP URLs authored by users.  Each URL is
     stored along with information about the author, the web page's title or

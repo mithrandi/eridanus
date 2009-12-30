@@ -10,7 +10,7 @@ from eridanus.plugin import Plugin, usage
 
 from eridanusstd import fortune
 
-class FortunePlugin(Item, Plugin):
+class Fortune(Item, Plugin):
     """
     Provides access to the system's `fortune` command.
     """

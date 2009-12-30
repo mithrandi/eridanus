@@ -13,7 +13,7 @@ from eridanus.plugin import Plugin, usage
 
 from eridanusstd import factoid
 
-class FactoidPlugin(Item, Plugin):
+class Factoid(Item, Plugin):
     classProvides(IPlugin, IEridanusPluginProvider)
     schemaVersion = 1
     typeName = 'eridanus_plugins_factoid'

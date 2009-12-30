@@ -11,7 +11,7 @@ from eridanus.plugin import Plugin, usage, AmbientEventObserver
 
 from eridanusstd import memo
 
-class MemoPlugin(Item, Plugin, AmbientEventObserver):
+class Memo(Item, Plugin, AmbientEventObserver):
     """
     A simple memo service.
 

@@ -10,7 +10,7 @@ from axiom.item import Item
 from eridanus.ieridanus import IEridanusPluginProvider
 from eridanus.plugin import Plugin, usage
 
-class UnicodePlugin(Item, Plugin):
+class Unicode(Item, Plugin):
     """
     Basic Unicode related services.
     """

@@ -10,7 +10,7 @@ from eridanus.plugin import Plugin, usage
 
 from eridanusstd import xboxlive
 
-class XboxLivePlugin(Item, Plugin):
+class XboxLive(Item, Plugin):
     """
     XBOX Live related services.
     """

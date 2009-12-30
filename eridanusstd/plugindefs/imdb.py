@@ -10,7 +10,7 @@ from eridanus.plugin import Plugin, usage
 
 from eridanusstd import imdb
 
-class IMDBPlugin(Item, Plugin):
+class IMDB(Item, Plugin):
     classProvides(IPlugin, IEridanusPluginProvider)
     schemaVersion = 1
     typeName = 'eridanus_plugins_imdb'

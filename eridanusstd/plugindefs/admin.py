@@ -33,7 +33,7 @@ class APICommand(SubCommand):
         source.reply(u'Set key for "%s".' % (apiName,))
 
 
-class AdminPlugin(Item, Plugin):
+class Admin(Item, Plugin):
     """
     Provides access to various admin functions.
 
