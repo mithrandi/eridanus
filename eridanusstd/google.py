@@ -5,7 +5,10 @@ The following documentation may be useful::
 
     http://code.google.com/apis/ajaxsearch/documentation/#fonje
 """
-import simplejson
+try:
+    import simplejson as json
+except ImportError:
+    import json
 
 from twisted.internet import defer
 
@@ -89,7 +92,7 @@ class WebSearchQuery(object):
         @rtype: C{iterable} of C{(unicode, unicode)}
         @return: An iterable of C{(title, url)} pairs
         """
-        response = simplejson.loads(data)[u'responseData']
+        response = json.loads(data)[u'responseData']
 
         cursor = response.get(u'cursor')
         currentPageIndex = cursor.get(u'currentPageIndex')
