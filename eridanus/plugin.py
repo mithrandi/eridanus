@@ -17,7 +17,7 @@ def safePluginImport(name, globals):
     try:
         imported = __import__(mod, globals, locals(), [pin])
         globals[pin] = getattr(imported, pin)
-    except ImportError:
+    except:
         from eridanus import brokenplugin
         globals[pin] = brokenplugin.brokenPlugin(pin)
 
@@ -317,6 +317,9 @@ def installPlugin(store, pluginName):
     @raises PluginNotFound: If no plugin named C{pluginName} could be found
     """
     for plugin in getPluginProvidersByName(pluginName):
+        if hasattr(plugin, 'exc_info'):
+            etype, evalue, etrace = plugin.exc_info
+            raise etype, evalue, etrace
         p = store.findOrCreate(plugin)
         store.powerUp(p, IEridanusPlugin)
         if IAmbientEventObserver.providedBy(plugin):
