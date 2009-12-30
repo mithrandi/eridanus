@@ -12,14 +12,24 @@ from eridanus.ieridanus import (ICommand, IEridanusPluginProvider,
 
 paramPattern = re.compile(r'([<[])(.*?)([>\]])')
 
-def safePluginImport(name, globals):
-    mod, pin = name.rsplit('.', 1)
+def safePluginImport(globals, pluginpath):
+    """
+    Import a plugin class in a way that defers errors.
+
+    @param globals: Namespace to import plugin into (usually globals())
+    @type globals: C{dict}
+
+    @param pluginpath: Full module path of the plugin to import
+    @type pluginpath: C{str}
+    """
+    mod, pin = pluginpath.rsplit('.', 1)
     try:
-        imported = __import__(mod, globals, locals(), [pin])
-        globals[pin] = getattr(imported, pin)
+        imported = __import__(mod, fromlist=[pin])
+        plugin = getattr(imported, pin)
     except:
         from eridanus import brokenplugin
-        globals[pin] = brokenplugin.brokenPlugin(pin)
+        plugin = brokenplugin.brokenPlugin(pin)
+    globals[pin] = plugin
 
 def formatUsage(s):
     """
