@@ -154,3 +154,22 @@ class Admin(Item, Plugin):
         if not msg:
             msg = u'No available plugins'
         source.reply(msg)
+
+    @usage(u'brokenplugins')
+    def cmd_brokenplugins(self, source):
+        """
+        List broken plugins that cannot be installed.
+        """
+        msg = u', '.join(sorted(source.protocol.getBrokenPlugins()))
+        if not msg:
+            msg = u'No broken plugins'
+        source.reply(msg)
+
+    @usage(u'diagnose <pluginName>')
+    def cmd_diagnose(self, source, pluginName):
+        """
+        Diagnose a broken plugin.
+        """
+        failure = source.protocol.diagnosePlugin(pluginName)
+        source.reply(u'Plugin "%s" failed with %s: %s' %
+                     (pluginName, failure.type.__name__, failure.getErrorMessage()))
