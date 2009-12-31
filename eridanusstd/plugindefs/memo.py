@@ -5,7 +5,7 @@ from twisted.plugin import IPlugin
 from axiom.attributes import integer, inmemory
 from axiom.item import Item
 
-from eridanus import errors, util as eutil
+from eridanus import util as eutil
 from eridanus.ieridanus import IEridanusPluginProvider, IAmbientEventObserver
 from eridanus.plugin import Plugin, usage, AmbientEventObserver
 

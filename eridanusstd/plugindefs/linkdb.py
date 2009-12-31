@@ -1,16 +1,19 @@
 from zope.interface import classProvides
 
+from twisted.python.filepath import FilePath
 from twisted.internet.defer import gatherResults
 from twisted.plugin import IPlugin
 
+from epsilon.extime import Time
+
 from axiom.attributes import integer
 from axiom.item import Item
-
 from axiom.scripts import axiomatic
 
 from eridanus import util
 from eridanus.ieridanus import IEridanusPluginProvider, IAmbientEventObserver
 from eridanus.plugin import AmbientEventObserver, Plugin, usage, alias
+from eridanus.bot import IRCBotService, IRCBotConfig
 
 from eridanusstd import linkdb
 
@@ -154,7 +157,7 @@ class ImportExportFile(object):
         self.writeItem(comment, self.commentAttrs)
 
     def readComment(self):
-        return self.readItem(linkbd.LinkEntryComment, self.commentAttrs)
+        return self.readItem(linkdb.LinkEntryComment, self.commentAttrs)
 
     metadataAttrs = ['kind', 'data']
 

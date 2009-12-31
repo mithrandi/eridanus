@@ -7,7 +7,7 @@ from twisted.plugin import IPlugin
 from axiom.attributes import integer
 from axiom.item import Item
 
-from eridanus import errors, util as eutil, reparse
+from eridanus import util as eutil, reparse
 from eridanus.ieridanus import IEridanusPluginProvider
 from eridanus.plugin import Plugin, usage
 

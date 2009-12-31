@@ -9,7 +9,7 @@ from eridanus import util as eutil
 from eridanus.ieridanus import IEridanusPluginProvider
 from eridanus.plugin import Plugin, usage
 
-from eridanusstd import google
+from eridanusstd import google, defertools
 
 class Google(Item, Plugin):
     """

@@ -11,7 +11,7 @@ from eridanus import errors
 from eridanus.ieridanus import IEridanusPluginProvider
 from eridanus.plugin import Plugin, usage
 
-from eridanusstd import currency
+from eridanusstd import currency, yahoo
 
 class Currency(Item, Plugin):
     """
