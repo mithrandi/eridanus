@@ -1,16 +1,19 @@
 import inspect, types, re
 from textwrap import dedent
-from zope.interface import implements
+from zope.interface import implements, classProvides
 
 from twisted.plugin import getPlugins, IPlugin
 from twisted.python.components import registerAdapter
 from twisted.python.util import mergeFunctionMetadata
+from twisted.python.failure import Failure
 
 from eridanus import plugins, errors
 from eridanus.ieridanus import (ICommand, IEridanusPluginProvider,
-    IEridanusPlugin, IAmbientEventObserver)
+    IEridanusPlugin, IAmbientEventObserver, IEridanusBrokenPlugin,
+    IEridanusBrokenPluginProvider)
 
 paramPattern = re.compile(r'([<[])(.*?)([>\]])')
+
 
 def safePluginImport(globals, pluginpath):
     """
@@ -27,9 +30,13 @@ def safePluginImport(globals, pluginpath):
         imported = __import__(mod, fromlist=[pin])
         plugin = getattr(imported, pin)
     except:
-        from eridanus import brokenplugin
-        plugin = brokenplugin.brokenPlugin(pin)
+        class ThisBrokenPlugin(BrokenPlugin):
+            classProvides(IPlugin, IEridanusBrokenPluginProvider)
+            pluginName = pin
+            failure = Failure()
+        plugin = ThisBrokenPlugin
     globals[pin] = plugin
+
 
 def formatUsage(s):
     """
@@ -259,12 +266,14 @@ class _PluginNameDescriptor(object):
     def __get__(self, instance, owner):
         return owner.__name__
 
+
 class _NameDescriptor(object):
     """
     A descriptor class to default name to the plugin's class name lowercased.
     """
     def __get__(self, instance, owner):
         return owner.__name__.lower()
+
 
 class Plugin(CommandLookupMixin):
     """
@@ -274,6 +283,17 @@ class Plugin(CommandLookupMixin):
 
     name = _NameDescriptor()
     pluginName = _PluginNameDescriptor()
+    axiomCommands = () # A tuple, because mutable class attrs are ugh.
+
+
+class BrokenPlugin(object):
+    """
+    Base class for broken plugins.
+    """
+    implements(IEridanusBrokenPlugin)
+
+    pluginName = None
+    failure = None
 
 
 def getAllPlugins():
@@ -281,6 +301,13 @@ def getAllPlugins():
     Get all plugins.
     """
     return getPlugins(IEridanusPluginProvider, plugins)
+
+
+def getBrokenPlugins():
+    """
+    Get broken plugins.
+    """
+    return getPlugins(IEridanusBrokenPluginProvider, plugins)
 
 
 def getPluginByName(store, name):
@@ -322,6 +349,17 @@ def getPluginProvidersByName(pluginName):
     raise errors.PluginNotFound(u'No plugin named "%s".' % (pluginName,))
 
 
+def getBrokenPluginProvidersByName(pluginName):
+    """
+    Get all objects that provide C{IEridanusPluginProvider}.
+    """
+    for plugin in getPlugins(IEridanusBrokenPluginProvider, plugins):
+        if plugin.pluginName == pluginName:
+            yield plugin
+
+    raise errors.PluginNotFound(u'No plugin named "%s".' % (pluginName,))
+
+
 def getAmbientEventObservers(store):
     """
     Get all Items that provide C{IAmbientEventObserver}.
@@ -341,14 +379,26 @@ def installPlugin(store, pluginName):
     @raises PluginNotFound: If no plugin named C{pluginName} could be found
     """
     for plugin in getPluginProvidersByName(pluginName):
-        if hasattr(plugin, 'exc_info'):
-            etype, evalue, etrace = plugin.exc_info
-            raise etype, evalue, etrace
         p = store.findOrCreate(plugin)
         store.powerUp(p, IEridanusPlugin)
         if IAmbientEventObserver.providedBy(plugin):
             store.powerUp(p, IAmbientEventObserver)
         return
+
+    raise errors.PluginNotFound(u'No plugin named "%s".' % (pluginName,))
+
+
+def diagnoseBrokenPlugin(pluginName):
+    """
+    Explain why a plugin is broken.
+
+    @param pluginName: Name of the broken plugin to explain
+    @type pluginName: C{unicode}
+
+    @raises PluginNotFound: If no plugin named C{pluginName} could be found
+    """
+    for plugin in getBrokenPluginProvidersByName(pluginName):
+        return plugin.failure
 
     raise errors.PluginNotFound(u'No plugin named "%s".' % (pluginName,))
 

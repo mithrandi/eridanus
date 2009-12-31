@@ -343,6 +343,18 @@ class IRCBot(IRCClient, _IRCKeepAliveMixin):
             store = self.getAuthenticatedAvatar(nickname).store
         plugin.installPlugin(store, pluginName)
 
+    def diagnosePlugin(self, pluginName):
+        """
+        Diagnose a broken plugin.
+
+        @type pluginName: C{unicode}
+        @param pluginName: Plugin name to diagnose
+
+        @returns: C{twisted.python.failure.Failure} instance from broken
+            plugin.
+        """
+        return plugin.diagnoseBrokenPlugin(pluginName)
+
     def revokePlugin(self, nickname, pluginName):
         """
         Revoke access to a plugin.
@@ -376,6 +388,13 @@ class IRCBot(IRCClient, _IRCKeepAliveMixin):
 
         allPlugins = set(plugin.getAllPlugins())
         return (p.pluginName for p in allPlugins - installedPlugins)
+
+    def getBrokenPlugins(self):
+        """
+        Get an iterable of names of plugins that cannot be installed.
+        """
+        brokenPlugins = set(plugin.getBrokenPlugins())
+        return (p.pluginName for p in brokenPlugins)
 
     def getCommands(self):
         for name in dir(self):

@@ -1,5 +1,3 @@
-from epsilon.extime import Time
-
 from twisted.cred.portal import IRealm
 
 from axiom.scripts import axiomatic
@@ -124,6 +122,20 @@ class ManageServices(axiomatic.AxiomaticSubCommand):
     def getAppStore(self):
         return self.parent.getAppStore()
 
+
+class ListAvailablePlugins(axiomatic.AxiomaticSubCommand):
+    longdesc = 'List available plugins, in the form "<PluginName> (<botcommand>)"'
+
+    def getStore(self):
+        return self.parent.getStore()
+
+    def postOptions(self):
+        pluginstrs = ['    %s (%s)' % (p.pluginName, p.name)
+                      for p in plugin.getAllPlugins()]
+        print 'Available plugins:'
+        print '\n'.join(sorted(pluginstrs))
+
+
 class InstallPlugin(axiomatic.AxiomaticSubCommand):
     longdesc = 'Install a plugin'
 
@@ -160,12 +172,45 @@ class GrantPlugin(axiomatic.AxiomaticSubCommand):
         plugin.installPlugin(userStore, self['pluginName'])
 
 
+class ListBrokenPlugins(axiomatic.AxiomaticSubCommand):
+    longdesc = 'List available plugins'
+
+    def getStore(self):
+        return self.parent.getStore()
+
+    def postOptions(self):
+        pluginstrs = ['    %s' % (p.pluginName,)
+                      for p in plugin.getBrokenPlugins()]
+        print 'Broken plugins:'
+        print '\n'.join(sorted(pluginstrs))
+
+
+class DiagnosePlugin(axiomatic.AxiomaticSubCommand):
+    longdesc = 'Explain why a plugin is unusable'
+
+    synopsis = '<pluginName>'
+
+    def getStore(self):
+        return self.parent.getStore()
+
+    def parseArgs(self, pluginName):
+        self['pluginName'] = self.decodeCommandLine(pluginName)
+
+    def postOptions(self):
+        trace = plugin.diagnoseBrokenPlugin(self['pluginName']).getTraceback()
+        print "Exception caught while trying to load %s:\n" % (self['pluginName'],)
+        print '\n'.join(['>>  '+ln for ln in trace.splitlines()]) + '\n'
+
+
 class ManagePlugins(axiomatic.AxiomaticSubCommand):
     longdesc = 'Manage plugins'
 
     subCommands = [
+        ('available', None, ListAvailablePlugins, 'List available plugins'),
         ('install', None, InstallPlugin, 'Install a plugin'),
         ('grant', None, GrantPlugin, 'Endow a user with access to a plugin'),
+        ('broken', None, ListBrokenPlugins, 'List unusable plugins'),
+        ('diagnose', None, DiagnosePlugin, 'Explain why a plugin is unusable'),
         ]
 
     def getStore(self):
@@ -184,7 +229,7 @@ class PluginCommands(axiomatic.AxiomaticSubCommand):
     @property
     def subCommands(self):
         for pin in plugin.getInstalledPlugins(self.getAppStore()):
-            if hasattr(pin, 'axiomCommands'):
+            if pin.axiomCommands:
                 class PluginSubCommand(axiomatic.AxiomaticSubCommand):
                     subCommands = pin.axiomCommands
                     getStore = lambda s: s.parent.getStore()
