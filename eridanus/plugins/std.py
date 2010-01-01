@@ -1,4 +1,6 @@
-"""Import plugin classes in a safe way, isolating their dependencies."""
+"""
+Eridanus standard plugin library.
+"""
 
 from functools import partial
 

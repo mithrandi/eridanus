@@ -14,8 +14,6 @@ from axiom.attributes import (AND, OR, timestamp, integer, reference, text,
     boolean, bytes, inmemory)
 from axiom.item import Item
 
-from axiom.iaxiom import IScheduler
-
 from xmantissa.ixmantissa import IFulltextIndexable, IFulltextIndexer
 
 from eridanus import const, util, iriparse
@@ -361,8 +359,6 @@ class LinkManager(Item):
         eid = self.lastEid
         self.lastEid += 1
 
-        print self.store
-        print IScheduler(self.store)
         return LinkEntry(store=self.store,
                          eid=eid,
                          channel=self.channel,
