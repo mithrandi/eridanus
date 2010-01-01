@@ -173,7 +173,7 @@ class GrantPlugin(axiomatic.AxiomaticSubCommand):
 
 
 class ListBrokenPlugins(axiomatic.AxiomaticSubCommand):
-    longdesc = 'List available plugins'
+    longdesc = 'List broken plugins'
 
     def getStore(self):
         return self.parent.getStore()

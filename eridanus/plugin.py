@@ -19,6 +19,17 @@ def safePluginImport(globals, pluginpath):
     """
     Import a plugin class in a way that defers errors.
 
+    Plugins that import without errors are added to the global
+    namespace as if they had been imported normally. If an exception
+    is raised during the import, the exception is captured and wrapped
+    in an C{IBrokenPlugin} which can be listed and examined at
+    runtime.
+
+    In this way, all plugins are visible, if not installable, and the
+    broken ones provide (hopefully) sufficient information to coax
+    them into life. Usually this will involve installing whatever
+    external libraries they depend on.
+
     @param globals: Namespace to import plugin into (usually globals())
     @type globals: C{dict}
 
