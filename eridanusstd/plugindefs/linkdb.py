@@ -248,11 +248,16 @@ class ImportEntries(axiomatic.AxiomaticSubCommand):
                     mode = line
 
                 if mode == 'service':
+                    # We assume the service already exists here.
                     kw = ief.readService()
-                    service = createService(siteStore, **kw)
+                    sid = kw['serviceID']
+                    print 'Assuming service "%s" exists and is configured.' % (sid,)
+                    service = siteStore.findUnique(IRCBotService,
+                                                   IRCBotService.serviceID == sid)
                 elif mode == 'config':
+                    # For legacy reasons, we must still read the service config.
                     kw = ief.readConfig()
-                    service.config = config = IRCBotConfig(store=siteStore, **kw)
+                    #service.config = config = IRCBotConfig(store=siteStore, **kw)
                 elif mode == 'entrymanager':
                     assert service is not None
                     kw = ief.readEntryManager()
