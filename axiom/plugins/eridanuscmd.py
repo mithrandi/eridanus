@@ -8,6 +8,7 @@ from eridanus import plugin
 from eridanus.bot import IRCBotService, IRCBotFactoryFactory, IRCBotConfig
 
 
+
 class ConfigureService(axiomatic.AxiomaticSubCommand):
     longdesc = 'Configure an Eridanus service'
 
@@ -47,16 +48,6 @@ class ConfigureService(axiomatic.AxiomaticSubCommand):
             config.ignores = self.decodeCommandLine(self['ignores']).split(u',')
 
 
-def createService(siteStore, serviceID):
-    fact = siteStore.findOrCreate(IRCBotFactoryFactory)
-    svc = siteStore.findOrCreate(IRCBotService,
-                             serviceID=serviceID,
-                             factory=fact)
-    try:
-        installOn(svc, siteStore)
-    except:
-        pass
-    return svc
 
 
 class CreateService(axiomatic.AxiomaticSubCommand):
@@ -71,7 +62,12 @@ class CreateService(axiomatic.AxiomaticSubCommand):
 
     def postOptions(self):
         store = self.getStore()
-        createService(store, self['id'])
+        fact = store.findOrCreate(IRCBotFactoryFactory)
+        svc = store.findOrCreate(IRCBotService,
+                                 serviceID=self['id'],
+                                 factory=fact)
+        installOn(svc, store)
+
 
 
 class RemoveService(axiomatic.AxiomaticSubCommand):
@@ -95,6 +91,7 @@ class RemoveService(axiomatic.AxiomaticSubCommand):
         uninstallFrom(svc, store)
 
 
+
 class ListServices(axiomatic.AxiomaticSubCommand):
     longdesc = 'List available Eridanus services'
 
@@ -104,6 +101,7 @@ class ListServices(axiomatic.AxiomaticSubCommand):
     def postOptions(self):
         store = self.getStore()
         print '\n'.join(store.query(IRCBotService).getColumn('serviceID'))
+
 
 
 class ManageServices(axiomatic.AxiomaticSubCommand):
@@ -123,6 +121,7 @@ class ManageServices(axiomatic.AxiomaticSubCommand):
         return self.parent.getAppStore()
 
 
+
 class ListAvailablePlugins(axiomatic.AxiomaticSubCommand):
     longdesc = 'List available plugins, in the form "<PluginName> (<botcommand>)"'
 
@@ -134,6 +133,7 @@ class ListAvailablePlugins(axiomatic.AxiomaticSubCommand):
                       for p in plugin.getAllPlugins()]
         print 'Available plugins:'
         print '\n'.join(sorted(pluginstrs))
+
 
 
 class InstallPlugin(axiomatic.AxiomaticSubCommand):
@@ -154,6 +154,7 @@ class InstallPlugin(axiomatic.AxiomaticSubCommand):
         plugin.installPlugin(self.getAppStore(), self['pluginName'])
 
 
+
 class GrantPlugin(axiomatic.AxiomaticSubCommand):
     longdesc = 'Grant a user with access to a plugin'
 
@@ -172,6 +173,7 @@ class GrantPlugin(axiomatic.AxiomaticSubCommand):
         plugin.installPlugin(userStore, self['pluginName'])
 
 
+
 class ListBrokenPlugins(axiomatic.AxiomaticSubCommand):
     longdesc = 'List broken plugins'
 
@@ -183,6 +185,7 @@ class ListBrokenPlugins(axiomatic.AxiomaticSubCommand):
                       for p in plugin.getBrokenPlugins()]
         print 'Broken plugins:'
         print '\n'.join(sorted(pluginstrs))
+
 
 
 class DiagnosePlugin(axiomatic.AxiomaticSubCommand):
@@ -200,6 +203,7 @@ class DiagnosePlugin(axiomatic.AxiomaticSubCommand):
         trace = plugin.diagnoseBrokenPlugin(self['pluginName']).getTraceback()
         print "Exception caught while trying to load %s:\n" % (self['pluginName'],)
         print '\n'.join(['>>  '+ln for ln in trace.splitlines()]) + '\n'
+
 
 
 class ManagePlugins(axiomatic.AxiomaticSubCommand):
@@ -221,6 +225,7 @@ class ManagePlugins(axiomatic.AxiomaticSubCommand):
 
     def getLoginSystem(self):
         return self.parent.getLoginSystem()
+
 
 
 class PluginCommands(axiomatic.AxiomaticSubCommand):
