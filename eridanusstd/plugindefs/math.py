@@ -30,3 +30,10 @@ class Math(Item, Plugin):
         expr = u' '.join((expr,) + exprs)
         source.reply(calc.evaluate(expr))
 
+
+    @usage(u'base <number> <base>')
+    def cmd_base(self, source, number, base):
+        """
+        Convert a base-10 number to another base.
+        """
+        source.reply(calc.base(int(number), int(base)))

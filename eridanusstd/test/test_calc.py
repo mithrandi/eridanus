@@ -104,3 +104,18 @@ class CalcGrammarTests(unittest.TestCase):
         """
         self.assertEvaluates('10 / 2 + 5 * 4 - (15 + 10)', 0)
         self.assertEvaluates('cos(0) * 10 % 3 * sin(pi / 2) + (2** 0)', 2)
+
+
+
+class BaseConversionTests(unittest.TestCase):
+    """
+    Tests for L{eridanusstd.calc.base}.
+    """
+    def test_base(self):
+        """
+        Convert a base-10 number to a base-N number, represented as text.
+        """
+        self.assertEquals(u'11', calc.base(11, 10))
+        self.assertEquals(u'12', calc.base(10, 8))
+        self.assertEquals(u'A', calc.base(10, 16))
+        self.assertEquals(u'3YW', calc.base(5144, 36))

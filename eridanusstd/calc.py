@@ -21,17 +21,17 @@ def foldr(op, end, seq):
 
 
 
-DIGITS = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+DIGITS = u'0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ'
 def base(n, b):
     """
     Convert a base-10 number to a base-N number.
+
+    @rtype: C{unicode}
     """
-    n = int(n)
-    b = int(b)
     if b < 2 or b > 36:
         raise ValueError(u'Base must be between 2 and 36, inclusively')
 
-    digits = ''
+    digits = u''
     while n:
         n, r = divmod(n, b)
         digits = DIGITS[r] + digits
