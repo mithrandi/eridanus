@@ -12,7 +12,6 @@ from eridanus.ieridanus import (ICommand, IEridanusPluginProvider,
     IEridanusPlugin, IAmbientEventObserver, IEridanusBrokenPlugin,
     IEridanusBrokenPluginProvider)
 
-paramPattern = re.compile(r'([<[])(.*?)([>\]])')
 
 
 def safePluginImport(globals, pluginpath):
@@ -41,13 +40,18 @@ def safePluginImport(globals, pluginpath):
         imported = __import__(mod, fromlist=[pin])
         plugin = getattr(imported, pin)
     except:
+
         class ThisBrokenPlugin(BrokenPlugin):
             classProvides(IPlugin, IEridanusBrokenPluginProvider)
             pluginName = pin
             failure = Failure()
+
         plugin = ThisBrokenPlugin
     globals[pin] = plugin
 
+
+
+paramPattern = re.compile(r'([<[])(.*?)([>\]])')
 
 def formatUsage(s):
     """
@@ -58,6 +62,7 @@ def formatUsage(s):
     @returns: Marked-up string
     """
     return paramPattern.sub(r'\1\002\2\002\3', s)
+
 
 
 def formatHelp(help, sep=' '):
@@ -71,6 +76,7 @@ def formatHelp(help, sep=' '):
              for line in dedent(help).splitlines()
              if line.strip()]
     return lines[0], sep.join(lines)
+
 
 
 def usage(desc):
@@ -89,6 +95,7 @@ def usage(desc):
     return fact
 
 
+
 def alias(f, name=None):
     """
     Create an alias of another command.
@@ -99,6 +106,7 @@ def alias(f, name=None):
         newCmd.func_name = name
     newCmd.arglimits = getCommandArgLimits(f)
     return newCmd
+
 
 
 def getCommandArgLimits(method, minargs=None, maxargs=None):
@@ -123,6 +131,7 @@ def getCommandArgLimits(method, minargs=None, maxargs=None):
     return minargs, maxargs
 
 
+
 class CommandLookupMixin(object):
     """
     L{ICommand} implementation that locates methods suitable for invocation.
@@ -145,10 +154,12 @@ class CommandLookupMixin(object):
             return 'No additional help.'
         return formatHelp(help)[1]
 
+
     def getCommands(self):
         for name in dir(self):
             if name.startswith('cmd_'):
                 yield ICommand(getattr(self, name))
+
 
     ### ICommand
 
@@ -167,10 +178,12 @@ class CommandLookupMixin(object):
         cmd.parent = self
         return cmd, params
 
+
     def invoke(self, source):
         raise errors.UsageError('Not a command')
 
 
+    
 class SubCommand(CommandLookupMixin):
     # XXX: maybe this could actually work?
     alias = False
@@ -223,8 +236,10 @@ class MethodCommand(object):
 
         self.minargs, self.maxargs = self.getArgLimits()
 
+
     def __repr__(self):
         return '<%s wrapping %s>' % (type(self).__name__, self.method)
+
 
     def getArgLimits(self):
         """
@@ -247,15 +262,18 @@ class MethodCommand(object):
         minargs, maxargs = arglimits = getattr(self.method, 'arglimits', (None, None))
         return getCommandArgLimits(self.method, minargs, maxargs)
 
+
     @property
     def alias(self):
         return getattr(self.method, 'alias', False)
+
 
     ### ICommand
 
     def locateCommand(self, params):
         self.params = params
         return self, []
+
 
     def invoke(self, source):
         numargs = len(self.params)
@@ -270,6 +288,7 @@ class MethodCommand(object):
 registerAdapter(MethodCommand, types.MethodType, ICommand)
 
 
+
 class _PluginNameDescriptor(object):
     """
     A descriptor class to default pluginName to the plugin's class name.
@@ -278,12 +297,14 @@ class _PluginNameDescriptor(object):
         return owner.__name__
 
 
+
 class _NameDescriptor(object):
     """
     A descriptor class to default name to the plugin's class name lowercased.
     """
     def __get__(self, instance, owner):
         return owner.__name__.lower()
+
 
 
 class Plugin(CommandLookupMixin):
@@ -297,6 +318,7 @@ class Plugin(CommandLookupMixin):
     axiomCommands = () # A tuple, because mutable class attrs are ugh.
 
 
+
 class BrokenPlugin(object):
     """
     Base class for broken plugins.
@@ -307,6 +329,7 @@ class BrokenPlugin(object):
     failure = None
 
 
+
 def getAllPlugins():
     """
     Get all plugins.
@@ -314,11 +337,13 @@ def getAllPlugins():
     return getPlugins(IEridanusPluginProvider, plugins)
 
 
+
 def getBrokenPlugins():
     """
     Get broken plugins.
     """
     return getPlugins(IEridanusBrokenPluginProvider, plugins)
+
 
 
 def getPluginByName(store, name):
@@ -342,11 +367,13 @@ def getPluginByName(store, name):
     raise errors.PluginNotInstalled(name)
 
 
+
 def getInstalledPlugins(store):
     """
     Get all plugins installed on C{store}.
     """
     return store.powerupsFor(IEridanusPlugin)
+
 
 
 def getPluginProvidersByName(pluginName):
@@ -360,6 +387,7 @@ def getPluginProvidersByName(pluginName):
     raise errors.PluginNotFound(u'No plugin named "%s".' % (pluginName,))
 
 
+
 def getBrokenPluginProvidersByName(pluginName):
     """
     Get all objects that provide C{IEridanusPluginProvider}.
@@ -371,11 +399,13 @@ def getBrokenPluginProvidersByName(pluginName):
     raise errors.PluginNotFound(u'No plugin named "%s".' % (pluginName,))
 
 
+
 def getAmbientEventObservers(store):
     """
     Get all Items that provide C{IAmbientEventObserver}.
     """
     return store.powerupsFor(IAmbientEventObserver)
+
 
 
 def installPlugin(store, pluginName):
@@ -399,6 +429,7 @@ def installPlugin(store, pluginName):
     raise errors.PluginNotFound(u'No plugin named "%s".' % (pluginName,))
 
 
+
 def diagnoseBrokenPlugin(pluginName):
     """
     Explain why a plugin is broken.
@@ -412,6 +443,7 @@ def diagnoseBrokenPlugin(pluginName):
         return plugin.failure
 
     raise errors.PluginNotFound(u'No plugin named "%s".' % (pluginName,))
+
 
 
 def uninstallPlugin(store, pluginName):
@@ -434,6 +466,7 @@ def uninstallPlugin(store, pluginName):
 
         store.powerDown(p, IEridanusPlugin)
         return
+
 
 
 class AmbientEventObserver(object):

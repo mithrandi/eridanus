@@ -38,6 +38,7 @@ class ICommand(Interface):
         @rtype: C{(ICommand, list)}
         """
 
+
     def invoke(source):
         """
         Invoke the command.
@@ -45,6 +46,7 @@ class ICommand(Interface):
         @param source: The source that the command originated from
         @type pseudo: L{Source} instance
         """
+
 
 
 class IEridanusPlugin(Interface):
@@ -69,6 +71,7 @@ class IEridanusPlugin(Interface):
     """)
 
 
+
 class IEridanusPluginProvider(Interface):
     """
     Interface for specifying that something can provide L{IEridanusPlugin}.
@@ -76,6 +79,7 @@ class IEridanusPluginProvider(Interface):
 
     def __call__(store):
         pass
+
 
 
 class IEridanusBrokenPlugin(Interface):
@@ -93,6 +97,7 @@ class IEridanusBrokenPlugin(Interface):
     """)
 
 
+
 class IEridanusBrokenPluginProvider(Interface):
     """
     Interface for specifying that something can provide
@@ -101,6 +106,7 @@ class IEridanusBrokenPluginProvider(Interface):
 
     def __call__(store):
         pass
+
 
 
 class IAmbientEventObserver(Interface):
@@ -114,6 +120,7 @@ class IAmbientEventObserver(Interface):
 
         @rtype: C{twisted.internet.Deferred}
         """
+
 
 
 # XXX: this is too specific to be useful, but it's fine for now
@@ -132,6 +139,7 @@ class IIRCAvatar(Interface):
         @return: An iterable of objects implementing C{IEridanusPlugin}
         """
 
+
     def getCommand(protocol, params):
         """
         Get the C{ICommand} provider with the given parameters.
@@ -147,6 +155,7 @@ class IIRCAvatar(Interface):
 
         @return: An object implementing C{ICommand}
         """
+
 
     def locateCommand(plugin, params):
         """
