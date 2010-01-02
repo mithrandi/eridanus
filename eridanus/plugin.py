@@ -1,3 +1,5 @@
+# -*- test-case-name: eridanus.test.test_plugin -*-
+
 import inspect, types, re
 from textwrap import dedent
 from zope.interface import implements, classProvides
