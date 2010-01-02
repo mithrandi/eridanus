@@ -38,6 +38,7 @@ class ICommand(Interface):
         @rtype: C{(ICommand, list)}
         """
 
+
     def invoke(source):
         """
         Invoke the command.
@@ -47,6 +48,7 @@ class ICommand(Interface):
         """
 
 
+
 class IEridanusPlugin(Interface):
     """
     An object that is considered by Eridanus to be a usable plugin.
@@ -54,12 +56,20 @@ class IEridanusPlugin(Interface):
 
     name = Attribute("""
     A C{unicode} value that specifies how the plugin is addressed in a command.
+    Defaults to the name of the plugin class lowercased.
     """)
 
     pluginName = Attribute("""
-    A C{unicode} value that specifies hwo the plugin is addressed outside
-    of commands.
+    A C{unicode} value that specifies how the plugin is addressed outside
+    of commands. Defaults to the name of the plugin class.
     """)
+
+    axiomCommands = Attribute("""
+    An C{iterable} that contains tuples suitable for use in the C{subCommands}
+    attribute on a subclass of C{axiom.scripts.axiomatic.AxiomaticSubCommand}.
+    Defaults to an empty tuple.
+    """)
+
 
 
 class IEridanusPluginProvider(Interface):
@@ -69,6 +79,34 @@ class IEridanusPluginProvider(Interface):
 
     def __call__(store):
         pass
+
+
+
+class IEridanusBrokenPlugin(Interface):
+    """
+    An object that is considered by Eridanus to be an unusable plugin.
+    """
+
+    pluginName = Attribute("""
+    A C{unicode} value that names the broken plugin.
+    """)
+
+    failure = Attribute("""
+    A C{twisted.python.failure.Failure} instance describing why the plugin is
+    broken.
+    """)
+
+
+
+class IEridanusBrokenPluginProvider(Interface):
+    """
+    Interface for specifying that something can provide
+    L{IEridanusBrokenPlugin}.
+    """
+
+    def __call__(store):
+        pass
+
 
 
 class IAmbientEventObserver(Interface):
@@ -82,6 +120,7 @@ class IAmbientEventObserver(Interface):
 
         @rtype: C{twisted.internet.Deferred}
         """
+
 
 
 # XXX: this is too specific to be useful, but it's fine for now
@@ -100,6 +139,7 @@ class IIRCAvatar(Interface):
         @return: An iterable of objects implementing C{IEridanusPlugin}
         """
 
+
     def getCommand(protocol, params):
         """
         Get the C{ICommand} provider with the given parameters.
@@ -115,6 +155,7 @@ class IIRCAvatar(Interface):
 
         @return: An object implementing C{ICommand}
         """
+
 
     def locateCommand(plugin, params):
         """

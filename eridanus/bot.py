@@ -28,6 +28,7 @@ from eridanus.plugin import usage, SubCommand
 from eridanus.util import encode, decode
 
 
+
 class _IRCKeepAliveMixin(object):
     """
     Ping an IRC server periodically to determine the connection status.
@@ -59,6 +60,7 @@ class _IRCKeepAliveMixin(object):
         self.quit('No PING response')
         self.factory.connector.disconnect()
 
+
     def cancelTimeout(self):
         if self.pingTimeout is not None:
             try:
@@ -66,6 +68,7 @@ class _IRCKeepAliveMixin(object):
             except ierror.AlreadyCalled:
                 pass
             self.pingTimeout = None
+
 
     def rawPing(self):
         """
@@ -76,12 +79,14 @@ class _IRCKeepAliveMixin(object):
         self.cancelTimeout()
         self.pingTimeout = reactor.callLater(self.pingTimeoutInterval, self.die)
 
+
     def irc_PONG(self, *args):
         """
         PING response handler for IRCClient.
         """
         self.cancelTimeout()
         reactor.callLater(self.pingInterval, self.rawPing)
+
 
 
 # XXX: There should probably be a layer of indirection between this
@@ -103,10 +108,12 @@ class IRCBot(IRCClient, _IRCKeepAliveMixin):
         self.isupported = {}
         self.authenticatedUsers = {}
 
+
     def maxMessageLength(self):
         # XXX: This should probably take into account the prefix we are about
         # to use or something.
         return 500 - int(self.isupported['NICKLEN'][0]) - int(self.isupported['CHANNELLEN'][0])
+
 
     def irc_RPL_BOUNCE(self, prefix, params):
         # 005 is doubly assigned.  Piece of crap dirty trash protocol.
@@ -115,22 +122,28 @@ class IRCBot(IRCClient, _IRCKeepAliveMixin):
         else:
             self.bounce(params[1])
 
+
     def join(self, channel, key=None):
         self.config.addChannel(channel)
         return IRCClient.join(self, encode(channel), key)
+
 
     def part(self, channel):
         self.config.removeChannel(channel)
         return IRCClient.part(self, encode(channel))
 
+
     def ignore(self, mask):
         return self.config.addIgnore(mask)
+
 
     def unignore(self, mask):
         return self.config.removeIgnore(mask)
 
+
     def noticed(self, user, channel, message):
         pass
+
 
     def privmsg(self, user, channel, message):
         user = IRCUser(user)
@@ -161,6 +174,7 @@ class IRCBot(IRCClient, _IRCKeepAliveMixin):
                 self.directedPublicMessage(source, message)
             self.publicMessage(source, message)
 
+
     def topic(self, channel, topic=None):
         channel = encode(channel)
         if topic is not None:
@@ -172,12 +186,14 @@ class IRCBot(IRCClient, _IRCKeepAliveMixin):
         IRCClient.topic(self, channel, topic)
         return d
 
+
     def topicUpdated(self, user, channel, topic):
         d = self.topicDeferreds.pop(channel, None)
         if d is not None:
             if topic is not None:
                 topic = decode(topic)
             d.callback((user, channel, topic))
+
 
     def isupport(self, options):
         isupported = self.isupported
@@ -190,9 +206,11 @@ class IRCBot(IRCClient, _IRCKeepAliveMixin):
                 value = True
             isupported[key] = value
 
+
     def setModes(self):
         for mode in self.config.modes:
             self.mode(self.nickname, True, mode)
+
 
     def signedOn(self):
         log.msg('Signed on.')
@@ -206,6 +224,7 @@ class IRCBot(IRCClient, _IRCKeepAliveMixin):
             self.join(encode(channel))
 
         log.msg('Joined channels: %r' % (channels,))
+
 
     # XXX: this method is a bit lame
     def locateBuiltinCommand(self, params):
@@ -222,11 +241,13 @@ class IRCBot(IRCClient, _IRCKeepAliveMixin):
 
         return method
 
+
     def locatePlugin(self, name):
         """
         Get a C{IEridanusPlugin} provider by name.
         """
         return plugin.getPluginByName(self.appStore, name)
+
 
     def splitMessage(self, message):
         """
@@ -237,6 +258,7 @@ class IRCBot(IRCClient, _IRCKeepAliveMixin):
         @return: C{list} of C{unicode}
         """
         return map(decode, shlex.split(encode(message)))
+
 
     def command(self, source, message):
         """
@@ -253,6 +275,7 @@ class IRCBot(IRCClient, _IRCKeepAliveMixin):
             cmd = avatar.getCommand(self, params)
             return cmd.invoke(source)
 
+
     def mentionFailure(self, f, source, msg=None):
         if msg is not None:
             log.msg(msg)
@@ -260,24 +283,29 @@ class IRCBot(IRCClient, _IRCKeepAliveMixin):
         msg = '%s: %s' % (f.type.__name__, f.getErrorMessage())
         source.reply(msg)
 
+
     def directedPublicMessage(self, source, message):
         d = maybeDeferred(self.command, source, message
             ).addErrback(self.mentionFailure, source)
 
     privateMessage = directedPublicMessage
 
+
     def publicMessage(self, source, message):
         for obs in plugin.getAmbientEventObservers(self.appStore):
             d = maybeDeferred(obs.publicMessageReceived, source, message
                 ).addErrback(self.mentionFailure, source)
 
+
     def getUsername(self, nickname):
         # XXX: maybe check that nickname is sane?
         return u'%s@%s' % (nickname, self.serviceID)
 
+
     def _getAvatar(self, nickname):
         username = self.getUsername(nickname)
         return self.authenticatedUsers.get(username, (None, None))
+
 
     def getAvatar(self, nickname):
         avatar, logout = self._getAvatar(nickname)
@@ -285,11 +313,13 @@ class IRCBot(IRCClient, _IRCKeepAliveMixin):
             avatar = AnonymousAvatar()
         return avatar
 
+
     def getAuthenticatedAvatar(self, nickname):
         avatar, logout = self._getAvatar(nickname)
         if avatar is None:
             raise errors.AuthenticationError(u'"%s" is not authenticated or has no avatar' % (nickname,))
         return avatar
+
 
     def logout(self, nickname):
         avatar, logout = self._getAvatar(nickname)
@@ -298,6 +328,7 @@ class IRCBot(IRCClient, _IRCKeepAliveMixin):
             return True
 
         return False
+
 
     def login(self, nickname, password):
         username = self.getUsername(nickname)
@@ -326,6 +357,7 @@ class IRCBot(IRCClient, _IRCKeepAliveMixin):
 
         return d.addCallbacks(loginDone, failedLogin)
 
+
     def grantPlugin(self, nickname, pluginName):
         """
         Grant access to a plugin.
@@ -342,6 +374,20 @@ class IRCBot(IRCClient, _IRCKeepAliveMixin):
         else:
             store = self.getAuthenticatedAvatar(nickname).store
         plugin.installPlugin(store, pluginName)
+
+
+    def diagnosePlugin(self, pluginName):
+        """
+        Diagnose a broken plugin.
+
+        @type pluginName: C{unicode}
+        @param pluginName: Plugin name to diagnose
+
+        @returns: C{twisted.python.failure.Failure} instance from broken
+            plugin.
+        """
+        return plugin.diagnoseBrokenPlugin(pluginName)
+
 
     def revokePlugin(self, nickname, pluginName):
         """
@@ -360,6 +406,7 @@ class IRCBot(IRCClient, _IRCKeepAliveMixin):
             store = self.getAuthenticatedAvatar(nickname).store
         plugin.uninstallPlugin(store, pluginName)
 
+
     def getAvailablePlugins(self, nickname):
         """
         Get an iterable of names of plugins that can still be installed.
@@ -377,10 +424,20 @@ class IRCBot(IRCClient, _IRCKeepAliveMixin):
         allPlugins = set(plugin.getAllPlugins())
         return (p.pluginName for p in allPlugins - installedPlugins)
 
+
+    def getBrokenPlugins(self):
+        """
+        Get an iterable of names of plugins that cannot be installed.
+        """
+        brokenPlugins = set(plugin.getBrokenPlugins())
+        return (p.pluginName for p in brokenPlugins)
+
+
     def getCommands(self):
         for name in dir(self):
             if name.startswith('cmd_'):
                 yield ICommand(getattr(self, name))
+
 
     @usage(u'help <name>')
     def cmd_help(self, source, *params):
@@ -418,6 +475,7 @@ class IRCBot(IRCClient, _IRCKeepAliveMixin):
 
         msg = u' -- '.join(helps)
         source.reply(msg)
+
 
     def listCommands(self, avatar, params):
         """
@@ -465,6 +523,7 @@ class IRCBot(IRCClient, _IRCKeepAliveMixin):
 
         return commands + plugins
 
+
     @usage(u'list [name] [subname] [...]')
     def cmd_list(self, source, *params):
         """
@@ -480,6 +539,7 @@ class IRCBot(IRCClient, _IRCKeepAliveMixin):
         source.reply(u', '.join(commands))
 
 
+
 class IRCBotFactory(ReconnectingClientFactory):
     protocol = IRCBot
 
@@ -492,12 +552,15 @@ class IRCBotFactory(ReconnectingClientFactory):
         appStore = service.loginSystem.accountByAddress(u'Eridanus', None).avatars.open()
         self.bot = self.protocol(appStore, service.serviceID, self, portal, config)
 
+
     @property
     def connector(self):
         return self.service.connector
 
+
     def buildProtocol(self, addr=None):
         return self.bot
+
 
 
 class IRCBotFactoryFactory(Item):
@@ -507,6 +570,7 @@ class IRCBotFactoryFactory(Item):
 
     def getFactory(self, service, portal, config):
         return IRCBotFactory(service, portal, config)
+
 
 
 class IRCBotConfig(Item):
@@ -545,11 +609,13 @@ class IRCBotConfig(Item):
         if channel not in self.channels:
             self.channels = self.channels + [channel]
 
+
     def removeChannel(self, channel):
         channels = self.channels
         while channel in channels:
             channels.remove(channel)
         self.channels = channels
+
 
     def isIgnored(self, mask):
         mask = util.normalizeMask(mask)
@@ -560,12 +626,14 @@ class IRCBotConfig(Item):
 
         return False
 
+
     def addIgnore(self, mask):
         mask = util.normalizeMask(mask)
         if mask not in self.ignores:
             self.ignores = self.ignores + [mask]
             return mask
         return None
+
 
     def removeIgnore(self, mask):
         def removeIgnores(mask):
@@ -580,6 +648,7 @@ class IRCBotConfig(Item):
         self.ignores = newIgnores
         return list(diff) or None
 
+
 def ircbotconfig1to2(old):
     return old.upgradeVersion(
         IRCBotConfig.typeName, 1, 2,
@@ -590,6 +659,8 @@ def ircbotconfig1to2(old):
         _ignores=old._ignores.decode('utf-8'))
 
 registerUpgrader(ircbotconfig1to2, IRCBotConfig.typeName, 1, 2)
+
+
 
 def ircbotconfig2to3(old):
     return old.upgradeVersion(
@@ -603,6 +674,7 @@ def ircbotconfig2to3(old):
 registerUpgrader(ircbotconfig2to3, IRCBotConfig.typeName, 2, 3)
 registerAttributeCopyingUpgrader(IRCBotConfig, 3, 4)
 registerAttributeCopyingUpgrader(IRCBotConfig, 4, 5)
+
 
 
 # XXX: technically this has no real ties to IRC anything, so the name sucks
@@ -650,8 +722,10 @@ class IRCBotService(Item):
         log.msg('Connecting to %s (%s:%s) as %r' % (config.name, hostname, port, config.nickname))
         return reactor.connectTCP(hostname, port, self.factory.getFactory(self, self.portal, config))
 
+
     def disconnect(self):
         self.connector.disconnect()
+
 
     def activate(self):
         self.parent = None
@@ -659,12 +733,15 @@ class IRCBotService(Item):
         if self.loginSystem:
             self.portal = Portal(self.loginSystem, [self.loginSystem, AllowAnonymousAccess()])
 
+
     def installed(self):
         self.setServiceParent(self.store)
+
 
     def deleted(self):
         if self.parent is not None:
             self.disownServiceParent()
+
 
     ### IService
 
@@ -672,17 +749,21 @@ class IRCBotService(Item):
         IServiceCollection(parent).addService(self)
         self.parent = parent
 
+
     def disownServiceParent(self):
         IServiceCollection(self.parent).removeService(self)
         self.parent = None
+
 
     def privilegedStartService(self):
         if self.config.portNumber < 1024:
             self.connector = self.connect()
 
+
     def startService(self):
         if self.connector is None:
             self.connector = self.connect()
+
 
     def stopService(self):
         self.disconnect()
