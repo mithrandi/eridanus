@@ -39,8 +39,8 @@ def base(n, b):
     return digits
 
 
-NAMES = {
-    # Functions
+
+FUNCTIONS = {
     'abs':     abs,
     'acos':    math.acos,
     'asin':    math.asin,
@@ -58,21 +58,31 @@ NAMES = {
     'sinh':    math.sinh,
     'sqrt':    math.sqrt,
     'tan':     math.tan,
-    'tanh':    math.tanh,
-    'base':    base,
+    'tanh':    math.tanh}
 
-    # Constants
-    'e':       Decimal(str(math.e)),
-    'pi':      Decimal(str(math.pi)),
-}
+
+
+CONSTANTS = {
+    'e':  Decimal(str(math.e)),
+    'pi': Decimal(str(math.pi))}
+
 
 
 def func(name):
-    global NAMES
+    global FUNCTIONS
     try:
-        return NAMES[name]
+        return FUNCTIONS[name]
     except KeyError:
-        raise SyntaxError(u'"%s" is not a recognised function or constant name' % (name,))
+        raise SyntaxError(u'"%s" is not a recognised function' % (name,))
+
+
+
+def constant(name):
+    global CONSTANTS
+    try:
+        return CONSTANTS[name]
+    except KeyError:
+        raise SyntaxError(u'"%s" is not a recognised constant' % (name,))
 
 
 
@@ -90,7 +100,8 @@ term_op      ::= <spaces>
                  ('+' => operator.add
                  |'-' => operator.sub):term => term
 
-product      ::= <pow>:a <product_elem>*:b => reduce(operate, [(operator.mul, a)] + b, 1)
+product      ::= <pow>:a <product_elem>*:b
+                 => reduce(operate, [(operator.mul, a)] + b, 1)
 product_elem ::= <product_op>:op <pow>:a => (op, a)
 product_op   ::= <spaces>
                  ('*'     => operator.mul
@@ -98,7 +109,8 @@ product_op   ::= <spaces>
                  |'/'     => operator.truediv
                  |'%'     => operator.mod):product => product
 
-pow          ::= (<atom>:a '*' '*' => a)*:xs <atom>:z => foldr(operator.pow, z, xs)
+pow          ::= (<atom>:a '*' '*' => a)*:xs <atom>:z
+                 => foldr(operator.pow, z, xs)
 
 atom         ::= <spaces>
                  (<func>
@@ -107,12 +119,18 @@ atom         ::= <spaces>
                  |<decimal>
                  |<integer>):atom <spaces> => atom
 
-func         ::= <name>:n '(' <func_params>:p ')' => Decimal(str(func(n)(*p)))
+func         ::= <name>:n '(' <func_params>?:p ')'
+                 => Decimal(str(func(n)(*p or [])))
 func_params  ::= <sum>:a (<spaces> ',' <spaces> <sum>)*:b => [a] + b
-constant     ::= <name>:n => func(n)
-name         ::= <letter>:x <letterOrDigit>*:xs !(xs.insert(0, x)) => ''.join(xs)
-integer      ::= <digit>+:a => Decimal(''.join(a))
-decimal      ::= (<digit>*:a ('.' <digit>*):b) => Decimal(''.join(a) + '.' + ''.join(b))
+constant     ::= <name>:n => constant(n)
+name         ::= <letter>:x <letterOrDigit>*:xs => x + ''.join(xs)
+integer      ::= <sign>:s <digit>+:a
+                 => Decimal(s + ''.join(a))
+decimal      ::= <sign>:s
+                 (<digit>+:a ('.' <digit>*):b
+                 |<digit>*:a ('.' <digit>+):b)
+                 => Decimal(s + ''.join(a + ['.'] + b))
+sign         ::= ('-' | '+')?:s => s or ''
 """
 
 
