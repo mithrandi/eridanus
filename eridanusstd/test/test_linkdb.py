@@ -40,8 +40,8 @@ class MetadataExtractionTests(unittest.TestCase):
             raise unittest.SkipTest('PIL is not available')
 
         info = dict(linkdb._extractImageMetadata(self.pngStream))
-        self.assertEquals(info, {
-            u'dimensions': u'256x256'})
+        self.assertEquals({
+            u'dimensions': u'256x256'}, info)
 
 
     def test_extractBogusImageMetadata(self):
@@ -53,7 +53,7 @@ class MetadataExtractionTests(unittest.TestCase):
             raise unittest.SkipTest('PIL is not available')
 
         info = dict(linkdb._extractImageMetadata(StringIO('boo')))
-        self.assertEquals(info, {})
+        self.assertEquals({}, info)
 
 
     def test_noPIL(self):
@@ -63,7 +63,7 @@ class MetadataExtractionTests(unittest.TestCase):
         """
         self.patch(linkdb, 'PIL', None)
         info = dict(linkdb._extractImageMetadata(self.pngStream))
-        self.assertEquals(info, {})
+        self.assertEquals({}, info)
 
 
     def test_buildMetadata(self):
@@ -74,17 +74,17 @@ class MetadataExtractionTests(unittest.TestCase):
         data = self.pngStream.read()
 
         md = dict(linkdb._buildMetadata(data, {}))
-        self.assertEquals(md, {})
+        self.assertEquals({}, md)
 
         md = dict(linkdb._buildMetadata(data, {
             'content-type': ['text/plain']}))
-        self.assertEquals(md, {
-            u'contentType': u'text/plain'})
+        self.assertEquals({
+            u'contentType': u'text/plain'}, md)
 
         md = dict(linkdb._buildMetadata(data, {
             'content-range': ['bytes 10240/20480']}))
-        self.assertEquals(md, {
-            u'size': util.humanReadableFileSize(20480)})
+        self.assertEquals({
+            u'size': util.humanReadableFileSize(20480)}, md)
 
 
     def test_buildMetadataForImage(self):
@@ -99,6 +99,6 @@ class MetadataExtractionTests(unittest.TestCase):
             linkdb, '_extractImageMetadata', lambda stream: [(u'foo', u'bar')])
         md = dict(linkdb._buildMetadata(data, {
             'content-type': ['image/png']}))
-        self.assertEquals(md, {
+        self.assertEquals({
             u'contentType': u'image/png',
-            u'foo': u'bar'})
+            u'foo': u'bar'}, md)
