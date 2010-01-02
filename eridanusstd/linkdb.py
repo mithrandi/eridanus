@@ -1,6 +1,12 @@
+# -*- test-case-name: eridanusstd.test.test_linkdb -*-
 import datetime, itertools, urllib, re, chardet, gzip, html5lib
 from StringIO import StringIO
-from PIL import Image
+try:
+    import PIL.Image
+    # To shut pyflakes up.
+    PIL
+except ImportError:
+    PIL = None
 from zope.interface import implements
 
 from epsilon.extime import Time
@@ -231,6 +237,31 @@ def _decodeData(data, contentType, contentEncoding):
     return _decodeText(data, params.get('charset'))
 
 
+
+def _extractImageMetadata(stream):
+    """
+    Extract image metadata from a stream.
+
+    If the Python Imaging Library is not available, no image metadata is
+    extracted.
+
+    @rtype: C{iterable} of C{(unicode, unicode)} pairs
+    @return: An iterable of C{(name, value)} pairs containg image metadata
+    """
+    if PIL is None:
+        return
+    
+    try:
+        im = PIL.Image.open(stream)
+        dims = im.size
+    except IOError:
+        dims = None
+
+    if dims is not None:
+        yield u'dimensions', u'x'.join(map(unicode, dims))
+
+
+
 def _buildMetadata(data, headers):
     """
     Create entry metadata from C{data} and C{headers}.
@@ -249,20 +280,15 @@ def _buildMetadata(data, headers):
         yield u'contentType', contentType
 
         if contentType.startswith('image'):
-            try:
-                im = Image.open(StringIO(data))
-                dims = im.size
-            except IOError:
-                dims = None
-
-            if dims is not None:
-                yield u'dimensions', u'x'.join(map(unicode, dims))
+            for info in _extractImageMetadata(StringIO(data)):
+                yield info
 
     size = getHeader('content-range')
     if size is not None:
         if size.startswith('bytes'):
             size = int(size.split(u'/')[-1])
             yield u'size', util.humanReadableFileSize(size)
+
 
 
 _whitespace = re.compile(ur'\s+')
