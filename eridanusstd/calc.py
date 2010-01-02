@@ -1,4 +1,4 @@
-import math, operator, decimal
+import math, decimal, operator
 from decimal import Decimal
 
 from pymeta.grammar import OMeta
@@ -70,6 +70,10 @@ def func(name):
         return NAMES[name]
     except KeyError:
         raise SyntaxError(u'"%s" is not a recognised function or constant name' % (name,))
+
+
+# This is to make pyflakes and such happier:
+operator
 
 
 calcGrammar = """

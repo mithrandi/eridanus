@@ -358,7 +358,7 @@ class LinkManager(Item):
         """
         eid = self.lastEid
         self.lastEid += 1
-        
+
         return LinkEntry(store=self.store,
                          eid=eid,
                          channel=self.channel,
