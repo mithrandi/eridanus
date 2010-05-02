@@ -65,5 +65,5 @@ class Google(Item, Plugin):
     def cmd_calc(self, source, expn, *expns):
         expns = [expn] + list(expns)
         d = google.Calculator().evaluate(u' '.join(expns))
-        d.addCallback(lambda (expn, res): res)
+        d.addCallback(lambda (expn, res): source.reply(res))
         return d
