@@ -135,6 +135,26 @@ class Calculator(object):
     """
     Primitive screen-scraping interface to Google's calculator.
     """
+    _resultFormatting = {
+        'sup': u'^'}
+
+    def _formatResult(self, elem):
+        """
+        Gracefully downgrade HTML markup in calculator results.
+        """
+        def _format():
+            yield elem.text
+            for child in elem.iterchildren():
+                tag = child.tag.split('}')[-1]
+                extra = self._resultFormatting.get(tag)
+                if extra is not None:
+                    yield extra
+                yield child.text
+                yield child.tail
+
+        return filter(None, map(unicode, _format()))
+
+
     def _extractResult(self, (data, headers), expn):
         """
         Extract the calculator result from a Google search.
@@ -155,11 +175,10 @@ class Calculator(object):
         results = tree.xpath(
             xpath,
             namespaces={'xhtml': 'http://www.w3.org/1999/xhtml'})
-        text = None
         if results:
-            text = results[0].text
-        if text:
-            return text.rsplit(' = ', 1)
+            elem = results[0]
+            expn = elem.rsplit(' = ', 1)[0]
+            return expn, ''.join(self._formatResult(elem))
         raise errors.InvalidExpression(expn)
 
 
