@@ -145,11 +145,18 @@ class Calculator(object):
         parser = html5lib.HTMLParser(
             tree=html5lib.treebuilders.getTreeBuilder('lxml', letree))
         tree = parser.parse(data)
+
+        # At some point html5lib stopped sucking.
+        if hasattr(html5lib, '__version__'):
+            xpath = '//xhtml:h2[@class="r"]/xhtml:b'
+        else:
+            xpath = '//h2[@class="r"]/b'
+
         results = tree.xpath(
-            '//xhtml:h2[@class="r"]/xhtml:b',
+            xpath,
             namespaces={'xhtml': 'http://www.w3.org/1999/xhtml'})
         text = None
-        if not results:
+        if results:
             text = results[0].text
         if text:
             return text.rsplit(' = ', 1)
