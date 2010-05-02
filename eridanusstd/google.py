@@ -177,7 +177,7 @@ class Calculator(object):
             namespaces={'xhtml': 'http://www.w3.org/1999/xhtml'})
         if results:
             elem = results[0]
-            expn = elem.rsplit(' = ', 1)[0]
+            expn = elem.text.rsplit(' = ', 1)[0]
             return expn, ''.join(self._formatResult(elem))
         raise errors.InvalidExpression(expn)
 
