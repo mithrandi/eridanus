@@ -63,6 +63,12 @@ class Google(Item, Plugin):
 
     @usage(u'calc <expn> [expn ...]')
     def cmd_calc(self, source, expn, *expns):
+        """
+        Evaluate an expression with Google calculator.
+
+        A guide to using the Google calculator can be found at
+        <http://www.google.com/help/calculator.html>.
+        """
         expns = [expn] + list(expns)
         d = google.Calculator().evaluate(u' '.join(expns))
         d.addCallback(lambda (expn, res): source.reply(res))
