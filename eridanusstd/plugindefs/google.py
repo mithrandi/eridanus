@@ -62,7 +62,7 @@ class Google(Item, Plugin):
 
 
     @usage(u'calc <expn> [expn ...]')
-    def cmd_calc(self, expn, *expns):
+    def cmd_calc(self, source, expn, *expns):
         expns = [expn] + list(expns)
         d = google.Calculator().evaluate(u' '.join(expns))
         d.addCallback(lambda (expn, res): res)
