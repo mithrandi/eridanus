@@ -59,3 +59,11 @@ class Google(Item, Plugin):
         """
         terms = [term] + list(terms)
         return self.websearch(source, terms, 1)
+
+
+    @usage(u'calc <expn> [expn ...]')
+    def cmd_calc(self, expn, *expns):
+        expns = [expn] + list(expns)
+        d = google.Calculator().evaluate(u' '.join(expns))
+        d.addCallback(lambda (expn, res): res)
+        return d

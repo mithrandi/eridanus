@@ -5,6 +5,8 @@ The following documentation may be useful::
 
     http://code.google.com/apis/ajaxsearch/documentation/#fonje
 """
+import html5lib
+from lxml import etree as letree
 try:
     import simplejson as json
 except ImportError:
@@ -126,3 +128,41 @@ class WebSearchQuery(object):
         url = self.url.add('start', start)
         return util.PerseverantDownloader(url, headers=HEADERS).go(
             ).addCallback(self.parseResults)
+
+
+
+class Calculator(object):
+    """
+    Primitive screen-scraping interface to Google's calculator.
+    """
+    def _extractResult(self, (data, headers), expn):
+        """
+        Extract the calculator result from a Google search.
+
+        @rtype:  C{(unicode, unicode)}
+        @return: A pair of C{(expn, result)}.
+        """
+        parser = html5lib.HTMLParser(
+            tree=html5lib.treebuilders.getTreeBuilder('lxml', letree))
+        tree = parser.parse(data)
+        results = tree.xpath(
+            '//xhtml:h2[@class="r"]/xhtml:b',
+            namespaces={'xhtml': 'http://www.w3.org/1999/xhtml'})
+        text = None
+        if not results:
+            text = results[0].text
+        if text:
+            return text.rsplit(' = ', 1)
+        raise errors.InvalidExpression(expn)
+
+
+    def evaluate(self, expn):
+        """
+        Evaluate an expression.
+        """
+        url = URL.fromString('http://www.google.com/search?')
+        url = url.add('q', expn + '=')
+        url = url.add('num', '1')
+        d = util.PerseverantDownloader(url).go()
+        d.addCallback(self._extractResult, expn)
+        return d
