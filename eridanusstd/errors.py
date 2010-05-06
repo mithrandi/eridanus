@@ -74,3 +74,10 @@ class InvalidQuote(ValueError):
     """
     This specified quote ID is invalid.
     """
+
+
+
+class RequestError(ValueError):
+    """
+    A bad request was made.
+    """

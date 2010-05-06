@@ -81,7 +81,17 @@ def convert(timeString, timezoneName, defaultTimezoneName):
     @rtype: C{datetime.datetime}
     """
     timezone = pytz.timezone(timezoneName)
-    dt = dateutil.parser.parse(timeString, tzinfos=TZINFOS)
+    dt = _parse(timeString)
     if dt.tzinfo is None:
         dt = dt.replace(tzinfo=pytz.timezone(defaultTimezoneName))
     return dt.astimezone(timezone)
+
+
+
+def _parse(timeString):
+    return dateutil.parser.parse(timeString, tzinfos=TZINFOS)
+
+
+
+def parse(timeString):
+    return Time.fromDatetime(_parse(timeString))
