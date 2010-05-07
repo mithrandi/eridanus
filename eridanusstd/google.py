@@ -152,7 +152,7 @@ class Calculator(object):
                 yield child.text
                 yield child.tail
 
-        return filter(None, map(unicode, _format()))
+        return filter(None, _format())
 
 
     def _extractResult(self, (data, headers), expn):
@@ -176,9 +176,7 @@ class Calculator(object):
             xpath,
             namespaces={'xhtml': 'http://www.w3.org/1999/xhtml'})
         if results:
-            elem = results[0]
-            expn = elem.text.rsplit(' = ', 1)[0]
-            return expn, ''.join(self._formatResult(elem))
+            return u''.join(self._formatResult(results[0]))
         raise errors.InvalidExpression(expn)
 
 

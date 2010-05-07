@@ -71,5 +71,5 @@ class Google(Item, Plugin):
         """
         expns = [expn] + list(expns)
         d = google.Calculator().evaluate(u' '.join(expns))
-        d.addCallback(lambda (expn, res): source.reply(res))
+        d.addCallback(source.reply)
         return d
