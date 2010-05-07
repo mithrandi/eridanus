@@ -20,11 +20,12 @@ from eridanus import util
 from eridanusstd import errors, defertools
 
 
+
 HEADERS = {
-    'Referrer': 'http://trac.slipgate.za.net/Eridanus'
-    }
+    'Referrer': 'http://trac.slipgate.za.net/Eridanus'}
 
 SEARCH_URL = URL.fromString('http://ajax.googleapis.com/ajax/services/search/')
+
 
 
 class WebSearchQuery(object):
@@ -70,10 +71,12 @@ class WebSearchQuery(object):
         self.pages = None
         self.queue = defertools.LazyQueue(self.getMoreResults)
 
+
     def __repr__(self):
         return '<%s for: %r>' % (
             type(self).__name__,
             self.terms)
+
 
     def _quoteTerms(self, terms):
         """
@@ -84,6 +87,7 @@ class WebSearchQuery(object):
                 yield u'"%s"' % (term,)
             else:
                 yield term
+
 
     def parseResults(self, (data, headers)):
         """
@@ -110,8 +114,11 @@ class WebSearchQuery(object):
             raise errors.NoSearchResults(
                 u'No results for the search terms: ' + u'; '.join(self.terms))
 
-        return ((util.unescapeEntities(result[u'titleNoFormatting']), result[u'url'])
-                for result in results)
+        return (
+            (util.unescapeEntities(result[u'titleNoFormatting']),
+             result[u'url'])
+            for result in results)
+
 
     def getMoreResults(self, start=None):
         """

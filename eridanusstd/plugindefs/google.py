@@ -11,6 +11,8 @@ from eridanus.plugin import Plugin, usage
 
 from eridanusstd import google, defertools
 
+
+
 class Google(Item, Plugin):
     """
     Google services.
@@ -28,6 +30,7 @@ class Google(Item, Plugin):
     def activate(self):
         self.apiKey = eutil.getAPIKey(self.store, u'googleAjaxSearch', default=None)
 
+
     def websearch(self, source, terms, count):
         """
         Perform a Google web search.
@@ -44,6 +47,7 @@ class Google(Item, Plugin):
             ).addCallback(formatResults
             ).addCallback(displayResults)
 
+
     @usage(u'search <term> [term ...]')
     def cmd_search(self, source, term, *terms):
         """
@@ -51,6 +55,7 @@ class Google(Item, Plugin):
         """
         terms = [term] + list(terms)
         return self.websearch(source, terms, 4)
+
 
     @usage(u'lucky <term> [term ...]')
     def cmd_lucky(self, source, term, *terms):
