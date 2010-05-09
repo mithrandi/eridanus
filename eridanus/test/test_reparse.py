@@ -1,5 +1,3 @@
-from datetime import timedelta
-
 from twisted.trial import unittest
 
 from eridanus import errors, reparse

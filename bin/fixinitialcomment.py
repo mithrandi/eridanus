@@ -2,7 +2,7 @@ import sys
 
 from axiom.store import Store
 
-from eridanus.entry import Entry, Comment
+from eridanus.entry import Entry
 
 
 db = Store(sys.argv[1])

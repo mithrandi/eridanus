@@ -261,7 +261,7 @@ class MethodCommand(object):
                   will accept
         @rtype: C{(min, max)}
         """
-        minargs, maxargs = arglimits = getattr(self.method, 'arglimits', (None, None))
+        minargs, maxargs = getattr(self.method, 'arglimits', (None, None))
         return getCommandArgLimits(self.method, minargs, maxargs)
 
 

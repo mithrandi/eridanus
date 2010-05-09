@@ -1,7 +1,6 @@
 import sys
 
 from axiom.store import Store
-from axiom.dependency import uninstallFrom
 
 from eridanus.bot import IRCBotService
 
