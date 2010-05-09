@@ -5,6 +5,11 @@ from eridanus.ieridanus import IEridanusPluginProvider, IEridanusBrokenPluginPro
 from eridanus.ieridanus import IEridanusPlugin, IEridanusBrokenPlugin
 
 
+# Make pyflakes happy
+UselessPlugin = None
+SadPlugin = None
+
+
 class TestSafePluginImport(unittest.TestCase):
     """
     Tests for the broken plugin system.
