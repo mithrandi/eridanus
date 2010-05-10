@@ -17,3 +17,4 @@ class SadPlugin(Plugin):
 
 # Here we import a mythical module to generate an ImportError.
 import gyre_and_gimble_in_the_wabe
+gyre_and_gimble_in_the_wabe

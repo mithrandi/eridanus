@@ -285,7 +285,7 @@ class IRCBot(IRCClient, _IRCKeepAliveMixin):
 
 
     def directedPublicMessage(self, source, message):
-        d = maybeDeferred(self.command, source, message
+        maybeDeferred(self.command, source, message
             ).addErrback(self.mentionFailure, source)
 
     privateMessage = directedPublicMessage
@@ -293,7 +293,7 @@ class IRCBot(IRCClient, _IRCKeepAliveMixin):
 
     def publicMessage(self, source, message):
         for obs in plugin.getAmbientEventObservers(self.appStore):
-            d = maybeDeferred(obs.publicMessageReceived, source, message
+            maybeDeferred(obs.publicMessageReceived, source, message
                 ).addErrback(self.mentionFailure, source)
 
 

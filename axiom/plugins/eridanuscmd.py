@@ -5,7 +5,9 @@ from axiom.dependency import installOn, uninstallFrom
 from axiom.attributes import AND
 
 from eridanus import plugin
+from eridanus.ieridanus import IIRCAvatar
 from eridanus.bot import IRCBotService, IRCBotFactoryFactory, IRCBotConfig
+from eridanus.avatar import AuthenticatedAvatar
 
 
 
@@ -170,6 +172,9 @@ class GrantPlugin(axiomatic.AxiomaticSubCommand):
         loginAccount = loginSystem.accountByAddress(self['username'], self['domain'])
         assert loginAccount is not None, 'No such user'
         userStore = loginAccount.avatars.open()
+        avatar = IIRCAvatar(userStore, None)
+        if avatar is None:
+            userStore.powerUp(AuthenticatedAvatar(store=userStore))
         plugin.installPlugin(userStore, self['pluginName'])
 
 

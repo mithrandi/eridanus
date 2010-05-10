@@ -2,6 +2,8 @@
 Parse a regular expression into it's parts.
 """
 import re, string
+# suppress pyflakes warning, as this is used by the PyMeta grammar
+string
 
 from pymeta.grammar import OMeta
 from pymeta.runtime import ParseError

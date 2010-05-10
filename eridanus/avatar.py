@@ -51,6 +51,7 @@ class AuthenticatedAvatar(Item, _AvatarMixin):
     """
     typeName = 'eridanus_avatar_authenticatedavatar'
     schemaVersion = 1
+    powerupInterfaces = [IIRCAvatar]
 
     dummy = integer()
 
