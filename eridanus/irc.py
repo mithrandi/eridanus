@@ -60,7 +60,7 @@ class IRCSource(object):
         self.user = user
 
         # XXX: somewhat of a hack, something else should probably be doing this
-        self.isPrivate = self.protocol.nickname == channel
+        self.isPrivate = self.protocol.nickname.lower() == channel.lower()
         if self.isPrivate:
             channel = user.nickname
 
