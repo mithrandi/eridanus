@@ -60,6 +60,9 @@ class Alias(Item, Plugin, AmbientEventObserver):
 
     @usage(u'list')
     def cmd_list(self, source):
+        """
+        List all defined aliases.
+        """
         aliasNames = (a.name for a in alias.getAliases(self.store))
         source.reply(u'; '.join(aliasNames))
 
