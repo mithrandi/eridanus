@@ -37,6 +37,14 @@ class AliasTests(unittest.TestCase):
         self.assertEquals(alias.findAlias(self.store, u'foo'), self.anAlias)
 
 
+    def test_defineInvalid(self):
+        """
+        Alias names may not contain spaces.
+        """
+        self.assertRaises(errors.InvalidIdentifier,
+            alias.defineAlias, self.store, u'hello world', [])
+
+
     def test_defineOverwrite(self):
         """
         Creating an alias with the same name as another alias will overwrite

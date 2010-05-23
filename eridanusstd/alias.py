@@ -30,8 +30,14 @@ def defineAlias(store, name, params):
 
     @type params: C{list} of C{unicode}
 
+    @raise eridanusstd.errors.InvalidIdentifier: If C{name} contains whitespace.
+
     @rtype: L{eridanusstd.alias.AliasDefinition}
     """
+    if any(map(unicode.isspace, name)):
+        raise errors.InvalidIdentifier(
+            u'%r is not a valid alias name' % (name,))
+
     # There can be only one.
     undefineAlias(store, name)
 

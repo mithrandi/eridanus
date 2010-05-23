@@ -20,6 +20,8 @@ class Alias(Item, Plugin, AmbientEventObserver):
     command, optionally including arguments, can be made into an alias.
     Additional arguments can be passed by the user invoking the alias.
 
+    Alias names may NOT contain whitespace.
+
     Aliases are invoked by starting a line with the trigger character
     (defaulting to '!') followed immediately by the alias name.
     """
@@ -38,7 +40,7 @@ class Alias(Item, Plugin, AmbientEventObserver):
         source.reply(a.displayValue())
 
 
-    @usage(u'undefine')
+    @usage(u'undefine <name>')
     def cmd_undefine(self, source, name):
         """
         Undefine an existing alias.
@@ -47,7 +49,7 @@ class Alias(Item, Plugin, AmbientEventObserver):
         alias.undefineAlias(self.store, name)
 
 
-    @usage(u'display')
+    @usage(u'display <name>')
     def cmd_display(self, source, name):
         """
         Display the command stored for an existing alias.
