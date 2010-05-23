@@ -74,3 +74,10 @@ class InvalidQuote(ValueError):
     """
     This specified quote ID is invalid.
     """
+
+
+
+class InvalidIdentifier(ValueError):
+    """
+    The specified identifier could not be found or is invalid.
+    """
