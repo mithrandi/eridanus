@@ -58,6 +58,12 @@ class Alias(Item, Plugin, AmbientEventObserver):
         source.reply(a.displayValue())
 
 
+    @usage(u'list')
+    def cmd_list(self, source):
+        aliasNames = (a.name for a in alias.getAliases(self.store))
+        source.reply(u'; '.join(aliasNames))
+
+
     # IAmbientEventObserver
 
     def publicMessageReceived(self, source, message):

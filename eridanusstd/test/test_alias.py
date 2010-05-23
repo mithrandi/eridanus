@@ -62,3 +62,19 @@ class AliasTests(unittest.TestCase):
         alias.undefineAlias(self.store, u'foo')
         self.assertRaises(errors.InvalidIdentifier,
             alias.findAlias, self.store, u'foo')
+
+
+    def test_getAliases(self):
+        """
+        L{eridanusstd.alias.getAliases} retrieves all defined aliases, sorted
+        in alphabetic order.
+        """
+        self.assertEquals(
+            list(alias.getAliases(self.store)),
+            [self.anAlias])
+
+        b = alias.defineAlias(self.store, u'b', [])
+        z = alias.defineAlias(self.store, u'z', [])
+        self.assertEquals(
+            list(alias.getAliases(self.store)),
+            [b, self.anAlias, z])

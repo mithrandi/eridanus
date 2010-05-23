@@ -74,3 +74,11 @@ def findAlias(store, name):
         raise errors.InvalidIdentifier(
             u'%r is not a valid alias name' % (name,))
     return a
+
+
+
+def getAliases(store):
+    """
+    Get all L{eridanusstd.alias.AliasDefinition}s.
+    """
+    return store.query(AliasDefinition, sort=AliasDefinition.name.ascending)
