@@ -11,7 +11,7 @@ from eridanus.ieridanus import IEridanusPluginProvider, IAmbientEventObserver
 from eridanus.plugin import Plugin, usage
 from eridanus.util import truncate
 
-from eridanusstd import twitter, timeutil
+from eridanusstd import twitter
 
 
 
@@ -24,35 +24,13 @@ class Twitter(Item, Plugin):
         source.reply(u'; '.join(results))
 
 
-    def getStatusIDFromURL(self, url):
-        """
-        Attempt to retrieve a status ID from a URL.
-
-        @return: A C{unicode} value of the status ID, or C{None} if there is
-            none.
-        """
-        netloc = url.netloc
-        if netloc.startswith('www.'):
-            netloc = netloc[4:]
-        if netloc == 'twitter.com':
-            segs = url.pathList()
-            if segs >= 3:
-                screenName, method, id = segs
-                if method in ['status', 'statuses']:
-                    try:
-                        return unicode(int(id))
-                    except (TypeError, ValueError):
-                        pass
-        return None
-
-
     def snarfURLs(self, source, text):
         """
         Find Twitter status URLs in a line of text and display information
         about the status.
         """
         for url in iriparse.parseURLs(text):
-            id = self.getStatusIDFromURL(url)
+            id = twitter.extractStatusIDFromURL(url)
             if id is not None:
                 d = twitter.query('statuses/show', id)
                 d.addCallback(self.formatStatus)
@@ -61,38 +39,22 @@ class Twitter(Item, Plugin):
                 yield d
 
 
-    def formatStatus(self, status):
-        """
-        Format a status LXML C{ObjectifiedElement}.
-        """
-        parts = [
-            u'\002%s\002' % status.user.screen_name]
-        if status.in_reply_to_status_id:
-            parts.append(
-                u' (in reply to #%s)' % (status.in_reply_to_status_id,))
-        timestamp = timeutil.parse(status.created_at.text)
-        parts.extend([
-            u': %s' % (status['text'],),
-            u' (posted %s)' % (timestamp.asHumanly(),)])
-        return u''.join(parts)
-
-
     def formatUserInfo(self, user):
         """
         Format a user info LXML C{ObjectifiedElement}.
         """
-        def _fields():
-            yield u'User', u'%s (%s)' % (user.name, user.screen_name)
-            yield u'Statuses', user.statuses_count
-            yield u'Website', user.url
-            yield u'Followers', user.followers_count
-            yield u'Friends', user.friends_count
-            yield u'Location', user.location
-            yield u'Description', user.description
+        for key, value in twitter.formatUserInfo(user):
+            yield '\002%s\002: %s' % (key, value)
 
-        for key, value in _fields():
-            if value:
-                yield '\002%s\002: %s' % (key, value)
+
+    def formatStatus(self, status):
+        """
+        Format a status LXML C{ObjectifiedElement}.
+        """
+        parts = twitter.formatStatus(status)
+        if parts['reply']:
+            parts['reply'] = u' (in reply to #%(reply)s)' % parts
+        return u'\002%(name)s\002%(reply)s: %(text)s (posted %(timestamp)s)' % parts
 
 
     def formatResults(self, results):

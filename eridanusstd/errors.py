@@ -81,3 +81,7 @@ class RequestError(ValueError):
     """
     A bad request was made.
     """
+    def __init__(self, request, error):
+        self.request = request
+        self.error = error
+        super(RequestError, self).__init__(u'%s: %s' % (request, error))
