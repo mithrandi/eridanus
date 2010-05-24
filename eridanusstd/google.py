@@ -187,6 +187,13 @@ class Calculator(object):
         raise errors.InvalidExpression(expn)
 
 
+    def _fetch(self, url):
+        """
+        Fetch page data.
+        """
+        return util.PerseverantDownloader(url).go()
+
+
     def evaluate(self, expn):
         """
         Evaluate an expression.
@@ -194,6 +201,6 @@ class Calculator(object):
         url = URL.fromString('http://www.google.com/search?')
         url = url.add('q', expn + '=')
         url = url.add('num', '1')
-        d = util.PerseverantDownloader(url).go()
+        d = self._fetch(url)
         d.addCallback(self._extractResult, expn)
         return d
