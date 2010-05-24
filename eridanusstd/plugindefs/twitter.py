@@ -104,6 +104,20 @@ class Twitter(Item, Plugin):
         return d
 
 
+    @usage(u'recent <nameOrID> [limit]')
+    def cmd_recent(self, source, nameOrID, limit=3):
+        """
+        Retrieve recent statuses (defaulting to 3) for a screen name or user ID.
+        """
+        d = twitter.query('user_timeline', nameOrID, count=limit)
+
+        @d.addCallback
+        def displayStatuses(timeline):
+            map(source.reply, map(self.formatStatus, timeline.status))
+
+        return d
+
+
     # IAmbientEventObserver
 
     def publicMessageReceived(self, source, text):
