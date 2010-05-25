@@ -74,3 +74,10 @@ class InvalidQuote(ValueError):
     """
     This specified quote ID is invalid.
     """
+
+
+
+class InvalidExpression(ValueError):
+    """
+    An invalid calculator expression was specified.
+    """
