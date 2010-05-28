@@ -1,4 +1,4 @@
-from axiom.attributes import text, textlist
+from axiom.attributes import text
 from axiom.item import Item
 
 from eridanusstd import errors
@@ -6,35 +6,38 @@ from eridanusstd import errors
 
 
 class AliasDefinition(Item):
+    """
+    An aliased command definition.
+    """
     name = text(doc="""
     Name.
     """, allowNone=False)
-    params = textlist(doc="""
-    Command parameters.
+
+    command = text(doc="""
+    Aliased command.
     """, allowNone=False)
 
     def displayValue(self):
         """
         Display-friendly representation of the alias.
         """
-        command = u' '.join(map(repr, self.params))
-        return u'%s => %s' % (self.name, command)
+        return u'%s => %s' % (self.name, self.command)
 
 
 
-def defineAlias(store, name, params):
+def defineAlias(store, name, command):
     """
     Define a new alias overwriting existing aliases with the same name.
 
     @type name: C{unicode}
 
-    @type params: C{list} of C{unicode}
+    @type command: C{unicode}
 
     @raise eridanusstd.errors.InvalidIdentifier: If C{name} contains whitespace.
 
     @rtype: L{eridanusstd.alias.AliasDefinition}
     """
-    if any(map(unicode.isspace, name)):
+    if u' ' in name:
         raise errors.InvalidIdentifier(
             u'%r is not a valid alias name' % (name,))
 
@@ -44,7 +47,7 @@ def defineAlias(store, name, params):
     return AliasDefinition(
         store=store,
         name=name,
-        params=params)
+        command=command)
 
 
 

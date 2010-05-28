@@ -7,6 +7,7 @@ from axiom.item import Item
 
 from eridanus.ieridanus import IEridanusPluginProvider, IAmbientEventObserver
 from eridanus.plugin import AmbientEventObserver, Plugin, usage
+from eridanus.util import padIterable
 
 from eridanusstd import alias
 
@@ -29,14 +30,15 @@ class Alias(Item, Plugin, AmbientEventObserver):
 
     trigger = text(default=u'!')
 
-    @usage(u'define <name> [param ...]')
-    def cmd_define(self, source, name, *params):
+    @usage(u'define <name> <command> [params ...]')
+    def cmd_define(self, source, name, command, *params):
         """
         Define a new alias.
 
         Any existing alias with the given name will be overwritten.
         """
-        a = alias.defineAlias(self.store, name, params)
+        command = u' '.join([command] + list(params))
+        a = alias.defineAlias(self.store, name, command)
         source.reply(a.displayValue())
 
 
@@ -67,17 +69,40 @@ class Alias(Item, Plugin, AmbientEventObserver):
         source.reply(u'; '.join(aliasNames))
 
 
+    def _isTrigger(self, message):
+        """
+        Does C{message} start with the alias trigger?
+        """
+        return message.lower().startswith(self.trigger.lower())
+
+
+    def _expandAlias(self, message):
+        """
+        Expand an alias definition.
+
+        Parameter appearing after the alias name are preserved.
+
+        @rtype: C{unicode}
+        @return: Expanded alias definition.
+        """
+        name, messageRest = padIterable(message.split(u' ', 1), 2)
+
+        if not name:
+            return None
+
+        a = alias.findAlias(self.store, name)
+        message = a.command
+        if messageRest:
+            message += ' ' + messageRest
+
+        return message
+
+
     # IAmbientEventObserver
 
     def publicMessageReceived(self, source, message):
-        if message.lower().startswith(self.trigger.lower()):
-            # XXX: We really should not be touching the protocol.
-            params = source.protocol.splitMessage(message[1:])
-            if not params:
-                return
-
-            name = params.pop(0)
-            a = alias.findAlias(self.store, name)
-            params = a.params + params
-            # XXX: We really should not be touching the protocol.
-            source.protocol.command(source, params)
+        if self._isTrigger(message):
+            message = self._expandAlias(message[len(self.trigger):])
+            if message:
+                # XXX: We really should not be touching the protocol.
+                source.protocol.command(source, message)
