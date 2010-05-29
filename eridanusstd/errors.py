@@ -77,6 +77,24 @@ class InvalidQuote(ValueError):
 
 
 
+class InvalidExpression(ValueError):
+    """
+    An invalid calculator expression was specified.
+    """
+
+
+
+class RequestError(ValueError):
+    """
+    A bad request was made.
+    """
+    def __init__(self, request, error):
+        self.request = request
+        self.error = error
+        super(RequestError, self).__init__(u'%s: %s' % (request, error))
+
+
+
 class InvalidIdentifier(ValueError):
     """
     The specified identifier could not be found or is invalid.
