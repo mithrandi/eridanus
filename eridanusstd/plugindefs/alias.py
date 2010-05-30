@@ -96,6 +96,8 @@ class Alias(Item, Plugin, AmbientEventObserver):
         if len(parts) > 1:
             message += ' ' + parts[1]
 
+        return message
+
 
     # IAmbientEventObserver
 
