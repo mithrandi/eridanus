@@ -23,8 +23,9 @@ class Alias(Item, Plugin, AmbientEventObserver):
 
     Alias names may NOT contain whitespace.
 
-    Aliases are invoked by starting a line with the trigger character
-    (defaulting to '!') followed immediately by the alias name.
+    Aliases are invoked by starting a line with the trigger (defaulting to '!')
+    followed immediately by the alias name. Alias names and the trigger are
+    case insensitive.
     """
     classProvides(IPlugin, IEridanusPluginProvider, IAmbientEventObserver)
 
@@ -80,22 +81,20 @@ class Alias(Item, Plugin, AmbientEventObserver):
         """
         Expand an alias definition.
 
-        Parameter appearing after the alias name are preserved.
+        Parameters appearing after the alias name are preserved.
 
         @rtype: C{unicode}
         @return: Expanded alias definition.
         """
-        name, messageRest = padIterable(message.split(u' ', 1), 2)
-
+        parts = message.split(u' ', 1)
+        name = parts[0]
         if not name:
             return None
 
         a = alias.findAlias(self.store, name)
         message = a.command
-        if messageRest:
-            message += ' ' + messageRest
-
-        return message
+        if len(parts) > 1:
+            message += ' ' + parts[1]
 
 
     # IAmbientEventObserver

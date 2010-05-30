@@ -11,7 +11,7 @@ class AliasDefinition(Item):
     """
     name = text(doc="""
     Name.
-    """, allowNone=False)
+    """, allowNone=False, indexed=True)
 
     command = text(doc="""
     Aliased command.
@@ -72,7 +72,8 @@ def findAlias(store, name):
 
     @rtype: L{eridanusstd.alias.AliasDefinition}
     """
-    a = store.findFirst(AliasDefinition, AliasDefinition.name == name)
+    a = store.findUnique(
+        AliasDefinition, AliasDefinition.name == name, default=None)
     if a is None:
         raise errors.InvalidIdentifier(
             u'%r is not a valid alias name' % (name,))
