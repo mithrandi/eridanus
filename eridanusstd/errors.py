@@ -92,3 +92,10 @@ class RequestError(ValueError):
         self.request = request
         self.error = error
         super(RequestError, self).__init__(u'%s: %s' % (request, error))
+
+
+
+class InvalidIdentifier(ValueError):
+    """
+    The specified identifier could not be found or is invalid.
+    """
