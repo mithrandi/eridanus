@@ -106,4 +106,4 @@ class Alias(Item, Plugin, AmbientEventObserver):
             message = self._expandAlias(message[len(self.trigger):])
             if message:
                 # XXX: We really should not be touching the protocol.
-                source.protocol.command(source, message)
+                return source.protocol.command(source, message)
