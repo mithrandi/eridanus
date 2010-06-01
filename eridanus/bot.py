@@ -24,7 +24,7 @@ from eridanus import util, errors, plugin
 from eridanus.avatar import AnonymousAvatar
 from eridanus.irc import IRCSource, IRCUser
 from eridanus.ieridanus import ICommand, IIRCAvatar
-from eridanus.plugin import usage, SubCommand
+from eridanus.plugin import usage, rest, SubCommand, IncrementalArguments
 from eridanus.util import encode, decode
 
 
@@ -225,19 +225,18 @@ class IRCBot(IRCClient, _IRCKeepAliveMixin):
 
 
     # XXX: this method is a bit lame
-    def locateBuiltinCommand(self, params):
+    def locateBuiltinCommand(self, args):
         """
         Locate a built-in command.
         """
-        cmd = params[0]
-        method = getattr(self,
-                         'cmd_%s' % cmd.lower(),
-                         None)
+        name = args.next()
+        method = getattr(self, 'cmd_%s' % name.lower(), None)
 
-        if method is not None:
-            params.pop(0)
+        if method is None:
+            return None, args
 
-        return method
+        cmd = ICommand(method)
+        return cmd.locateCommand(args)
 
 
     def locatePlugin(self, name):
@@ -247,30 +246,19 @@ class IRCBot(IRCClient, _IRCKeepAliveMixin):
         return plugin.getPluginByName(self.appStore, name)
 
 
-    def splitMessage(self, message):
-        """
-        Lexically split C{message}.
-
-        @type message: C{str}
-
-        @return: C{list} of C{unicode}
-        """
-        return map(decode, shlex.split(encode(message)))
-
-
     def command(self, source, message):
         """
         Find and invoke the C{ICommand} provider from C{message}.
         """
-        params = self.splitMessage(message)
-        # XXX: this sucks, having to call the command two different ways is just stupid
-        cmd = self.locateBuiltinCommand(params)
+        args = IncrementalArguments(message)
+        # XXX: Having to call the command two different ways is not great.
+        cmd, _ = self.locateBuiltinCommand(args.copy())
 
         if cmd is not None:
-            cmd(source, *params)
+            cmd.invoke(source)
         else:
             avatar = self.getAvatar(source.user.nickname)
-            cmd = avatar.getCommand(self, params)
+            cmd = avatar.getCommand(self, args)
             return cmd.invoke(source)
 
 
@@ -437,8 +425,9 @@ class IRCBot(IRCClient, _IRCKeepAliveMixin):
                 yield ICommand(getattr(self, name))
 
 
+    @rest
     @usage(u'help <name>')
-    def cmd_help(self, source, *params):
+    def cmd_help(self, source, name):
         """
         Retrieve help for a given command or plugin.
 
@@ -446,17 +435,17 @@ class IRCBot(IRCClient, _IRCKeepAliveMixin):
         do and how to use them.  Commands and subcommands can be listed with
         the "list" command.
         """
-        params = list(params)
-        if not params:
-            params = [u'help']
+        if not name:
+            name = u'help'
+
+        args = IncrementalArguments(name)
 
         # XXX: blehblehbleh, locateBuiltinCommand is pure fail
         avatar = self.getAvatar(source.user.nickname)
-        cmd = self.locateBuiltinCommand(params)
+        cmd, _ = self.locateBuiltinCommand(args.copy())
         if cmd is None:
-            cmd = avatar.getCommand(self, params)
+            cmd = avatar.getCommand(self, args)
 
-        cmd = ICommand(cmd)
         helps = [cmd.help]
         if cmd.usage is not None:
             helps.insert(0, cmd.usage)
@@ -467,7 +456,7 @@ class IRCBot(IRCClient, _IRCKeepAliveMixin):
             helps.insert(0, u'\002%s\002' % (cmd.pluginName,))
             msg = u' -- '.join(helps)
             source.reply(msg)
-            commands = self.listCommands(avatar, [cmd.name])
+            commands = self.listCommands(avatar, cmd.name)
             helps = [u'\002%s\002' % (cmd.pluginName,),
                      u', '.join(commands)]
 
@@ -475,12 +464,13 @@ class IRCBot(IRCClient, _IRCKeepAliveMixin):
         source.reply(msg)
 
 
-    def listCommands(self, avatar, params):
+    def listCommands(self, avatar, name):
         """
         Retrieve a list of subcommands.
         """
-        if params:
-            parents = avatar.getAllCommands(self, params)
+        if name:
+            args = IncrementalArguments(name)
+            parents = avatar.getAllCommands(self, args)
             commands = itertools.chain(*(p.getCommands() for p in parents))
             plugins = []
         else:
@@ -522,8 +512,9 @@ class IRCBot(IRCClient, _IRCKeepAliveMixin):
         return commands + plugins
 
 
-    @usage(u'list [name] [subname] [...]')
-    def cmd_list(self, source, *params):
+    @rest
+    @usage(u'list [name]')
+    def cmd_list(self, source, name):
         """
         List commands and sub-commands.
 
@@ -533,7 +524,7 @@ class IRCBot(IRCClient, _IRCKeepAliveMixin):
         Private plugins are marked with an *, subcommands are marked with an @.
         """
         avatar = self.getAvatar(source.user.nickname)
-        commands = self.listCommands(avatar, list(params))
+        commands = self.listCommands(avatar, name)
         source.reply(u', '.join(commands))
 
 
