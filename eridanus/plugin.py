@@ -159,7 +159,7 @@ class IncrementalArguments(object):
     @type tail: C{unicode}
     @ivar tail: Current tail of the message.
     """
-    quoteCharacters = [u'"', u"'"]
+    quoteCharacters = [u'"']
 
     def __init__(self, tail):
         self.tail = tail

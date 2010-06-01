@@ -81,11 +81,10 @@ class IncrementalArgumentsTests(unittest.TestCase):
         """
         expected = [
             (u'"foo"', [u'foo']),
-            (u"'foo'", [u'foo']),
+            (u"you're", [u"you're"]),
             (u'foo "bar baz"', [u'foo', u'bar baz']),
             (u'foo "bar \\"quux\\" baz"', [u'foo', u'bar "quux" baz']),
-            (u"foo 'bar \\'quux\\' baz'", [u'foo', u"bar 'quux' baz"]),
-            (u"foo \\'bar baz\\'", [u'foo', u"\\'bar", u"baz\\'"])]
+            (u'foo \\"bar baz\\"', [u'foo', u'\\"bar', u'baz\\"'])]
 
         for input, output in expected:
             args = plugin.IncrementalArguments(input)
