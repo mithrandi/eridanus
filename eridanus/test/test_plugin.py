@@ -1,8 +1,6 @@
 from twisted.trial import unittest
 
-from eridanus import plugin
-from eridanus.ieridanus import IEridanusPluginProvider, IEridanusBrokenPluginProvider
-from eridanus.ieridanus import IEridanusPlugin, IEridanusBrokenPlugin
+from eridanus import plugin, ieridanus
 
 
 # Make pyflakes happy
@@ -10,11 +8,10 @@ UselessPlugin = None
 SadPlugin = None
 
 
-class TestSafePluginImport(unittest.TestCase):
+class SafePluginImportTests(unittest.TestCase):
     """
     Tests for the broken plugin system.
     """
-
     def test_workingPlugin(self):
         """
         Non-broken plugins should be imported fine.
@@ -22,8 +19,9 @@ class TestSafePluginImport(unittest.TestCase):
         plugin.safePluginImport(globals(),
                                 'eridanus.test.plugin_working.UselessPlugin')
         self.assertEqual('UselessPlugin', UselessPlugin.pluginName)
-        self.assertTrue(IEridanusPlugin.implementedBy(UselessPlugin))
-        self.assertTrue(IEridanusPluginProvider.providedBy(UselessPlugin))
+        self.assertTrue(ieridanus.IEridanusPlugin.implementedBy(UselessPlugin))
+        self.assertTrue(
+            ieridanus.IEridanusPluginProvider.providedBy(UselessPlugin))
 
 
     def test_brokenPlugin(self):
@@ -33,10 +31,13 @@ class TestSafePluginImport(unittest.TestCase):
         plugin.safePluginImport(globals(),
                                 'eridanus.test.plugin_broken.SadPlugin')
         self.assertEqual('SadPlugin', SadPlugin.pluginName)
-        self.assertTrue(IEridanusBrokenPlugin.implementedBy(SadPlugin))
-        self.assertTrue(IEridanusBrokenPluginProvider.providedBy(SadPlugin))
-        self.assertFalse(IEridanusPlugin.implementedBy(SadPlugin))
-        self.assertFalse(IEridanusPluginProvider.providedBy(SadPlugin))
+        self.assertTrue(
+            ieridanus.IEridanusBrokenPlugin.implementedBy(SadPlugin))
+        self.assertTrue(
+            ieridanus.IEridanusBrokenPluginProvider.providedBy(SadPlugin))
+        self.assertFalse(ieridanus.IEridanusPlugin.implementedBy(SadPlugin))
+        self.assertFalse(
+            ieridanus.IEridanusPluginProvider.providedBy(SadPlugin))
         self.assertEqual(ImportError, SadPlugin.failure.type)
         self.assertEqual('No module named gyre_and_gimble_in_the_wabe',
                          SadPlugin.failure.getErrorMessage())

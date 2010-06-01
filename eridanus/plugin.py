@@ -309,7 +309,7 @@ class MethodCommand(object):
     implements(ICommand)
 
     defaultUsage = 'No usage information'
-    defaultHelp = """No additional help."""
+    defaultHelp = 'No additional help.'
 
     def __init__(self, method):
         super(MethodCommand, self).__init__()

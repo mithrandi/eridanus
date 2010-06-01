@@ -53,7 +53,6 @@ class AuthenticatedAvatar(Item, _AvatarMixin):
     you probably don't want the rest of the world being able to use.
     """
     typeName = 'eridanus_avatar_authenticatedavatar'
-    schemaVersion = 1
     powerupInterfaces = [IIRCAvatar]
 
     dummy = integer()
