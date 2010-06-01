@@ -119,3 +119,22 @@ class IncrementalArgumentsTests(unittest.TestCase):
         self.assertEquals(
             repr(args),
             "<IncrementalArguments tail=u'\"bar\" baz'>")
+
+
+    def test_rest(self):
+        """
+        L{eridanus.plugin.rest} decorates a function such that it will consume
+        all arguments in a single parameter.
+        """
+        class LookAPlugin(object):
+            @plugin.rest
+            def cmd_test(self, source, foo, bar, rest):
+                return [foo, bar, rest]
+
+        aplugin = LookAPlugin()
+        args = plugin.IncrementalArguments(u'foo bar baz quux oatmeal')
+        cmd = ieridanus.ICommand(aplugin.cmd_test)
+        cmd.locateCommand(args)
+        self.assertEquals(
+            cmd.invoke(None),
+            [u'foo', u'bar', u'baz quux oatmeal'])
