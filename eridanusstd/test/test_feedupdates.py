@@ -42,7 +42,8 @@ class FeedUpdatesTests(unittest.TestCase):
         self.path = FilePath(__file__)
         self.store = Store()
         self.plugin = feedupdates_plugin.FeedUpdates(store=self.store)
-        object.__setattr__(self.plugin, 'superfeedrService', MockSuperfeedrService())
+        object.__setattr__(
+            self.plugin, 'superfeedrService', MockSuperfeedrService())
         self.source = MockSource(u'#quux')
 
 
