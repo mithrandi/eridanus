@@ -13,6 +13,9 @@ from eridanusstd.plugindefs import feedupdates as feedupdates_plugin
 
 
 class MockSuperfeedrService(object):
+    """
+    Mock L{ISuperfeedrService}.
+    """
     def subscribe(self, url, callback):
         return succeed(None)
 
