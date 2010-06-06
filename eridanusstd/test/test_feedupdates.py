@@ -26,6 +26,9 @@ class MockSuperfeedrService(object):
 
 
 class MockSource(record('channel')):
+    """
+    Mock source object that counts function calls.
+    """
     def __init__(self, *a, **kw):
         super(MockSource, self).__init__(*a, **kw)
         self.calls = {}
@@ -51,6 +54,13 @@ class FeedUpdatesTests(unittest.TestCase):
 
 
     def test_subscribe(self):
+        """
+        Subscribing to a feed creates a L{SubscribedFeed} item with the
+        appropriate attributes. Invalid values for the C{formatting} argument
+        raise C{ValueError} and attempting to subscribe to the same feed twice
+        from the same subscription source (e.g. an IRC channel) results in
+        L{eridanusstd.errors.InvalidIdentifier} being raised.
+        """
         self.assertRaises(ValueError,
             self.plugin.subscribe, self.source, u'wrong', u'url', u'not_valid')
 
@@ -72,6 +82,11 @@ class FeedUpdatesTests(unittest.TestCase):
 
 
     def test_unsubscribe(self):
+        """
+        Unsubscribing deletes the relevant L{SubscribedFeed} item. Attempting
+        to unsubscribe from a nonexistant feed raises
+        L{eridanusstd.errors.InvalidIdentifier}.
+        """
         self.assertRaises(errors.InvalidIdentifier,
             self.plugin.unsubscribe, self.source, u'wrong')
 
@@ -90,6 +105,12 @@ class FeedUpdatesTests(unittest.TestCase):
 
 
     def test_getSubscription(self):
+        """
+        L{FeedUpdates.getSubscription} finds
+        the single subscription with the specified identifier attributed to the
+        specified feed subscriber. L{FeedUpdates.getSubscriptions} retrieves
+        all feeds for a given subsciber.
+        """
         self.assertIdentical(
             self.plugin.getSubscription(u'notthere', self.source.channel),
             None)
@@ -118,6 +139,9 @@ class FeedUpdatesTests(unittest.TestCase):
 
 
     def parse(self, path):
+        """
+        Parse the XML document at C{path} into a C{list} of C{domish} objects.
+        """
         elements = []
         stream = domish.ExpatElementStream()
         stream.DocumentStartEvent = lambda root: None
@@ -128,6 +152,10 @@ class FeedUpdatesTests(unittest.TestCase):
 
 
     def test_itemsReceived(self):
+        """
+        C{FeedUpdates.itemsReceived} is called with some Superfeedr item domish
+        instances, which then triggers C{source.notice}.
+        """
         elements = self.parse(self.path.sibling('feedupdates_1.xml'))
         items = elements[0].elements(
             uri=u'http://jabber.org/protocol/pubsub#event', name=u'items')
