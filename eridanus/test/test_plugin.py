@@ -87,6 +87,17 @@ class MethodCommandTests(unittest.TestCase):
         return cmd.invoke(None)
 
 
+    def test_invokeWithoutLocate(self):
+        """
+        Method commands have their C{args} attribute initialised to something,
+        instead of raising C{AttributeError}.
+        """
+        cmd = ICommand(self.cmd_test)
+        self.assertIdentical(type(cmd), MethodCommand)
+        self.assertRaises(errors.UsageError,
+            cmd.invoke, None)
+
+
     def test_invoke(self):
         """
         Invoke a command with exactly the right number of arguments, each
