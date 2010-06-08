@@ -113,12 +113,15 @@ class IAmbientEventObserver(Interface):
     """
     An object that receives notifications about ambient events.
     """
-
     def publicMessageReceived(source, message):
         """
         A public message occured.
+        """
 
-        @rtype: C{twisted.internet.Deferred}
+
+    def joinedChannel(source):
+        """
+        The client joined a channel.
         """
 
 

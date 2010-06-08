@@ -7,7 +7,8 @@ from twisted.cred.checkers import AllowAnonymousAccess
 from twisted.cred.credentials import UsernamePassword
 from twisted.cred.portal import Portal
 from twisted.internet import reactor, error as ierror
-from twisted.internet.defer import succeed, maybeDeferred, Deferred
+from twisted.internet.defer import (succeed, maybeDeferred, Deferred,
+    gatherResults)
 from twisted.internet.protocol import ReconnectingClientFactory
 from twisted.python import log
 from twisted.words.protocols.irc import IRCClient
@@ -145,6 +146,38 @@ class IRCBot(IRCClient, _IRCKeepAliveMixin):
         pass
 
 
+    def broadcastAmbientEvent(self, eventName, source, *args, **kw):
+        """
+        Broadcast an ambient event to all L{IAmbientEventObserver}s.
+
+        @type  eventName: C{str}
+        @param eventName: Event to broadcast, this is assumed to be a callable
+            attribute on the L{IAmbientEventObserver}.
+
+        @type source: L{IRCSource}
+
+        @param *args: Additional arguments to pass to the event observer.
+
+        @param *kw: Additional keyword arguments to pass to the event observer.
+
+        @rtype: C{Deferred}
+        """
+        ds = []
+        for obs in plugin.getAmbientEventObservers(self.appStore):
+            meth = getattr(obs, eventName, None)
+            if meth is not None:
+                d = maybeDeferred(meth, source, *args, **kw)
+                d.addErrback(self.mentionFailure, source)
+                ds.append(d)
+
+        return gatherResults(ds)
+
+
+    def joined(self, channel):
+        source = IRCSource(self, decode(channel), None)
+        self.broadcastAmbientEvent('joinedChannel', source)
+
+
     def privmsg(self, user, channel, message):
         user = IRCUser(user)
         if self.config.isIgnored(user.usermask):
@@ -280,7 +313,7 @@ class IRCBot(IRCClient, _IRCKeepAliveMixin):
             log.msg(msg)
         log.err(f)
         msg = '%s: %s' % (f.type.__name__, f.getErrorMessage())
-        source.reply(msg)
+        source.say(msg)
 
 
     def directedPublicMessage(self, source, message):
@@ -291,9 +324,7 @@ class IRCBot(IRCClient, _IRCKeepAliveMixin):
 
 
     def publicMessage(self, source, message):
-        for obs in plugin.getAmbientEventObservers(self.appStore):
-            maybeDeferred(obs.publicMessageReceived, source, message
-                ).addErrback(self.mentionFailure, source)
+        self.broadcastAmbientEvent('publicMessageReceived', source, message)
 
 
     def getUsername(self, nickname):
