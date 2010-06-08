@@ -755,8 +755,7 @@ class IRCBotService(Item):
 
 
     def privilegedStartService(self):
-        if self.config.portNumber < 1024:
-            self.connector = self.connect()
+        pass
 
 
     def startService(self):
