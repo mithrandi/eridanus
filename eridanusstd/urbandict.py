@@ -53,8 +53,8 @@ class UrbanDictService(soap.Surfactant):
         Lookup C{term} on Urban Dictionary.
         """
         kw = {soap.XSI + 'type': 'xsd:string'}
-        request = request(URBANDICT.key(self.apiKey, **kw),
-                          URBANDICT.term(term, **kw))
+        request = request(soap.Local.key(self.apiKey, **kw),
+                          soap.Local.term(term, **kw))
 
         def handleResponse(response):
             results = list(self.parseLookupResponse(response))
@@ -70,5 +70,5 @@ class UrbanDictService(soap.Surfactant):
         Verify C{self.apiKey}.
         """
         kw = {soap.XSI + 'type': 'xsd:string'}
-        request = request(URBANDICT.key(self.apiKey, **kw))
+        request = request(soap.Local.key(self.apiKey, **kw))
         return request, lambda response: soap.getValueFromXSIType(response.find('return'))
