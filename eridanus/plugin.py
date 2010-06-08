@@ -325,6 +325,7 @@ class MethodCommand(object):
             help = self.defaultHelp
 
         self.method = method
+        self.args = IncrementalArguments(u'')
         self.rest = getattr(method, 'rest', False)
         self.name = method.__name__[4:]
         self.usage = usage
@@ -368,7 +369,7 @@ class MethodCommand(object):
 
     def locateCommand(self, args):
         self.args = args
-        return self, None
+        return self, IncrementalArguments(u'')
 
 
     def invoke(self, source):
