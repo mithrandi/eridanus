@@ -142,9 +142,13 @@ def getCommandArgLimits(method, minargs=None, maxargs=None):
         else:
             maxargs = None
 
-    if rest and maxargs is None:
-        raise TypeError(
-            'Commands decorated with "rest" cannot use varargs')
+    if rest:
+        if maxargs is None:
+            raise TypeError(
+                'Commands decorated with "rest" cannot use varargs')
+        elif minargs != maxargs:
+            raise TypeError(
+                'Commands decorated with "rest" cannot use defaults')
 
     return minargs, maxargs
 
@@ -380,7 +384,7 @@ class MethodCommand(object):
 
         if self.rest:
             params.append(self.args.tail)
-        elif self.maxargs is not None and self.args.tail:
+        elif self.args.tail:
             raise errors.UsageError('Too many arguments -- ' + self.usage)
 
         if len(params) < self.minargs:

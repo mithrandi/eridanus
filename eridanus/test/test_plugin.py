@@ -45,6 +45,148 @@ class SafePluginImportTests(unittest.TestCase):
 
 
 
+class MethodCommandTests(unittest.TestCase):
+    """
+    Tests for L{eridanus.plugin.MethodCommand}.
+    """
+    def cmd_test(self, source, foo, bar):
+        return (foo, bar)
+
+
+    def cmd_defaults(self, source, foo, bar=None):
+        return (foo, bar)
+
+
+    def cmd_varargs(self, source, foo, *args):
+        return (foo, args)
+
+
+    @rest
+    def cmd_rest(self, source, foo, bar):
+        return (foo, bar)
+
+
+    @rest
+    def cmd_restDefaults(self, source, foo, bar=None):
+        return (foo, bar)
+
+
+    @rest
+    def cmd_restVarargs(self, source, foo, *args):
+        return (foo, args)
+
+
+    def invokeCommand(self, meth, args):
+        """
+        Adapt C{meth} to L{ICommand}, checking the result is L{MethodCommand}
+        and invoke it with C{args} as the arguments.
+        """
+        cmd = ICommand(meth)
+        self.assertIdentical(type(cmd), MethodCommand)
+        cmd.locateCommand(args)
+        return cmd.invoke(None)
+
+
+    def test_invoke(self):
+        """
+        Invoke a command with exactly the right number of arguments, each
+        argument given is split and passed as individual function arguments.
+        """
+        res = self.invokeCommand(
+            self.cmd_test, IncrementalArguments('foo bar'))
+        self.assertEquals(res, (u'foo', u'bar'))
+
+
+    def test_invokeDefaults(self):
+        """
+        Invoke a command, with defaults, allowing one of the defaults to be used.
+        """
+        res = self.invokeCommand(
+            self.cmd_defaults, IncrementalArguments('foo'))
+        self.assertEquals(res, (u'foo', None))
+
+
+    def test_invokeVarargs(self):
+        """
+        Invoke a command, with varargs (C{*args}).
+        """
+        res = self.invokeCommand(
+            self.cmd_varargs, IncrementalArguments('foo'))
+        self.assertEquals(res, (u'foo', ()))
+
+        res = self.invokeCommand(
+            self.cmd_varargs, IncrementalArguments('foo baz  quux'))
+        self.assertEquals(res, (u'foo', (u'baz', u'quux')))
+
+
+    def test_invokeTooMany(self):
+        """
+        Invoke a command with too many arguments, resulting in
+        L{eridanus.errors.UsageError}.
+        """
+        self.assertRaises(errors.UsageError,
+            self.invokeCommand,
+            self.cmd_test, IncrementalArguments('foo bar baz'))
+
+
+    def test_invokeTooFew(self):
+        """
+        Invoke a command with too few arguments, resulting in
+        L{eridanus.errors.UsageError}.
+        """
+        self.assertRaises(errors.UsageError,
+            self.invokeCommand,
+            self.cmd_test, IncrementalArguments('foo'))
+
+
+    def test_invokeRest(self):
+        """
+        Invoke a command decorated with L{rest}, the final command argument
+        will contain all remaining arguments intact. Omitting an argument to
+        the "rest" (final) argument results in it being the empty string.
+        """
+        res = self.invokeCommand(self.cmd_rest, IncrementalArguments('foo'))
+        self.assertEquals(res, (u'foo', u''))
+
+        res = self.invokeCommand(self.cmd_rest, IncrementalArguments('foo bar'))
+        self.assertEquals(res, (u'foo', u'bar'))
+
+        res = self.invokeCommand(
+            self.cmd_rest, IncrementalArguments('foo bar baz'))
+        self.assertEquals(res, (u'foo', u'bar baz'))
+
+
+    def test_invokeRestDefaults(self):
+        """
+        Commands decorated with L{rest} using defaults cause C{TypeError} to be
+        raised.
+        """
+        self.assertRaises(TypeError,
+            self.invokeCommand,
+            self.cmd_restDefaults, IncrementalArguments('foo'))
+
+
+    def test_invokeRestVarargs(self):
+        """
+        Commands decorated with L{rest} using varargs (C{*args}) cause C{TypeError} to be
+        raised.
+        """
+        self.assertRaises(TypeError,
+            self.invokeCommand,
+            self.cmd_restVarargs, IncrementalArguments('foo'))
+
+
+    def test_invokeRestTooFew(self):
+        """
+        Invoke a command with too few arguments, resulting in
+        L{eridanus.errors.UsageError}.
+        """
+        self.assertRaises(errors.UsageError,
+            self.invokeCommand,
+            self.cmd_rest, IncrementalArguments(''))
+
+
+
 class IncrementalArgumentsTests(unittest.TestCase):
     """
     Tests for L{eridanus.plugin.IncrementalArguments}.
@@ -119,22 +261,3 @@ class IncrementalArgumentsTests(unittest.TestCase):
         self.assertEquals(
             repr(args),
             "<IncrementalArguments tail=u'\"bar\" baz'>")
-
-
-    def test_rest(self):
-        """
-        L{eridanus.plugin.rest} decorates a function such that it will consume
-        all arguments in a single parameter.
-        """
-        class LookAPlugin(object):
-            @plugin.rest
-            def cmd_test(self, source, foo, bar, rest):
-                return [foo, bar, rest]
-
-        aplugin = LookAPlugin()
-        args = plugin.IncrementalArguments(u'foo bar baz quux oatmeal')
-        cmd = ieridanus.ICommand(aplugin.cmd_test)
-        cmd.locateCommand(args)
-        self.assertEquals(
-            cmd.invoke(None),
-            [u'foo', u'bar', u'baz quux oatmeal'])
