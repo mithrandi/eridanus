@@ -227,7 +227,7 @@ class IncrementalArgumentsTests(unittest.TestCase):
             (u"you're", [u"you're"]),
             (u'foo "bar baz"', [u'foo', u'bar baz']),
             (u'foo "bar \\"quux\\" baz"', [u'foo', u'bar "quux" baz']),
-            (u'foo \\ bar', [u'foo', u'\\', u'bar'])]
+            (u'foo"bar baz"quux', [u'foo"bar', u'baz"quux'])]
 
         for input, output in expected:
             args = IncrementalArguments(input)
