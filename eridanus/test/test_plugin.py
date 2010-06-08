@@ -1,6 +1,11 @@
 from twisted.trial import unittest
 
-from eridanus import plugin, ieridanus
+from eridanus import errors
+from eridanus.ieridanus import (ICommand, IEridanusPluginProvider,
+    IEridanusPlugin, IAmbientEventObserver, IEridanusBrokenPlugin,
+    IEridanusBrokenPluginProvider)
+from eridanus.plugin import (safePluginImport, MethodCommand, rest,
+    IncrementalArguments)
 
 
 # Make pyflakes happy
@@ -16,31 +21,27 @@ class SafePluginImportTests(unittest.TestCase):
         """
         Non-broken plugins should be imported fine.
         """
-        plugin.safePluginImport(globals(),
-                                'eridanus.test.plugin_working.UselessPlugin')
-        self.assertEqual('UselessPlugin', UselessPlugin.pluginName)
-        self.assertTrue(ieridanus.IEridanusPlugin.implementedBy(UselessPlugin))
-        self.assertTrue(
-            ieridanus.IEridanusPluginProvider.providedBy(UselessPlugin))
+        safePluginImport(
+            globals(), 'eridanus.test.plugin_working.UselessPlugin')
+        self.assertEquals('UselessPlugin', UselessPlugin.pluginName)
+        self.assertTrue(IEridanusPlugin.implementedBy(UselessPlugin))
+        self.assertTrue(IEridanusPluginProvider.providedBy(UselessPlugin))
 
 
     def test_brokenPlugin(self):
         """
         Broken plugins should be imported as BrokenPlugins.
         """
-        plugin.safePluginImport(globals(),
-                                'eridanus.test.plugin_broken.SadPlugin')
-        self.assertEqual('SadPlugin', SadPlugin.pluginName)
-        self.assertTrue(
-            ieridanus.IEridanusBrokenPlugin.implementedBy(SadPlugin))
-        self.assertTrue(
-            ieridanus.IEridanusBrokenPluginProvider.providedBy(SadPlugin))
-        self.assertFalse(ieridanus.IEridanusPlugin.implementedBy(SadPlugin))
-        self.assertFalse(
-            ieridanus.IEridanusPluginProvider.providedBy(SadPlugin))
-        self.assertEqual(ImportError, SadPlugin.failure.type)
-        self.assertEqual('No module named gyre_and_gimble_in_the_wabe',
-                         SadPlugin.failure.getErrorMessage())
+        safePluginImport(globals(), 'eridanus.test.plugin_broken.SadPlugin')
+        self.assertEquals('SadPlugin', SadPlugin.pluginName)
+        self.assertTrue(IEridanusBrokenPlugin.implementedBy(SadPlugin))
+        self.assertTrue(IEridanusBrokenPluginProvider.providedBy(SadPlugin))
+        self.assertFalse(IEridanusPlugin.implementedBy(SadPlugin))
+        self.assertFalse(IEridanusPluginProvider.providedBy(SadPlugin))
+        self.assertEquals(ImportError, SadPlugin.failure.type)
+        self.assertEquals(
+            'No module named gyre_and_gimble_in_the_wabe',
+            SadPlugin.failure.getErrorMessage())
 
 
 
@@ -53,7 +54,7 @@ class IncrementalArgumentsTests(unittest.TestCase):
         C{IncrementalArguments} is iterable and produces a result for each word
         in the message.
         """
-        args = plugin.IncrementalArguments(u'foo bar baz')
+        args = IncrementalArguments(u'foo bar baz')
         self.assertEquals(list(args), [u'foo', u'bar', 'baz'])
         self.assertEquals(args.tail, u'')
 
@@ -64,30 +65,30 @@ class IncrementalArgumentsTests(unittest.TestCase):
         leaves the remainder of the message intact. Phrases in quotes are
         treated as a single word.
         """
-        args = plugin.IncrementalArguments(u'foo bar baz')
+        args = IncrementalArguments(u'foo bar baz')
         self.assertEquals(args.next(), u'foo')
         self.assertEquals(args.tail, u'bar baz')
 
-        args = plugin.IncrementalArguments(u'"foo bar" baz')
+        args = IncrementalArguments(u'"foo bar" baz')
         self.assertEquals(args.next(), u'foo bar')
         self.assertEquals(args.tail, u'baz')
 
 
     def test_quoting(self):
         """
-        Quote characters (C{"} and C{'}) can be escaped with C{\} when they
-        appear inside quote characters. Outside of quote characters C{\} has no
-        no special meaning.
+        The quote character (C{"} can be escaped with C{\} when it appears
+        inside quote characters. Outside of quote characters C{\} has no no
+        special meaning.
         """
         expected = [
             (u'"foo"', [u'foo']),
             (u"you're", [u"you're"]),
             (u'foo "bar baz"', [u'foo', u'bar baz']),
             (u'foo "bar \\"quux\\" baz"', [u'foo', u'bar "quux" baz']),
-            (u'foo \\"bar baz\\"', [u'foo', u'\\"bar', u'baz\\"'])]
+            (u'foo \\ bar', [u'foo', u'\\', u'bar'])]
 
         for input, output in expected:
-            args = plugin.IncrementalArguments(input)
+            args = IncrementalArguments(input)
             self.assertEquals(list(args), output)
 
 
@@ -97,7 +98,7 @@ class IncrementalArgumentsTests(unittest.TestCase):
         C{IncrementalArguments} instance that can be manipulated separately
         from the original.
         """
-        args = plugin.IncrementalArguments(u'foo bar baz')
+        args = IncrementalArguments(u'foo bar baz')
         argscopy = args.copy()
         list(args)
         self.assertEquals(list(args), [])
@@ -109,7 +110,7 @@ class IncrementalArgumentsTests(unittest.TestCase):
         C{IncrementalArguments.__repr__} produces useful and accurate
         human-readable text.
         """
-        args = plugin.IncrementalArguments(u'foo "bar" baz')
+        args = IncrementalArguments(u'foo "bar" baz')
         self.assertEquals(
             repr(args),
             "<IncrementalArguments tail=u'foo \"bar\" baz'>")
