@@ -154,13 +154,11 @@ class IncrementalArguments(object):
     """
     Incrementally parse arguments from a message via the iteration protocol.
 
-    Text quoted with C{"} or C{'} is split as a single value.
+    Text quoted with C{"} is split as a single value.
 
     @type tail: C{unicode}
     @ivar tail: Current tail of the message.
     """
-    quoteCharacters = [u'"']
-
     def __init__(self, tail):
         self.tail = tail
 
@@ -192,7 +190,7 @@ class IncrementalArguments(object):
                     escaped = False
                 elif c == u'\\':
                     escaped = True
-                elif c in self.quoteCharacters:
+                elif c == u'"':
                     break
                 else:
                     one += c
@@ -202,7 +200,7 @@ class IncrementalArguments(object):
         if s == u'':
             raise ValueError('No arguments to split')
 
-        if s[0] in self.quoteCharacters:
+        if s[0] == u'"':
             head, tail = _readQuoted(s[1:])
         else:
             head, tail = _readOne(s)
