@@ -2,8 +2,7 @@ from twisted.trial import unittest
 
 from eridanus import errors
 from eridanus.ieridanus import (ICommand, IEridanusPluginProvider,
-    IEridanusPlugin, IAmbientEventObserver, IEridanusBrokenPlugin,
-    IEridanusBrokenPluginProvider)
+    IEridanusPlugin, IEridanusBrokenPlugin, IEridanusBrokenPluginProvider)
 from eridanus.plugin import (safePluginImport, MethodCommand, rest,
     IncrementalArguments)
 
@@ -104,7 +103,7 @@ class MethodCommandTests(unittest.TestCase):
         argument given is split and passed as individual function arguments.
         """
         res = self.invokeCommand(
-            self.cmd_test, IncrementalArguments('foo bar'))
+            self.cmd_test, IncrementalArguments(u'foo bar'))
         self.assertEquals(res, (u'foo', u'bar'))
 
 
@@ -113,7 +112,7 @@ class MethodCommandTests(unittest.TestCase):
         Invoke a command, with defaults, allowing one of the defaults to be used.
         """
         res = self.invokeCommand(
-            self.cmd_defaults, IncrementalArguments('foo'))
+            self.cmd_defaults, IncrementalArguments(u'foo'))
         self.assertEquals(res, (u'foo', None))
 
 
@@ -122,11 +121,11 @@ class MethodCommandTests(unittest.TestCase):
         Invoke a command, with varargs (C{*args}).
         """
         res = self.invokeCommand(
-            self.cmd_varargs, IncrementalArguments('foo'))
+            self.cmd_varargs, IncrementalArguments(u'foo'))
         self.assertEquals(res, (u'foo', ()))
 
         res = self.invokeCommand(
-            self.cmd_varargs, IncrementalArguments('foo baz  quux'))
+            self.cmd_varargs, IncrementalArguments(u'foo baz  quux'))
         self.assertEquals(res, (u'foo', (u'baz', u'quux')))
 
 
@@ -137,7 +136,7 @@ class MethodCommandTests(unittest.TestCase):
         """
         self.assertRaises(errors.UsageError,
             self.invokeCommand,
-            self.cmd_test, IncrementalArguments('foo bar baz'))
+            self.cmd_test, IncrementalArguments(u'foo bar baz'))
 
 
     def test_invokeTooFew(self):
@@ -147,7 +146,7 @@ class MethodCommandTests(unittest.TestCase):
         """
         self.assertRaises(errors.UsageError,
             self.invokeCommand,
-            self.cmd_test, IncrementalArguments('foo'))
+            self.cmd_test, IncrementalArguments(u'foo'))
 
 
     def test_invokeRest(self):
@@ -156,14 +155,15 @@ class MethodCommandTests(unittest.TestCase):
         will contain all remaining arguments intact. Omitting an argument to
         the "rest" (final) argument results in it being the empty string.
         """
-        res = self.invokeCommand(self.cmd_rest, IncrementalArguments('foo'))
+        res = self.invokeCommand(self.cmd_rest, IncrementalArguments(u'foo'))
         self.assertEquals(res, (u'foo', u''))
 
-        res = self.invokeCommand(self.cmd_rest, IncrementalArguments('foo bar'))
+        res = self.invokeCommand(
+            self.cmd_rest, IncrementalArguments(u'foo bar'))
         self.assertEquals(res, (u'foo', u'bar'))
 
         res = self.invokeCommand(
-            self.cmd_rest, IncrementalArguments('foo bar baz'))
+            self.cmd_rest, IncrementalArguments(u'foo bar baz'))
         self.assertEquals(res, (u'foo', u'bar baz'))
 
 
@@ -174,7 +174,7 @@ class MethodCommandTests(unittest.TestCase):
         """
         self.assertRaises(TypeError,
             self.invokeCommand,
-            self.cmd_restDefaults, IncrementalArguments('foo'))
+            self.cmd_restDefaults, IncrementalArguments(u'foo'))
 
 
     def test_invokeRestVarargs(self):
@@ -184,7 +184,7 @@ class MethodCommandTests(unittest.TestCase):
         """
         self.assertRaises(TypeError,
             self.invokeCommand,
-            self.cmd_restVarargs, IncrementalArguments('foo'))
+            self.cmd_restVarargs, IncrementalArguments(u'foo'))
 
 
     def test_invokeRestTooFew(self):
@@ -194,7 +194,7 @@ class MethodCommandTests(unittest.TestCase):
         """
         self.assertRaises(errors.UsageError,
             self.invokeCommand,
-            self.cmd_rest, IncrementalArguments(''))
+            self.cmd_rest, IncrementalArguments(u''))
 
 
 

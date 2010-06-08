@@ -1,4 +1,4 @@
-import shlex, itertools
+import itertools
 
 from zope.interface import implements
 
