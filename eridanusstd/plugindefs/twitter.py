@@ -109,7 +109,7 @@ class Twitter(Item, Plugin):
         """
         Retrieve recent statuses (defaulting to 3) for a screen name or user ID.
         """
-        d = twitter.query('user_timeline', nameOrID, count=limit)
+        d = twitter.query('statuses/user_timeline', nameOrID, count=limit)
 
         @d.addCallback
         def displayStatuses(timeline):

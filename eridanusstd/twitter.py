@@ -59,7 +59,7 @@ def query(method, arg=_no_arg, **params):
         url = url.child(name)
 
     for key, value in params.iteritems():
-        url.add(key, value)
+        url = url.add(key, value)
     d = util.PerseverantDownloader(url).go()
     d.addErrback(handleError)
     d.addCallback(
