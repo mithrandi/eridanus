@@ -1,6 +1,6 @@
 # -*- test-case-name: eridanus.test.test_plugin -*-
 
-import inspect, types, re
+import inspect, types, re, itertools
 from textwrap import dedent
 from zope.interface import implements, classProvides
 
@@ -98,6 +98,16 @@ def usage(desc):
 
 
 
+def rest(f):
+    """
+    Decorate a function with a flag indicating that it should receive all
+    remainder arguments in the last function argument.
+    """
+    f.rest = True
+    return f
+
+
+
 def alias(f, name=None):
     """
     Create an alias of another command.
@@ -113,11 +123,13 @@ def alias(f, name=None):
 
 def getCommandArgLimits(method, minargs=None, maxargs=None):
     """
-    Find the argument limits on an ICommand method.
+    Find the argument limits on an C{ICommand} method.
     """
     args, vararg, varkw, defaults = inspect.getargspec(method)
     # Exclude self and source parameters.
     normArgCount = len(args) - 2
+
+    rest = getattr(method, 'rest', False)
 
     if minargs is None:
         # Exclude default arguments from impacting the minimum number of
@@ -130,7 +142,91 @@ def getCommandArgLimits(method, minargs=None, maxargs=None):
         else:
             maxargs = None
 
+    if rest:
+        if maxargs is None:
+            raise TypeError(
+                'Commands decorated with "rest" cannot use varargs')
+        elif minargs != maxargs:
+            raise TypeError(
+                'Commands decorated with "rest" cannot use defaults')
+
     return minargs, maxargs
+
+
+
+class IncrementalArguments(object):
+    """
+    Incrementally parse arguments from a message via the iteration protocol.
+
+    Text quoted with C{"} is split as a single value.
+
+    @type tail: C{unicode}
+    @ivar tail: Current tail of the message.
+    """
+    def __init__(self, tail):
+        self.tail = tail
+
+
+    def __repr__(self):
+        return '<%s tail=%r>' % (
+            type(self).__name__,
+            self.tail)
+
+
+    def _splitArguments(self):
+        """
+        Split the next argument from C{tail}.
+
+        @rtype: C{(unicode, unicode)}
+        @return: C{(head, tail)}
+        """
+        def _readOne(s):
+            one, sep, rest = s.partition(' ')
+            return one, rest
+
+        def _readQuoted(s):
+            one = u''
+            escaped = False
+            it = iter(s)
+            for c in it:
+                if escaped:
+                    one += c
+                    escaped = False
+                elif c == u'\\':
+                    escaped = True
+                elif c == u'"':
+                    break
+                else:
+                    one += c
+            return one, u''.join(it)
+
+        s = self.tail.lstrip()
+        if s == u'':
+            raise ValueError('No arguments to split')
+
+        if s[0] == u'"':
+            head, tail = _readQuoted(s[1:])
+        else:
+            head, tail = _readOne(s)
+
+        return head, tail.lstrip()
+
+
+    def copy(self):
+        return type(self)(self.tail)
+
+
+    # Iterator protocol
+
+    def __iter__(self):
+        return self
+
+
+    def next(self):
+        if not self.tail:
+            raise StopIteration()
+        head, self.tail = self._splitArguments()
+        return head
 
 
 
@@ -163,35 +259,33 @@ class CommandLookupMixin(object):
                 yield ICommand(getattr(self, name))
 
 
-    ### ICommand
+    # ICommand
 
-    def locateCommand(self, params):
-        cmd = params.pop(0).lower()
-        method = getattr(self,
-                         'cmd_%s' % cmd,
-                         None)
+    def locateCommand(self, args):
+        cmd = args.next().lower()
+        method = getattr(self, 'cmd_%s' % cmd, None)
         if method is None:
-            msg = 'Unknown command "%s"' % (cmd,)
-            raise errors.UsageError(msg)
+            raise errors.UsageError('Unknown command "%s"' % (cmd,))
 
         cmd = ICommand(method)
         # XXX: This might not be the best route.  Primarily useful for making
         # SubCommand not quite so useless (access to the parent's store etc.)
         cmd.parent = self
-        return cmd, params
+        return cmd, args
 
 
     def invoke(self, source):
         raise errors.UsageError('Not a command')
 
 
-    
+
 class SubCommand(CommandLookupMixin):
     # XXX: maybe this could actually work?
     alias = False
 
     def invoke(self, source):
         raise errors.UsageError('Too few parameters -- ' + self.help)
+
 
 
 class MethodCommand(object):
@@ -217,7 +311,7 @@ class MethodCommand(object):
     implements(ICommand)
 
     defaultUsage = 'No usage information'
-    defaultHelp = """No additional help."""
+    defaultHelp = 'No additional help.'
 
     def __init__(self, method):
         super(MethodCommand, self).__init__()
@@ -231,7 +325,8 @@ class MethodCommand(object):
             help = self.defaultHelp
 
         self.method = method
-        self.params = []
+        self.args = IncrementalArguments(u'')
+        self.rest = getattr(method, 'rest', False)
         self.name = method.__name__[4:]
         self.usage = usage
         self.shortHelp, self.help = formatHelp(help)
@@ -270,22 +365,33 @@ class MethodCommand(object):
         return getattr(self.method, 'alias', False)
 
 
-    ### ICommand
+    # ICommand
 
-    def locateCommand(self, params):
-        self.params = params
-        return self, []
+    def locateCommand(self, args):
+        self.args = args
+        return self, IncrementalArguments(u'')
 
 
     def invoke(self, source):
-        numargs = len(self.params)
+        count = self.maxargs
+        if self.rest:
+            count -= 1
 
-        if numargs < self.minargs:
-            raise errors.UsageError('Not enough arguments -- ' + self.usage)
-        if self.maxargs is not None and numargs > self.maxargs:
+        if count is None:
+            params = self.args
+        else:
+            params = itertools.islice(self.args, count)
+        params = list(params)
+
+        if self.rest:
+            params.append(self.args.tail)
+        elif self.args.tail:
             raise errors.UsageError('Too many arguments -- ' + self.usage)
 
-        return self.method(source, *self.params)
+        if len(params) < self.minargs:
+            raise errors.UsageError('Not enough arguments -- ' + self.usage)
+
+        return self.method(source, *params)
 
 registerAdapter(MethodCommand, types.MethodType, ICommand)
 

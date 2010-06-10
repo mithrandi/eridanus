@@ -14,17 +14,17 @@ class _AvatarMixin(object):
     """
     implements(IIRCAvatar)
 
-    def locateCommand(self, plugin, params):
+    def locateCommand(self, plugin, args):
         cmd = plugin
-        while params:
-            cmd, params = cmd.locateCommand(params)
-
+        while args.tail:
+            cmd, args = cmd.locateCommand(args)
         return cmd
 
-    def getAllCommands(self, protocol, params):
-        pluginName = params.pop(0)
+
+    def getAllCommands(self, protocol, args):
+        pluginName = args.next()
         for plugin in self.locatePlugins(protocol, pluginName):
-            yield self.locateCommand(plugin, params[:])
+            yield self.locateCommand(plugin, args.copy())
 
 
 class AnonymousAvatar(_AvatarMixin):
@@ -34,9 +34,12 @@ class AnonymousAvatar(_AvatarMixin):
     def locatePlugins(self, protocol, name):
         yield protocol.locatePlugin(name)
 
-    def getCommand(self, protocol, params):
-        plugin = self.locatePlugins(protocol, params.pop(0)).next()
-        return self.locateCommand(plugin, params)
+
+    def getCommand(self, protocol, args):
+        pluginName = args.next()
+        plugin = self.locatePlugins(protocol, pluginName).next()
+        return self.locateCommand(plugin, args)
+
 
 
 class AuthenticatedAvatar(Item, _AvatarMixin):
@@ -50,7 +53,6 @@ class AuthenticatedAvatar(Item, _AvatarMixin):
     you probably don't want the rest of the world being able to use.
     """
     typeName = 'eridanus_avatar_authenticatedavatar'
-    schemaVersion = 1
     powerupInterfaces = [IIRCAvatar]
 
     dummy = integer()
@@ -72,14 +74,15 @@ class AuthenticatedAvatar(Item, _AvatarMixin):
 
         return plugins
 
-    def getCommand(self, protocol, params):
-        pluginName = params.pop(0)
+
+    def getCommand(self, protocol, args):
+        pluginName = args.next()
         plugins = list(self.locatePlugins(protocol, pluginName))
 
         while plugins:
             try:
                 plugin = plugins.pop()
-                return self.locateCommand(plugin, params[:])
+                return self.locateCommand(plugin, args.copy())
             except errors.UsageError:
                 # XXX: this isn't great
                 if not plugins:
