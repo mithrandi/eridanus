@@ -6,7 +6,7 @@ from axiom.attributes import integer
 from axiom.item import Item
 
 from eridanus.ieridanus import IEridanusPluginProvider
-from eridanus.plugin import Plugin, usage
+from eridanus.plugin import Plugin, usage, rest
 
 from eridanusstd import dict
 
@@ -56,6 +56,7 @@ class Dict(Item, Plugin):
         return dict.getDicts().addCallback(gotDicts)
 
 
+    @rest
     @usage(u'define <word>')
     def cmd_define(self, source, word):
         """
@@ -69,6 +70,7 @@ class Dict(Item, Plugin):
             ).addCallback(source.reply)
 
 
+    @rest
     @usage(u'definefor <database> <word>')
     def cmd_definefor(self, source, database, word):
         """
@@ -82,6 +84,7 @@ class Dict(Item, Plugin):
             ).addCallback(source.reply)
 
 
+    @rest
     @usage(u'spell <word>')
     def cmd_spell(self, source, word, language=None):
         """
@@ -94,6 +97,7 @@ class Dict(Item, Plugin):
         source.reply(self.suggest(word, u'en_GB'))
 
 
+    @rest
     @usage(u'spell <language> <word>')
     def cmd_spellfor(self, source, language, word):
         """
