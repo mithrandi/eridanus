@@ -475,22 +475,23 @@ class LinkManager(Item):
         """
         return self._entryBy(url=url)
 
-    def search(self, terms, limit=None):
+
+    def search(self, term, limit=None):
         """
-        Find L{LinkEntry}s with information that matches C{terms}.
+        Find L{LinkEntry}s with information that matches C{term}.
 
         A search attempts to find any entry with any term occuring in the
         title, url or any of the comments.  More terms mean more specific
         results.
 
-        @type terms: C{iterable}
-        @param terms: The terms to include in the search
+        @type  term: C{unicode}
+        @param term: Search term.
 
-        @type limit: C{int} or C{None}
-        @param limit: Maximum number of results to find
+        @type  limit: C{int} or C{None}
+        @param limit: Maximum number of results to find.
 
         @rtype: C{iterable}
-        @return: All L{LinkEntry}s that matched the search terms
+        @return: All L{LinkEntry}s that matched the search term
         """
         def getEntries(results):
             def getEntryItemByID(storeID):
@@ -511,8 +512,8 @@ class LinkManager(Item):
             entries = itertools.islice(entries, limit)
             return sorted(entries, key=lambda e: e.modified, reverse=True)
 
-        term = u' '.join(terms)
         return self.searchIndexer.search(term).addCallback(getEntries)
+
 
     # XXX: should this really be a method?
     def topContributors(self, limit=None):

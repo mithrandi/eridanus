@@ -8,7 +8,7 @@ from axiom.item import Item
 
 from eridanus import iriparse
 from eridanus.ieridanus import IEridanusPluginProvider, IAmbientEventObserver
-from eridanus.plugin import Plugin, usage
+from eridanus.plugin import Plugin, usage, rest
 from eridanus.util import truncate
 
 from eridanusstd import twitter
@@ -89,16 +89,16 @@ class Twitter(Item, Plugin):
         return d
 
 
-    @usage(u'search <term> [term ...]')
-    def cmd_search(self, source, term, *terms):
+    @rest
+    @usage(u'search <term>')
+    def cmd_search(self, source, term):
         """
         Search Twitter.
 
         For more information about search operators see
         <http://search.twitter.com/operators>.
         """
-        terms = [term] + list(terms)
-        d = twitter.search(terms)
+        d = twitter.search(term)
         d.addCallback(self.formatResults)
         d.addCallback(self.displayResults, source)
         return d

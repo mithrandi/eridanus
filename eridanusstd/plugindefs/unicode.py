@@ -8,7 +8,9 @@ from axiom.attributes import integer
 from axiom.item import Item
 
 from eridanus.ieridanus import IEridanusPluginProvider
-from eridanus.plugin import Plugin, usage
+from eridanus.plugin import Plugin, usage, rest
+
+
 
 class Unicode(Item, Plugin):
     """
@@ -27,6 +29,8 @@ class Unicode(Item, Plugin):
         """
         source.reply(unicodedata.name(char))
 
+
+    @rest
     @usage(u'lookup <unicodeName>')
     def cmd_lookup(self, source, name):
         """

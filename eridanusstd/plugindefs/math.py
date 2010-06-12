@@ -6,7 +6,7 @@ from axiom.attributes import integer
 from axiom.item import Item
 
 from eridanus.ieridanus import IEridanusPluginProvider
-from eridanus.plugin import Plugin, usage
+from eridanus.plugin import Plugin, usage, rest
 
 from eridanusstd import calc
 
@@ -17,18 +17,17 @@ class Math(Item, Plugin):
     Various mathematics related commands.
     """
     classProvides(IPlugin, IEridanusPluginProvider)
-    schemaVersion = 1
     typeName = 'eridanus_plugins_math'
 
     dummy = integer()
 
-    @usage(u'calc <expression> [expression ...]')
-    def cmd_calc(self, source, expr, *exprs):
+    @rest
+    @usage(u'calc <expn>')
+    def cmd_calc(self, source, expn):
         """
         Evaluate simple mathematical expressions.
         """
-        expr = u' '.join((expr,) + exprs)
-        source.reply(calc.evaluate(expr))
+        source.reply(calc.evaluate(expn))
 
 
     @usage(u'base <number> <base>')

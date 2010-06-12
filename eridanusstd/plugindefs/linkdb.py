@@ -12,7 +12,7 @@ from axiom.scripts import axiomatic
 
 from eridanus import util
 from eridanus.ieridanus import IEridanusPluginProvider, IAmbientEventObserver
-from eridanus.plugin import AmbientEventObserver, Plugin, usage, alias
+from eridanus.plugin import AmbientEventObserver, Plugin, usage, alias, rest
 from eridanus.bot import IRCBotService, IRCBotConfig
 
 from eridanusstd import linkdb
@@ -291,7 +291,7 @@ class Hackery(axiomatic.AxiomaticSubCommand):
 
         #scheduler = Scheduler(store=store)
         #installOn(scheduler, store)
-        
+
         print 'Deleting old indexers...'
         store.query(SQLiteIndexer).deleteFromStore()
         print 'Creating new indexer...'
@@ -386,6 +386,7 @@ class LinkDBAdmin(Item, Plugin, _LinkDBHelperMixin):
         source.reply(u'Undeleted entry %s.' % (entry.canonical,))
 
 
+
 class LinkDB(Item, Plugin, AmbientEventObserver, _LinkDBHelperMixin):
     """
     LinkDB is designed to track HTTP URLs authored by users.  Each URL is
@@ -395,20 +396,20 @@ class LinkDB(Item, Plugin, AmbientEventObserver, _LinkDBHelperMixin):
     and access is restricted as such.
     """
     classProvides(IPlugin, IEridanusPluginProvider, IAmbientEventObserver)
-    schemaVersion = 1
     typeName = 'eridanus_plugins_linkdb'
 
     axiomCommands = [
         ('export',  None, ExportEntries,  'Export entries'),
         ('import',  None, ImportEntries,  'Import entries'),
-        ('hackery', None, Hackery,        'Perform magic'),
-        ]
+        ('hackery', None, Hackery,        'Perform magic')]
+
     name = u'url'
 
     dummy = integer()
 
     def getLinkStore(self, source):
         return self.store
+
 
     def createEntry(self, (title, metadata), source, url, comment):
         """
@@ -426,6 +427,7 @@ class LinkDB(Item, Plugin, AmbientEventObserver, _LinkDBHelperMixin):
             entry.updateMetadata(metadata)
 
         return entry
+
 
     def updateEntry(self, (title, metadata), source, entry, comment=None):
         """
@@ -445,11 +447,13 @@ class LinkDB(Item, Plugin, AmbientEventObserver, _LinkDBHelperMixin):
         entry.touchEntry()
         return entry, c
 
+
     def fetchFailed(self, f, source, url):
         # Log the failure but go ahead with creating/updating the entry.
         msg = 'Fetching %s failed:' % (url,)
         source.logFailure(f, msg)
         return None, {}
+
 
     def snarfURLs(self, source, text):
         """
@@ -482,6 +486,7 @@ class LinkDB(Item, Plugin, AmbientEventObserver, _LinkDBHelperMixin):
 
         return gatherResults(list(fetch()))
 
+
     @usage(u'get <entryID>')
     def cmd_get(self, source, entryID):
         """
@@ -490,14 +495,16 @@ class LinkDB(Item, Plugin, AmbientEventObserver, _LinkDBHelperMixin):
         entry = self.getEntryByID(source, entryID)
         source.reply(entry.completeHumanReadable)
 
-    def find(self, linkManager, terms, limit=25):
+
+    def find(self, linkManager, term, limit=25):
         """
-        Search for <terms> in entries on <linkManager> up to a maximum of <limit>.
+        Search C{linkManager} for entries that match C{term}, up to a maximum
+        of C{limit}.
         """
         def processResults(entries):
             entries = list(entries)
             if not entries:
-                yield u'No results found for: %s.' % (u'; '.join(terms),)
+                yield u'No results found for: %s' % (term,)
             elif len(entries) <= 3:
                 for e in entries:
                     yield e.completeHumanReadable
@@ -507,37 +514,40 @@ class LinkDB(Item, Plugin, AmbientEventObserver, _LinkDBHelperMixin):
                 yield msg
 
         # XXX: don't hardcode the limit
-        return linkManager.search(terms, limit=limit
+        return linkManager.search(term, limit=limit
             ).addCallback(processResults)
 
-    @usage(u'find <term> [term ...]')
-    def cmd_find(self, source, term, *terms):
+
+    @rest
+    @usage(u'find <term>')
+    def cmd_find(self, source, term):
         """
-        Search for entries whose title, URL or comment contain any <term>.
+        Search for entries whose title, URL or comment match <term>.
 
         This search assumes the channel where the command was invoked, it can
         also not be used in private.  See the "findfor" command.
         """
-        terms = [term] + list(terms)
         lm = self.getLinkManager(source)
 
         def gotResults(results):
             map(source.reply, results)
 
-        return self.find(lm, terms
+        return self.find(lm, term
             ).addCallback(gotResults)
 
     cmd_search = alias(cmd_find, 'cmd_search')
 
-    @usage(u'findfor <channel> <term> [term ...]')
-    def cmd_findfor(self, source, channel, term, *terms):
+
+    @rest
+    @usage(u'findfor <channel> <term>')
+    def cmd_findfor(self, source, channel, term):
         """
-        Search <channel> for entries whose title, URL or comment contain any <term>.
+        Search <channel> for entries whose title, URL or comment match <term>.
         """
-        terms = [term] + list(terms)
         lm = self.getLinkManager(source, channel)
-        msg = self.find(lm, terms)
+        msg = self.find(lm, term)
         source.reply(msg)
+
 
     @usage(u'stats')
     def cmd_stats(self, source):
@@ -548,6 +558,7 @@ class LinkDB(Item, Plugin, AmbientEventObserver, _LinkDBHelperMixin):
         numEntries, numComments, numContributors, timespan = lm.stats()
         msg = '%d entries with %d comments from %d contributors over a total time period of %s.' % (numEntries, numComments, numContributors, util.humanReadableTimeDelta(timespan))
         source.reply(msg)
+
 
     @usage(u'discard <entryID>')
     def cmd_discard(self, source, entryID):
@@ -567,6 +578,7 @@ class LinkDB(Item, Plugin, AmbientEventObserver, _LinkDBHelperMixin):
 
         source.reply(msg)
 
+
     @usage(u'delete <entryID>')
     def cmd_delete(self, source, entryID):
         """
@@ -585,6 +597,7 @@ class LinkDB(Item, Plugin, AmbientEventObserver, _LinkDBHelperMixin):
 
         source.reply(msg)
 
+
     @usage(u'refresh <entryID>')
     def cmd_refresh(self, source, entryID):
         """
@@ -599,6 +612,7 @@ class LinkDB(Item, Plugin, AmbientEventObserver, _LinkDBHelperMixin):
             ).addErrback(self.fetchFailed, source, entry.url
             # XXX: it might be nice if self.fetchFailed could return the right thing for us
             ).addCallback(lambda *a: entryUpdated(entry))
+
 
     @usage(u'recent [nickname]')
     def cmd_recent(self, source, nickname=None):
@@ -617,7 +631,8 @@ class LinkDB(Item, Plugin, AmbientEventObserver, _LinkDBHelperMixin):
                 msg = u'No recent entries for \002%s\002.' % (nickname,)
             source.reply(msg)
 
-    ### IAmbientEventObserver
+
+    # IAmbientEventObserver
 
     def publicMessageReceived(self, source, message):
         return self.snarfURLs(source, message)

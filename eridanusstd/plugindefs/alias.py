@@ -6,7 +6,7 @@ from axiom.attributes import text
 from axiom.item import Item
 
 from eridanus.ieridanus import IEridanusPluginProvider, IAmbientEventObserver
-from eridanus.plugin import AmbientEventObserver, Plugin, usage
+from eridanus.plugin import AmbientEventObserver, Plugin, usage, rest
 from eridanus.util import padIterable
 
 from eridanusstd import alias
@@ -31,14 +31,14 @@ class Alias(Item, Plugin, AmbientEventObserver):
 
     trigger = text(default=u'!')
 
-    @usage(u'define <name> <command> [params ...]')
-    def cmd_define(self, source, name, command, *params):
+    @rest
+    @usage(u'define <name> <command>')
+    def cmd_define(self, source, name, command):
         """
         Define a new alias.
 
         Any existing alias with the given name will be overwritten.
         """
-        command = u' '.join([command] + list(params))
         a = alias.defineAlias(self.store, name, command)
         source.reply(a.displayValue())
 
