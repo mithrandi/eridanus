@@ -13,18 +13,19 @@ from eridanus.plugin import Plugin, usage
 
 from eridanusstd import currency, yahoo
 
+
+
 class Currency(Item, Plugin):
     """
     Simple currency services.
     """
     classProvides(IPlugin, IEridanusPluginProvider)
-    schemaVersion = 1
     typeName = 'eridanus_plugins_currencyplugin'
 
     dummy = integer()
 
-    @usage(u'convert <amount> <from> <to>')
-    def cmd_convert(self, source, amount, currencyFrom, currencyTo):
+    @usage(u'convert <from> <to> <amount>')
+    def cmd_convert(self, source, currencyFrom, currencyTo, amount):
         """
         Convert <amount> from currency <from> to currency <to>.
 
@@ -41,6 +42,7 @@ class Currency(Item, Plugin):
         return yahoo.currencyExchange(currencyFrom, currencyTo
             ).addCallback(convert)
 
+
     @usage(u'name <code>')
     def cmd_name(self, source, code):
         """
@@ -49,6 +51,7 @@ class Currency(Item, Plugin):
         code = code.upper()
         name = currency.currencyNames.get(code)
         if name is None:
-            raise errors.InvalidCurrency(u'%r is not a recognised currency code' % (code,))
+            raise errors.InvalidCurrency(
+                u'%r is not a recognised currency code' % (code,))
 
         source.reply(name)
