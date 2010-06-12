@@ -6,17 +6,19 @@ from axiom.attributes import integer
 from axiom.item import Item
 
 from eridanus.ieridanus import IEridanusPluginProvider
-from eridanus.plugin import Plugin, usage
+from eridanus.plugin import Plugin, usage, rest
 
 from eridanusstd import imdb
 
+
+
 class IMDB(Item, Plugin):
     classProvides(IPlugin, IEridanusPluginProvider)
-    schemaVersion = 1
     typeName = 'eridanus_plugins_imdb'
 
     dummy = integer()
 
+    @rest
     @usage(u'search <title>')
     def cmd_search(self, source, title):
         """
@@ -35,6 +37,7 @@ class IMDB(Item, Plugin):
         return imdb.searchByTitle(title, exact=False
             ).addCallback(gotResults
             ).addCallback(outputResults)
+
 
     @usage(u'plot <id>')
     def cmd_plot(self, source, id):

@@ -7,9 +7,11 @@ from axiom.item import Item
 
 from eridanus import util as eutil
 from eridanus.ieridanus import IEridanusPluginProvider
-from eridanus.plugin import Plugin, usage
+from eridanus.plugin import Plugin, usage, rest
 
 from eridanusstd import urbandict
+
+
 
 class UrbanDict(Item, Plugin):
     """
@@ -18,17 +20,18 @@ class UrbanDict(Item, Plugin):
     An API key for `urbandict` is required in order for this plugin to work.
     """
     classProvides(IPlugin, IEridanusPluginProvider)
-    schemaVersion = 1
     typeName = 'eridanus_plugins_urbandict'
 
     dummy = integer()
 
-    S = inmemory()
+    service = inmemory()
 
     def activate(self):
         apiKey = eutil.getAPIKey(self.store, u'urbandict')
-        self.S = urbandict.UrbanDictService(apiKey)
+        self.service = urbandict.UrbanDictService(apiKey)
 
+
+    @rest
     @usage(u'define <term>')
     def cmd_define(self, source, term):
         """
@@ -45,9 +48,10 @@ class UrbanDict(Item, Plugin):
         def displayResults(formattedResults):
             source.reply(u' '.join(formattedResults))
 
-        return self.S.lookup(term
+        return self.service.lookup(term
             ).addCallback(formatResults
             ).addCallback(displayResults)
+
 
     @usage(u'verifyKey')
     def cmd_verifykey(self, source):
@@ -59,4 +63,4 @@ class UrbanDict(Item, Plugin):
             msg = u'The API key %s valid.' % (result,)
             source.reply(msg)
 
-        return self.S.verify_key().addCallback(gotResult)
+        return self.service.verify_key().addCallback(gotResult)

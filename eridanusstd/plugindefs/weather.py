@@ -6,17 +6,19 @@ from axiom.attributes import integer
 from axiom.item import Item
 
 from eridanus.ieridanus import IEridanusPluginProvider
-from eridanus.plugin import Plugin, usage
+from eridanus.plugin import Plugin, usage, rest
 
 from eridanusstd import weather
 
+
+
 class Weather(Item, Plugin):
     classProvides(IPlugin, IEridanusPluginProvider)
-    schemaVersion = 1
     typeName = 'eridanus_plugins_weatherplugin'
 
     dummy = integer()
 
+    @rest
     @usage(u'current <location>')
     def cmd_current(self, source, location):
         """

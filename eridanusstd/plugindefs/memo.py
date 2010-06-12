@@ -7,9 +7,11 @@ from axiom.item import Item
 
 from eridanus import util as eutil
 from eridanus.ieridanus import IEridanusPluginProvider, IAmbientEventObserver
-from eridanus.plugin import Plugin, usage, AmbientEventObserver
+from eridanus.plugin import Plugin, usage, AmbientEventObserver, rest
 
 from eridanusstd import memo
+
+
 
 class Memo(Item, Plugin, AmbientEventObserver):
     """
@@ -19,7 +21,6 @@ class Memo(Item, Plugin, AmbientEventObserver):
     nickname becomes active all stored memos for that nickname are recited.
     """
     classProvides(IPlugin, IEridanusPluginProvider, IAmbientEventObserver)
-    schemaVersion = 1
     typeName = 'eridanus_plugins_memoplugin'
 
     dummy = integer()
@@ -29,6 +30,7 @@ class Memo(Item, Plugin, AmbientEventObserver):
     def activate(self):
         self.manager = memo.MemoManager(self.store)
 
+    @rest
     @usage(u'leave <nickname> <message>')
     def cmd_leave(self, source, nickname, message):
         """
@@ -44,6 +46,7 @@ class Memo(Item, Plugin, AmbientEventObserver):
                                message)
 
         source.reply(u'Memo left for \002%s\002.' % (nickname,))
+
 
     @usage(u'list <nickname>')
     def cmd_list(self, source, nickname):
@@ -64,7 +67,8 @@ class Memo(Item, Plugin, AmbientEventObserver):
 
         source.reply(u' '.join(getMemos()))
 
-    ### IAmbientEventObserver
+
+    # IAmbientEventObserver
 
     def publicMessageReceived(self, source, message):
         memos = self.manager.getMemosFor(source.channel, source.user.nickname)

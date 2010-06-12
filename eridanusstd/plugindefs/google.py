@@ -7,7 +7,7 @@ from axiom.item import Item
 
 from eridanus import util as eutil
 from eridanus.ieridanus import IEridanusPluginProvider
-from eridanus.plugin import Plugin, usage
+from eridanus.plugin import Plugin, usage, rest
 
 from eridanusstd import google, defertools
 
@@ -20,7 +20,6 @@ class Google(Item, Plugin):
     It is recommended you set an API key for `googleAjaxSearch`.
     """
     classProvides(IPlugin, IEridanusPluginProvider)
-    schemaVersion = 1
     typeName = 'eridanus_plugins_google'
 
     dummy = integer()
@@ -28,10 +27,11 @@ class Google(Item, Plugin):
     apiKey = inmemory()
 
     def activate(self):
-        self.apiKey = eutil.getAPIKey(self.store, u'googleAjaxSearch', default=None)
+        self.apiKey = eutil.getAPIKey(
+            self.store, u'googleAjaxSearch', default=None)
 
 
-    def websearch(self, source, terms, count):
+    def websearch(self, source, term, count):
         """
         Perform a Google web search.
         """
@@ -42,39 +42,39 @@ class Google(Item, Plugin):
         def displayResults(formattedResults):
             source.reply(u' '.join(formattedResults))
 
-        q = google.WebSearchQuery(terms, apiKey=self.apiKey)
+        q = google.WebSearchQuery(term, apiKey=self.apiKey)
         return defertools.slice(q.queue, count
             ).addCallback(formatResults
             ).addCallback(displayResults)
 
 
-    @usage(u'search <term> [term ...]')
-    def cmd_search(self, source, term, *terms):
+    @rest
+    @usage(u'search <term>')
+    def cmd_search(self, source, term):
         """
         Perform a Google web search.
         """
-        terms = [term] + list(terms)
-        return self.websearch(source, terms, 4)
+        return self.websearch(source, term, 4)
 
 
-    @usage(u'lucky <term> [term ...]')
-    def cmd_lucky(self, source, term, *terms):
+    @rest
+    @usage(u'lucky <term>')
+    def cmd_lucky(self, source, term):
         """
         Perform an "I'm feeling lucky" Google web search.
         """
-        terms = [term] + list(terms)
-        return self.websearch(source, terms, 1)
+        return self.websearch(source, term, 1)
 
 
-    @usage(u'calc <expn> [expn ...]')
-    def cmd_calc(self, source, expn, *expns):
+    @rest
+    @usage(u'calc <expn>')
+    def cmd_calc(self, source, expn):
         """
         Evaluate an expression with Google calculator.
 
         A guide to using the Google calculator can be found at
         <http://www.google.com/help/calculator.html>.
         """
-        expns = [expn] + list(expns)
-        d = google.Calculator().evaluate(u' '.join(expns))
+        d = google.Calculator().evaluate(expn)
         d.addCallback(source.reply)
         return d

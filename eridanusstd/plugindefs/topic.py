@@ -6,14 +6,15 @@ from axiom.attributes import integer
 from axiom.item import Item
 
 from eridanus.ieridanus import IEridanusPluginProvider
-from eridanus.plugin import Plugin, usage
+from eridanus.plugin import Plugin, usage, rest
+
+
 
 class Topic(Item, Plugin):
     """
     Manage channel topics in a structured fashion.
     """
     classProvides(IPlugin, IEridanusPluginProvider)
-    schemaVersion = 1
     typeName = 'eridanus_plugins_topic'
 
     dummy = integer()
@@ -28,6 +29,7 @@ class Topic(Item, Plugin):
         return source.getTopic(
             ).addCallback(splitTopic)
 
+
     def setTopics(self, source, topics):
         topic = self.separator.join(topics)
 
@@ -38,6 +40,8 @@ class Topic(Item, Plugin):
 
         source.setTopic(topic)
 
+
+    @rest
     @usage(u'add <topic>')
     def cmd_add(self, source, *topic):
         """
@@ -50,6 +54,7 @@ class Topic(Item, Plugin):
 
         return self.getTopics(source
             ).addCallback(addTopic)
+
 
     @usage(u'remove <index>')
     def cmd_remove(self, source, index):

@@ -68,27 +68,14 @@ def query(method, arg=_no_arg, **params):
 
 
 
-def _quoteTerms(terms):
-    """
-    Iterate C{terms} and quote any terms that need to be quoted.
-    """
-    for term in terms:
-        if u' ' in term:
-            yield u'"%s"' % (term,)
-        else:
-            yield term
-
-
-
-def search(terms, limit=25):
+def search(term, limit=25):
     """
     Query the Twitter search API and parse the result.
 
     @rtype: C{Deferred} => C{lxml.objectify.ObjectifiedElement}
     """
-    terms = list(_quoteTerms(terms))
     url = TWITTER_SEARCH.child('search.atom'
-        ).add('q', u' '.join(terms).encode('utf-8')
+        ).add('q', term.encode('utf-8')
         ).add('rpp', limit
         ).add('result_type', 'mixed')
     d = util.PerseverantDownloader(url).go()
@@ -98,7 +85,7 @@ def search(terms, limit=25):
         root = lxml.objectify.fromstring(data)
         if not root.findall('{http://www.w3.org/2005/Atom}entry'):
             raise errors.NoSearchResults(
-                u'No results for the search terms: ' + u'; '.join(terms))
+                u'No results for the search term: ' + term)
         return root
 
     d.addCallback(getResults)

@@ -29,7 +29,7 @@ class APICommand(SubCommand):
         """
         Set the API key for <apiName>.
         """
-        apiKey = eutil.setAPIKey(self.parent.store, apiName, key)
+        eutil.setAPIKey(self.parent.store, apiName, key)
         source.reply(u'Set key for "%s".' % (apiName,))
 
 

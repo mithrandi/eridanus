@@ -9,6 +9,7 @@ import html5lib
 from lxml import etree as letree
 try:
     import simplejson as json
+    json # For Pyflakes.
 except ImportError:
     import json
 
@@ -36,33 +37,29 @@ class WebSearchQuery(object):
     to lazily pull results from C{self.queue}.  With this method, new pages
     will automatically be fetched when a result set runs dry.
 
-    @type terms: C{list} of C{unicode}
-    @ivar terms: The query's search terms
+    @type term: C{unicode}
+    @ivar term: Search term.
 
     @type url: C{nevow.url.URL}
-    @ivar url: The base search URL
+    @ivar url: Base search URL.
 
     @type pages: C{list} of C{dict}s
-    @ivar pages: The remaining result pages that can be fetched
+    @ivar pages: Remaining result pages that can be fetched.
 
     @type queue: C{defertools.LazyQueue}
-    @ivar queue: The queue where results are lazily accumulated
+    @ivar queue: Queue where results are lazily accumulated.
     """
-    def __init__(self, terms, apiKey=None):
+    def __init__(self, term, apiKey=None):
         """
         Initialise a query.
 
-        @type terms: C{iterable} of C{unicode}
-        @param terms: An iterable of search terms to query for, terms that
-            contain a space will be quoted
-
         @type apiKey: C{unicode} or C{None}
-        @param apiKey: A valid Google AJAX Search API key or C{None}
+        @param apiKey: A valid Google AJAX Search API key or C{None}.
         """
-        self.terms = list(self._quoteTerms(terms))
+        self.term = term
         url = SEARCH_URL.child('web'
             ).add('v', '1.0'
-            ).add('q', u' '.join(self.terms))
+            ).add('q', self.term.encode('utf-8'))
 
         if apiKey is not None:
             url = url.add('key', apiKey)
@@ -75,18 +72,7 @@ class WebSearchQuery(object):
     def __repr__(self):
         return '<%s for: %r>' % (
             type(self).__name__,
-            self.terms)
-
-
-    def _quoteTerms(self, terms):
-        """
-        Iterate C{terms} and quote any terms that need to be quoted.
-        """
-        for term in terms:
-            if u' ' in term:
-                yield u'"%s"' % (term,)
-            else:
-                yield term
+            self.term)
 
 
     def parseResults(self, (data, headers)):
@@ -101,7 +87,6 @@ class WebSearchQuery(object):
         response = json.loads(data)[u'responseData']
 
         cursor = response.get(u'cursor')
-        currentPageIndex = cursor.get(u'currentPageIndex')
         pages = cursor.get(u'pages')
 
         if self.pages is None:
@@ -112,7 +97,7 @@ class WebSearchQuery(object):
         results = response.get(u'results')
         if not results:
             raise errors.NoSearchResults(
-                u'No results for the search terms: ' + u'; '.join(self.terms))
+                u'No results for the search term: ' + self.term)
 
         return (
             (util.unescapeEntities(result[u'titleNoFormatting']),
