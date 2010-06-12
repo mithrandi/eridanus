@@ -7,7 +7,6 @@ from axiom.item import Item
 
 from eridanus.ieridanus import IEridanusPluginProvider, IAmbientEventObserver
 from eridanus.plugin import AmbientEventObserver, Plugin, usage, rest
-from eridanus.util import padIterable
 
 from eridanusstd import alias
 

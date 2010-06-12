@@ -1,4 +1,4 @@
-import math, decimal, operator
+import math, operator
 from decimal import Decimal
 
 from pymeta.grammar import OMeta

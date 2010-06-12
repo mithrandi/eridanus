@@ -29,7 +29,7 @@ class Dict(Item, Plugin):
         """
         Format dictionary definition results.
         """
-        formatted = (u'\002%s\002: %s' % (db, defn) for db, defn in result)
+        formatted = (u'\002%s\002: %s' % (db, defn) for db, defn in results)
         return u' '.join(formatted)
 
 

@@ -9,6 +9,7 @@ import html5lib
 from lxml import etree as letree
 try:
     import simplejson as json
+    json # For Pyflakes.
 except ImportError:
     import json
 
@@ -86,7 +87,6 @@ class WebSearchQuery(object):
         response = json.loads(data)[u'responseData']
 
         cursor = response.get(u'cursor')
-        currentPageIndex = cursor.get(u'currentPageIndex')
         pages = cursor.get(u'pages')
 
         if self.pages is None:

@@ -231,7 +231,6 @@ class ImportEntries(axiomatic.AxiomaticSubCommand):
 
         mode = None
         service = None
-        config = None
         entryManager = None
         entry = None
 

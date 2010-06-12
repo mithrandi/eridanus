@@ -16,7 +16,7 @@ from twisted.python import log
 from twisted.web import error as weberror
 
 from axiom import batch
-from axiom.attributes import (AND, OR, timestamp, integer, reference, text,
+from axiom.attributes import (AND, timestamp, integer, reference, text,
     boolean, bytes, inmemory)
 from axiom.item import Item
 
@@ -519,7 +519,6 @@ class LinkManager(Item):
     def topContributors(self, limit=None):
         query = self.getEntries(sort=LinkEntry.nick.descending)
 
-        totalEntries = query.count()
         runningTotal = 0
         contributors = 0
 
