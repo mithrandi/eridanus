@@ -185,7 +185,7 @@ class ISuperfeedrService(Interface):
     Feeds can be subscribed to with a callback that will be fired whenever new
     items appear in that feed.
 
-    @see: U{http://superfeedr.com}
+    @see: U{http://superfeedr.com/}
     """
     def subscribe(url, callback):
         """
@@ -204,16 +204,4 @@ class ISuperfeedrService(Interface):
         subscribers left for C{url}.
 
         @return: C{Deferred} that fires when unsubscribed.
-        """
-
-
-    def itemsReceived(url, items):
-        """
-        A notification arrived for a subscribed feed.
-
-        @type  url: C{unicode}
-        @param url: Feed URL.
-
-        @type  items: C{list} of C{twisted.words.xish.domish.Element}
-        @param items: Newly arrived feed items.
         """

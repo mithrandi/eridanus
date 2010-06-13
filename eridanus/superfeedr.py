@@ -126,13 +126,31 @@ class SuperfeedrService(Item):
         return xmppClient, pubsubClient
 
 
+    def itemsReceived(self, url, items):
+        """
+        A notification arrived for a subscribed feed.
+
+        Subscribers to C{url} have their callbacks fired with C{url} and
+        C{items}.
+
+        @type  url: C{unicode}
+        @param url: Feed URL.
+
+        @type  items: C{list} of C{twisted.words.xish.domish.Element}
+        @param items: Newly arrived feed items.
+        """
+        callbacks = self._subscribers.get(url, [])
+        for callback in callbacks:
+            callback(url, items)
+
+
     def _addFeed(self, url):
         # XXX: only subscribe if needed
         return self.pubsubClient.subscribe(
             JID('firehoser.superfeedr.com'), url, self.jid)
 
 
-    def _removeFeed(self, url):
+    def _maybeRemoveFeed(self, url):
         if not self._subscribers.get(url):
             return self.pubsubClient.unsubscribe(
                 JID('firehoser.superfeedr.com'), url, self.jid)
@@ -165,15 +183,9 @@ class SuperfeedrService(Item):
             self._callWhenReady.append(d)
 
         def _unsubscribe(dummy):
-            return self._removeFeed(url)
+            return self._maybeRemoveFeed(url)
 
         return d.addCallback(_unsubscribe)
-
-
-    def itemsReceived(self, url, items):
-        callbacks = self._subscribers.get(url, [])
-        for callback in callbacks:
-            callback(url, items)
 
 
     # IService

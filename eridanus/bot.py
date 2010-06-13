@@ -7,8 +7,7 @@ from twisted.cred.checkers import AllowAnonymousAccess
 from twisted.cred.credentials import UsernamePassword
 from twisted.cred.portal import Portal
 from twisted.internet import reactor, error as ierror
-from twisted.internet.defer import (succeed, maybeDeferred, Deferred,
-    gatherResults)
+from twisted.internet.defer import succeed, maybeDeferred, Deferred
 from twisted.internet.protocol import ReconnectingClientFactory
 from twisted.python import log
 from twisted.words.protocols.irc import IRCClient
@@ -162,15 +161,11 @@ class IRCBot(IRCClient, _IRCKeepAliveMixin):
 
         @rtype: C{Deferred}
         """
-        ds = []
         for obs in plugin.getAmbientEventObservers(self.appStore):
             meth = getattr(obs, eventName, None)
             if meth is not None:
                 d = maybeDeferred(meth, source, *args, **kw)
                 d.addErrback(self.mentionFailure, source)
-                ds.append(d)
-
-        return gatherResults(ds)
 
 
     def joined(self, channel):
