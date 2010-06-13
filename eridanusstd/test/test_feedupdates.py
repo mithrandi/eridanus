@@ -94,10 +94,13 @@ class FeedUpdatesTests(unittest.TestCase):
 
         @d.addCallback
         def unsubscribeIt(sub):
-            return self.plugin.unsubscribe(self.source, u'foo')
+            d = self.plugin.unsubscribe(self.source, u'foo')
+            d.addCallback(lambda dummy: sub)
+            return d
 
         @d.addCallback
-        def unsubscibed(dummy):
+        def unsubscibed(sub):
+            self.assertIdentical(sub._unsubscribe, None)
             self.assertRaises(errors.InvalidIdentifier,
                 self.plugin.unsubscribe, self.source, u'foo')
 

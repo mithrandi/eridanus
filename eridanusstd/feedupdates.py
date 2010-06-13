@@ -53,6 +53,7 @@ class SubscribedFeed(Item):
         """
         if self._unsubscribe is not None:
             self._unsubscribe()
+            self._unsubscribe = None
 
         def _unsubscribe(dummy):
             self.deleteFromStore()
