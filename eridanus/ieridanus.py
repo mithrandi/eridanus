@@ -113,12 +113,15 @@ class IAmbientEventObserver(Interface):
     """
     An object that receives notifications about ambient events.
     """
-
     def publicMessageReceived(source, message):
         """
         A public message occured.
+        """
 
-        @rtype: C{twisted.internet.Deferred}
+
+    def joinedChannel(source):
+        """
+        The client joined a channel.
         """
 
 
@@ -172,4 +175,33 @@ class IIRCAvatar(Interface):
 
         @return: The located command
         @rtype: C{ICommand} provider
+        """
+
+
+class ISuperfeedrService(Interface):
+    """
+    An L{IService} that receives PubSub notifications via Superfeedr.
+
+    Feeds can be subscribed to with a callback that will be fired whenever new
+    items appear in that feed.
+
+    @see: U{http://superfeedr.com/}
+    """
+    def subscribe(url, callback):
+        """
+        Subscribe to feed notifications for a feed URL.
+
+        @return: C{Deferred} that fires with a callable that, when called, will
+            unsubscribe C{callback} from notifications for C{url}.
+        """
+
+
+    def unsubscribe(url):
+        """
+        Unsubscribe to a feed URL.
+
+        Unsubscription only takes place if there are no notification
+        subscribers left for C{url}.
+
+        @return: C{Deferred} that fires when unsubscribed.
         """

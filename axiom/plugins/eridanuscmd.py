@@ -4,10 +4,11 @@ from axiom.scripts import axiomatic
 from axiom.dependency import installOn, uninstallFrom
 from axiom.attributes import AND
 
-from eridanus import plugin
+from eridanus import plugin, util
 from eridanus.ieridanus import IIRCAvatar
 from eridanus.bot import IRCBotService, IRCBotFactoryFactory, IRCBotConfig
 from eridanus.avatar import AuthenticatedAvatar
+from eridanus.superfeedr import SuperfeedrService
 
 
 
@@ -258,14 +259,33 @@ class PluginCommands(axiomatic.AxiomaticSubCommand):
 
 
 
+class CreateSuperfeedrService(axiomatic.AxiomaticSubCommand):
+    longdesc = 'Create a new Superfeedr service'
+    synopsis = '<apiKey>'
+
+    def parseArgs(self, key):
+        self['key'] = self.decodeCommandLine(key)
+
+
+    def postOptions(self):
+        store = self.parent.getStore()
+
+        util.setAPIKey(store, SuperfeedrService.apiKeyName, self['key'])
+
+        svc = store.findOrCreate(SuperfeedrService)
+        installOn(svc, store)
+
+
+
 class Eridanus(axiomatic.AxiomaticCommand):
     name = 'eridanus'
     description = 'Eridanus mechanic'
 
     subCommands = [
-        ('service',   None, ManageServices, 'Manage services'),
-        ('plugins',   None, ManagePlugins,  'Manage plugins'),
-        ('plugincmd', None, PluginCommands, 'Plugin-specific commands'),
+        ('service',    None, ManageServices, 'Manage services'),
+        ('plugins',    None, ManagePlugins,  'Manage plugins'),
+        ('plugincmd',  None, PluginCommands, 'Plugin-specific commands'),
+        ('superfeedr', None, CreateSuperfeedrService, 'Create Superfeedr service'),
         ]
 
     def getStore(self):
