@@ -25,7 +25,7 @@ class Dict(Item, Plugin):
     dummy = integer()
 
 
-    def formatResults(results):
+    def formatResults(self, results):
         """
         Format dictionary definition results.
         """
