@@ -1,18 +1,11 @@
-import html5lib
-
-from lxml import etree as letree
-
 from twisted.web import error as weberror, http
 
 from nevow.url import URL
 
 from eridanus import util
 from eridanusstd import errors
+from eridanusstd.util import parseHTML
 
-
-def _parseHTML(data):
-    parser = html5lib.HTMLParser(tree=html5lib.treebuilders.getTreeBuilder('lxml', letree))
-    return parser.parse(data)
 
 
 def handleBadQuoteID(f, quoteID):
@@ -37,7 +30,7 @@ def qdbUS(quoteID):
             yield line
 
     return util.PerseverantDownloader(url).go(
-        ).addCallback(lambda (data, headers): _parseHTML(data)
+        ).addCallback(lambda (data, headers): parseHTML(data)
         ).addErrback(handleBadQuoteID, quoteID
         ).addCallback(extractQuote)
 
@@ -58,7 +51,7 @@ def bash(quoteID):
             yield line
 
     return util.PerseverantDownloader(url).go(
-        ).addCallback(lambda (data, headers): _parseHTML(data)
+        ).addCallback(lambda (data, headers): parseHTML(data)
         ).addErrback(handleBadQuoteID, quoteID
         ).addCallback(extractQuote)
 

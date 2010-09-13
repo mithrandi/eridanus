@@ -1,7 +1,7 @@
 """
 Utility functions designed for scraping data off IMDB.
 """
-import html5lib, urllib
+import urllib
 
 from twisted.internet import defer
 
@@ -9,7 +9,7 @@ from nevow.url import URL
 
 from eridanus.util import PerseverantDownloader
 
-from eridanusstd import etree
+from eridanusstd.util import parseHTML
 
 
 IMDB_URL = URL.fromString('http://www.imdb.com/')
@@ -102,19 +102,12 @@ def getInfoByTitle(title, **kw):
         ).addCallback(getInfoByID)
 
 
-def _parseHTML(data):
-    """
-    Helper function for parsing C{data}, with html5lib, into an ElementTree.
-    """
-    parser = html5lib.HTMLParser(tree=html5lib.treebuilders.getTreeBuilder('etree', etree))
-    return etree.ElementTree(parser.parse(data))
-
 
 def _parseSearchResults((data, headers)):
     """
     Parse search result HTML into an iterable of C{(name, url, id)}.
     """
-    tree = _parseHTML(data)
+    tree = parseHTML(data)
 
     # XXX: Maybe do something a little more less shot-in-the-darkish, like
     # finding the first `ol` after an `h1`.
@@ -134,7 +127,7 @@ def _parseSummary((data, headers)):
     """
     Extract the plot summary.
     """
-    tree = _parseHTML(data)
+    tree = parseHTML(data)
 
     for p in tree.findall('//p'):
         if p.get('class') == 'plotpar':
@@ -165,7 +158,7 @@ def _parsePoster((data, headers)):
     """
     Extract the URL for the poster image.
     """
-    tree = _parseHTML(data)
+    tree = parseHTML(data)
 
     for table in tree.findall('//table'):
         if table.get('id') == 'principal':
@@ -287,7 +280,7 @@ def _parseTitleInfo((data, headers), url):
 
     @rtype: Deferred firing with a C{dict}
     """
-    tree = _parseHTML(data)
+    tree = parseHTML(data)
 
     info = {}
     info['title'] = tree.find('//h1').text.strip()

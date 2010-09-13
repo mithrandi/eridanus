@@ -7,7 +7,7 @@ from twisted.words.xish import domish
 
 from axiom.store import Store
 
-from eridanusstd import feedupdates, errors
+from eridanusstd import errors
 from eridanusstd.plugindefs import feedupdates as feedupdates_plugin
 
 
