@@ -147,6 +147,7 @@ def evaluate(expn):
     @rtype: C{Decimal}
     """
     try:
-        return CalcGrammar(expn).apply('expn')
+        result, err = CalcGrammar(expn).apply('expn')
+        return result
     except ParseError:
         raise SyntaxError(u'Could not evaluate the provided mathematical expression')
