@@ -26,6 +26,7 @@ Usage sample::
 """
 try:
     from xml.etree import ElementTree as ET
+    ET # Pyflakes.
 except ImportError:
     from elementtree import ElementTree as ET
 

@@ -124,7 +124,7 @@ class IRIGrammar(OMeta.makeGrammar(iriGrammar, globals())):
 
 def extractURL(input):
     g = IRIGrammar(input)
-    uri = g.apply('IRI')
+    uri, err = g.apply('IRI')
     return uri, g.urlEnd
 
 
@@ -148,12 +148,12 @@ def extractURLsWithPosition(input, supportedSchemes=None):
 
 
 def extractURLs(input, supportedSchemes=None):
-    for uri, _ in extractURLsWithPosition(input, supportedSchemes):
+    for uri, pos in extractURLsWithPosition(input, supportedSchemes):
         yield uri
 
 
 def parseURL(input):
-    uri, = extractURL(input)
+    uri, pos = extractURL(input)
     # TODO: Actually parse the URL components ourself.
     return url.URL.fromString(uri)
 
