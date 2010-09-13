@@ -57,7 +57,7 @@ def parseRegex(regex):
     """
     g = RegexGrammar(regex)
     try:
-        find, repl, _flags = g.apply('regex')
+        (find, repl, _flags), err = g.apply('regex')
     except ParseError:
         raise errors.MalformedRegex(u'"%s" is not a well-formed regular expression' % (regex,))
 
