@@ -5,7 +5,6 @@ The following documentation may be useful::
 
     http://code.google.com/apis/ajaxsearch/documentation/#fonje
 """
-import html5lib
 try:
     import simplejson as json
     json # For Pyflakes.
@@ -155,15 +154,8 @@ class Calculator(object):
         @return: A pair of C{(expn, result)}.
         """
         tree = parseHTML(data)
-
-        # At some point html5lib stopped sucking.
-        if hasattr(html5lib, '__version__'):
-            xpath = '//xhtml:h2[@class="r"]/xhtml:b'
-        else:
-            xpath = '//h2[@class="r"]/b'
-
         results = tree.xpath(
-            xpath,
+            '//xhtml:h2[@class="r"]/xhtml:b',
             namespaces={'xhtml': 'http://www.w3.org/1999/xhtml'})
         if results:
             return u''.join(self._formatResult(results[0]))

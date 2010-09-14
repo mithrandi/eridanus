@@ -4,7 +4,7 @@ from lxml import etree
 from twisted.trial.unittest import TestCase, SkipTest
 from twisted.python.filepath import FilePath
 
-from eridanusstd import util, etree as standard_etree
+from eridanusstd import util
 
 
 
@@ -28,17 +28,3 @@ class UtilTests(TestCase):
         self.assertIdentical(
             type(tree),
             type(etree.ElementTree()))
-
-
-    def test_parseHTMLCompat(self):
-        """
-        L{eridanusstd.util.parseHTML} will use a compatibility html5lib API if
-        a newer one is not available and parse HTML content into a standard
-        element tree.
-        """
-        self.patch(util.html5lib, 'parse', None)
-
-        tree = util.parseHTML(self.path.sibling('index.html').open())
-        self.assertIdentical(
-            tree.__class__,
-            standard_etree.ElementTree)

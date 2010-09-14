@@ -1,10 +1,12 @@
 from itertools import chain
 
+from lxml import etree
+
 from nevow.url import URL
 
 from eridanus.util import PerseverantDownloader
 from eridanus.soap import getValueFromXSIType
-from eridanusstd import errors, etree
+from eridanusstd import errors
 
 
 API_URL = URL.fromString('http://duncanmackenzie.net/services/GetXboxInfo.aspx')
