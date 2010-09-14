@@ -1,5 +1,5 @@
 # -*- test-case-name: eridanusstd.test.test_linkdb -*-
-import datetime, itertools, urllib, re, chardet, gzip, html5lib
+import datetime, itertools, urllib, re, chardet, gzip
 from StringIO import StringIO
 try:
     import PIL.Image
@@ -23,7 +23,8 @@ from axiom.item import Item
 from xmantissa.ixmantissa import IFulltextIndexable, IFulltextIndexer
 
 from eridanus import const, util, iriparse
-from eridanusstd import errors, etree
+from eridanusstd import errors
+from eridanusstd.util import parseHTML
 
 
 def parseEntryID(eid):
@@ -299,9 +300,7 @@ def _extractTitle(data):
 
     if data:
         try:
-            # XXX: this should use lxml as soon as html5lib gets a clue
-            parser = html5lib.HTMLParser(tree=html5lib.treebuilders.getTreeBuilder('etree', etree))
-            tree = etree.ElementTree(parser.parse(data))
+            tree = parseHTML(data)
             titleElem = tree.find('//title')
             if titleElem is not None and titleElem.text is not None:
                 text = unicode(titleElem.text)

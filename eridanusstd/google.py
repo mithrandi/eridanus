@@ -6,7 +6,6 @@ The following documentation may be useful::
     http://code.google.com/apis/ajaxsearch/documentation/#fonje
 """
 import html5lib
-from lxml import etree as letree
 try:
     import simplejson as json
     json # For Pyflakes.
@@ -19,6 +18,7 @@ from nevow.url import URL
 
 from eridanus import util
 from eridanusstd import errors, defertools
+from eridanusstd.util import parseHTML
 
 
 
@@ -154,9 +154,7 @@ class Calculator(object):
         @rtype:  C{(unicode, unicode)}
         @return: A pair of C{(expn, result)}.
         """
-        parser = html5lib.HTMLParser(
-            tree=html5lib.treebuilders.getTreeBuilder('lxml', letree))
-        tree = parser.parse(data)
+        tree = parseHTML(data)
 
         # At some point html5lib stopped sucking.
         if hasattr(html5lib, '__version__'):
