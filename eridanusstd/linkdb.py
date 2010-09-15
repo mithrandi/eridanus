@@ -301,10 +301,14 @@ def _extractTitle(data):
     if data:
         try:
             tree = parseHTML(data)
-            titleElem = tree.find('//title')
-            if titleElem is not None and titleElem.text is not None:
-                text = unicode(titleElem.text)
-                return sanitizeTitle(text)
+            results = tree.xpath(
+                '//xhtml:title',
+                namespaces={'xhtml': 'http://www.w3.org/1999/xhtml'})
+
+            results = filter(
+                None, (sanitizeTitle(unicode(e.text)) for e in results))
+            if results:
+                return u';'.join(results)
         except:
             log.msg('Extracting title failed:')
             log.err()

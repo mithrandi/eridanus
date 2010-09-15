@@ -1,5 +1,7 @@
 from StringIO import StringIO
+
 from twisted.trial import unittest
+from twisted.python.filepath import FilePath
 
 from eridanus import util
 from eridanusstd import linkdb
@@ -102,3 +104,19 @@ class MetadataExtractionTests(unittest.TestCase):
         self.assertEquals({
             u'contentType': u'image/png',
             u'foo': u'bar'}, md)
+
+
+
+class TitleExtractionTests(unittest.TestCase):
+    """
+    Tests for title extraction in L{eridanusstd.linkdb}.
+    """
+    def setUp(self):
+        self.path = FilePath(__file__)
+
+
+    def test_extractTitle(self):
+        data = self.path.sibling('index.html').open().read()
+        self.assertEquals(
+            linkdb._extractTitle(data),
+            u'Google')

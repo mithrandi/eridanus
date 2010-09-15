@@ -1,11 +1,12 @@
 import dateutil.parser
 
+from lxml import etree
+
 from epsilon.structlike import record
 
 from nevow.url import URL
 
 from eridanus import util
-from eridanusstd import etree
 
 
 class WundergroundConditions(record('location observationTime condition temperature humidity pressure windSpeed windDirection windChill dewPoint heatIndex')):
