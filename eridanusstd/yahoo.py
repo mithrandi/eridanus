@@ -23,12 +23,7 @@ def currencyExchange(currencyFrom, currencyTo):
         if lastTradeRate == 0:
             raise errors.InvalidCurrency(u'One of the specified currency codes is invalid')
 
-        print d, d.split('/', 3)
-        month, day, year = map(int, d.split('/', 3))
-        d = date(year, month, day)
-        t = Time.fromHumanly(t).asDatetime().time()
-        tradeTime = Time.fromDatetime(datetime.combine(d, t))
-
+        tradeTime = u'%s %s' % (d, t)
         return Decimal(lastTradeRate), tradeTime
 
     url = CURRENCY_URL.add('s', '%s%s=X' % (currencyFrom, currencyTo))
