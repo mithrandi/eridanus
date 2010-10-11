@@ -37,7 +37,7 @@ class Currency(Item, Plugin):
 
         def convert((rate, tradeTime)):
             convertedAmount = rate * amount
-            source.reply(unicode(convertedAmount))
+            source.reply(u'%s (at %s)' % (convertedAmount, tradeTime))
 
         return yahoo.currencyExchange(currencyFrom, currencyTo
             ).addCallback(convert)
