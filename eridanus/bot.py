@@ -20,7 +20,7 @@ from axiom.item import Item
 from axiom.upgrade import registerUpgrader, registerAttributeCopyingUpgrader
 from axiom.userbase import LoginSystem
 
-from eridanus import util, errors, plugin
+from eridanus import util, errors, plugin, iriparse
 from eridanus.avatar import AnonymousAvatar
 from eridanus.irc import IRCSource, IRCUser
 from eridanus.ieridanus import ICommand, IIRCAvatar
@@ -308,6 +308,8 @@ class IRCBot(IRCClient, _IRCKeepAliveMixin):
 
     def publicMessage(self, source, message):
         self.broadcastAmbientEvent('publicMessageReceived', source, message)
+        for url in iriparse.parseURLs(message):
+            self.broadcastAmbientEvent('publicURLReceived', source, url)
 
 
     def getUsername(self, nickname):
