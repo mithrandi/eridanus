@@ -116,12 +116,25 @@ class IAmbientEventObserver(Interface):
     def publicMessageReceived(source, message):
         """
         A public message occured.
+
+        @type message: C{unicode}
         """
 
 
     def joinedChannel(source):
         """
         The client joined a channel.
+        """
+
+
+    def publicURLReceived(source, url):
+        """
+        A public message containing a URL occured.
+
+        This event will be called multiple times if multiple URLs appear in a
+        single message.
+
+        @type url: C{nevow.url.URL}
         """
 
 
@@ -176,6 +189,7 @@ class IIRCAvatar(Interface):
         @return: The located command
         @rtype: C{ICommand} provider
         """
+
 
 
 class ISuperfeedrService(Interface):
