@@ -9,12 +9,15 @@ from nevow.url import URL
 from eridanus import util
 
 
+
 class WundergroundConditions(
-    record('location observationTime condition temperature humidity pressure '
-           'windSpeed windDirection windChill dewPoint heatIndex')):
+    record('displayLocation observationLocation observationTime condition '
+           'temperature humidity pressure windSpeed windDirection windChill '
+           'dewPoint heatIndex')):
     @classmethod
     def fromElement(cls, node):
-        location = node.findtext('display_location/full')
+        displayLocation = node.findtext('display_location/full')
+        observationLocation = node.findtext('observation_location/full')
         try:
             observationTime = dateutil.parser.parse(
                 node.findtext('observation_time_rfc822'))
@@ -40,7 +43,8 @@ class WundergroundConditions(
         else:
             windChill = int(windChill)
 
-        return cls(location=location,
+        return cls(displayLocation=displayLocation,
+                   observationLocation=observationLocation,
                    observationTime=observationTime,
                    condition=condition,
                    temperature=temp,
@@ -51,6 +55,7 @@ class WundergroundConditions(
                    windChill=windChill,
                    dewPoint=dewPoint,
                    heatIndex=heatIndex)
+
 
     @property
     def display(self):
@@ -69,15 +74,20 @@ class WundergroundConditions(
             if self.pressure:
                 yield u'Pressure', self.pressure
             if self.windSpeed and self.windDirection:
-                yield u'Wind', u'%s at %0.2fkm/h' % (self.windDirection, self.windSpeed)
+                yield u'Wind', u'%s at %0.2fkm/h' % (
+                    self.windDirection, self.windSpeed)
             if self.windChill:
                 yield u'Wind chill', temp(self.windChill)
 
         timestring = u'<unknown>'
         if self.observationTime is not None:
-            timestring = unicode(self.observationTime.strftime('%H:%M %Z on %d %B %Y'))
-        params = u'; '.join(u'\002%s\002: %s' % (key, value) for key, value in attrs())
-        return u'In %s at %s: %s' % (self.location, timestring, params)
+            timestring = unicode(
+                self.observationTime.strftime('%H:%M %Z on %d %B %Y'))
+        params = u'; '.join(
+            u'\002%s\002: %s' % (key, value) for key, value in attrs())
+        return u'In %s (from %s) at %s: %s' % (
+            self.displayLocation, self.observationLocation, timestring, params)
+
 
 
 class Wunderground(object):
