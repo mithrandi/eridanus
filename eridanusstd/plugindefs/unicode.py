@@ -22,13 +22,15 @@ class Unicode(Item, Plugin):
 
     dummy = integer()
 
+    NAME_LIMIT = 20
+
     @rest
     @usage(u'name <unicodeCharacters>')
     def cmd_name(self, source, chars):
         """
         Get the Unicode names for <unicodeCharacters>.
         """
-        names = map(unicodedata.name, chars)
+        names = map(unicodedata.name, chars)[:self.NAME_LIMIT]
         source.reply(u'; '.join(names))
 
 
