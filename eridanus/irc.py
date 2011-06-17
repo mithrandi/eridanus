@@ -78,11 +78,15 @@ class IRCSource(object):
 
         return None
 
-    def notice(self, text):
+    def notice(self, text, target=None):
         """
-        Notice C{text} to the current channel.
+        Notice C{text} to a user or the current channel.
         """
-        self.protocol.notice(encode(self.channel), encode(text))
+        if target is None:
+            target = self.channel
+        else:
+            target = getattr(target, 'usermask', target)
+        self.protocol.notice(encode(target), encode(text))
 
     def say(self, text):
         """
