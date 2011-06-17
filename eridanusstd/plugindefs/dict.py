@@ -86,7 +86,7 @@ class Dict(Item, Plugin):
 
     @rest
     @usage(u'spell <word>')
-    def cmd_spell(self, source, word, language=None):
+    def cmd_spell(self, source, word):
         """
         Check the spelling of a word in English (UK).
 
