@@ -105,7 +105,7 @@ class Alias(Item, Plugin, AmbientEventObserver):
             try:
                 message = self._expandAlias(message[len(self.trigger):])
             except errors.InvalidIdentifier, e:
-                source.notice(u'%s: %s' % (type(e).__name__, e), source.user)
+                source.privateNotice(u'%s: %s' % (type(e).__name__, e))
             else:
                 if message:
                     # XXX: We really should not be touching the protocol.
