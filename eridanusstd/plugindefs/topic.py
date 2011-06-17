@@ -43,13 +43,12 @@ class Topic(Item, Plugin):
 
     @rest
     @usage(u'add <topic>')
-    def cmd_add(self, source, *topic):
+    def cmd_add(self, source, topic):
         """
         Add the sub-topic <topic> to the channel topic.
         """
         def addTopic(topics):
-            subtopic = u' '.join(topic)
-            topics.append(subtopic)
+            topics.append(topic)
             self.setTopics(source, topics)
 
         return self.getTopics(source
