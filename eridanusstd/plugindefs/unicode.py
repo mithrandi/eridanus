@@ -22,12 +22,14 @@ class Unicode(Item, Plugin):
 
     dummy = integer()
 
-    @usage(u'name <unicodeCharacter>')
-    def cmd_name(self, source, char):
+    @rest
+    @usage(u'name <unicodeCharacters>')
+    def cmd_name(self, source, chars):
         """
-        Get the Unicode name for <unicodeCharacter>.
+        Get the Unicode names for <unicodeCharacters>.
         """
-        source.reply(unicodedata.name(char))
+        names = map(unicodedata.name, chars)
+        source.reply(u'; '.join(names))
 
 
     @rest
