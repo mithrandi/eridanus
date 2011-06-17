@@ -8,7 +8,7 @@ from axiom.item import Item
 from eridanus.ieridanus import IEridanusPluginProvider, IAmbientEventObserver
 from eridanus.plugin import AmbientEventObserver, Plugin, usage, rest
 
-from eridanusstd import alias
+from eridanusstd import alias, errors
 
 
 
@@ -102,7 +102,11 @@ class Alias(Item, Plugin, AmbientEventObserver):
 
     def publicMessageReceived(self, source, message):
         if self._isTrigger(message):
-            message = self._expandAlias(message[len(self.trigger):])
-            if message:
-                # XXX: We really should not be touching the protocol.
-                return source.protocol.command(source, message)
+            try:
+                message = self._expandAlias(message[len(self.trigger):])
+            except errors.InvalidIdentifier:
+                pass
+            else:
+                if message:
+                    # XXX: We really should not be touching the protocol.
+                    return source.protocol.command(source, message)
