@@ -1,4 +1,5 @@
 import lxml.objectify
+from xml.sax.saxutils import unescape
 
 from twisted.python.failure import Failure
 from twisted.web import error as weberror
@@ -117,6 +118,7 @@ def extractStatusIDFromURL(url):
 
 
 def _sanitizeFormatting(value):
+    value = unescape(value)
     lines = value.splitlines()
     return u' '.join(lines)
 
