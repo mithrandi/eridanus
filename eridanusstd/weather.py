@@ -9,11 +9,17 @@ from nevow.url import URL
 from eridanus import util
 
 
-class WundergroundConditions(record('location observationTime condition temperature humidity pressure windSpeed windDirection windChill dewPoint heatIndex')):
+class WundergroundConditions(
+    record('location observationTime condition temperature humidity pressure '
+           'windSpeed windDirection windChill dewPoint heatIndex')):
     @classmethod
     def fromElement(cls, node):
         location = node.findtext('display_location/full')
-        observationTime = dateutil.parser.parse(node.findtext('observation_time_rfc822'))
+        try:
+            observationTime = dateutil.parser.parse(
+                node.findtext('observation_time_rfc822'))
+        except ValueError:
+            observationTime = None
         condition = node.findtext('weather')
         temp = int(node.findtext('temp_c'))
         humidity = node.findtext('relative_humidity')
@@ -67,7 +73,9 @@ class WundergroundConditions(record('location observationTime condition temperat
             if self.windChill:
                 yield u'Wind chill', temp(self.windChill)
 
-        timestring = unicode(self.observationTime.strftime('%H:%M %Z on %d %B %Y'))
+        timestring = u'<unknown>'
+        if self.observationTime is not None:
+            timestring = unicode(self.observationTime.strftime('%H:%M %Z on %d %B %Y'))
         params = u'; '.join(u'\002%s\002: %s' % (key, value) for key, value in attrs())
         return u'In %s at %s: %s' % (self.location, timestring, params)
 
