@@ -89,7 +89,7 @@ class IRCSource(object):
         """
         Send a private I{NOTICE} to L{self.user}.
         """
-        self.protocol.notice(encode(self.user.usermask), encode(text))
+        self.protocol.notice(encode(self.user.nickname), encode(text))
 
 
     def say(self, text):
