@@ -84,6 +84,14 @@ class IRCSource(object):
         """
         self.protocol.notice(encode(self.channel), encode(text))
 
+
+    def privateNotice(self, text):
+        """
+        Send a private I{NOTICE} to L{self.user}.
+        """
+        self.protocol.notice(encode(self.user.nickname), encode(text))
+
+
     def say(self, text):
         """
         Say C{text} in the current channel (or private) over the protocol.
