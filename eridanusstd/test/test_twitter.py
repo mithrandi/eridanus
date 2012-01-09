@@ -54,6 +54,8 @@ class TwitterTests(unittest.TestCase):
             ('http://twitter.com/bob/status/514431337', '514431337'),
             ('http://www.twitter.com/bob/status/514431337', '514431337'),
             ('http://twitter.com/bob/statuses/514431337', '514431337'),
+            ('http://twitter.com/#!/bob/statuses/514431337', '514431337'),
+            ('http://www.twitter.com/#!/bob/statuses/514431337', '514431337'),
             ('http://www.twitter.com/bob/statuses/hello', None),
             ('http://www.twitter.com/bob/statuses', None),
             ('http://somethingnottwitter.com/bob/statuses/514431337', None)]

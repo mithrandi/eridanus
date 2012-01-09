@@ -106,6 +106,9 @@ def extractStatusIDFromURL(url):
         netloc = netloc[4:]
     if netloc == 'twitter.com':
         segs = url.pathList()
+        # New-style Twitter URL
+        if len(segs) == 1 and not segs[0] and url.fragment:
+            segs = url.fragment[2:].split('/', 2)
         if len(segs) >= 3:
             screenName, method, id = segs
             if method in ['status', 'statuses']:
