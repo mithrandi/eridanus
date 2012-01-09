@@ -62,7 +62,7 @@ class Twitter(Item, Plugin):
         Format a status LXML C{ObjectifiedElement}.
         """
         parts = twitter.formatStatus(*a, **kw)
-        if parts['reply']:
+        if parts.get('reply'):
             parts['reply'] = u' (in reply to #%(reply)s)' % parts
         return u'\002%(name)s\002%(reply)s: %(text)s (posted %(timestamp)s)' % parts
 
