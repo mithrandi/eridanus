@@ -147,13 +147,14 @@ def formatUserInfo(user):
 
 
 
-def formatStatus(status):
+def formatStatus(status, includeReplyTo=True):
     """
     Format a status LXML C{ObjectifiedElement}.
     """
     parts = dict()
     parts['name'] = u'%s (%s)' % (status.user.name, status.user.screen_name)
-    parts['reply'] = status.in_reply_to_status_id
+    if includeReplyTo:
+        parts['reply'] = status.in_reply_to_status_id
     parts['text'] = _sanitizeFormatting(status['text'].text)
     timestamp = timeutil.parse(status.created_at.text)
     parts['timestamp'] = timestamp.asHumanly()

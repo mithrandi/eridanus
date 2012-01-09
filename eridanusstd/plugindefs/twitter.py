@@ -1,5 +1,7 @@
 from zope.interface import classProvides
 
+from functools import partial
+
 from twisted.plugin import IPlugin
 from twisted.internet.defer import gatherResults
 
@@ -55,11 +57,11 @@ class Twitter(Item, Plugin):
             yield '\002%s\002: %s' % (key, value)
 
 
-    def formatStatus(self, status):
+    def formatStatus(self, *a, **kw):
         """
         Format a status LXML C{ObjectifiedElement}.
         """
-        parts = twitter.formatStatus(status)
+        parts = twitter.formatStatus(*a, **kw)
         if parts['reply']:
             parts['reply'] = u' (in reply to #%(reply)s)' % parts
         return u'\002%(name)s\002%(reply)s: %(text)s (posted %(timestamp)s)' % parts
@@ -135,7 +137,8 @@ class Twitter(Item, Plugin):
         conversation is followed backwards until the beginning or <limit>.
         """
         def displayStatuses(statuses):
-            map(source.notice, map(self.formatStatus, reversed(statuses)))
+            formatStatus = partial(self.formatStatus, includeReplyTo=False)
+            map(source.notice, map(formatStatus, reversed(statuses)))
 
         ids = list(self.snarfStatusIDs(idOrURL))
         if not ids:
