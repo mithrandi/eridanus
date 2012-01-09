@@ -64,6 +64,8 @@ class Twitter(Item, Plugin):
         parts = twitter.formatStatus(*a, **kw)
         if parts.get('reply'):
             parts['reply'] = u' (in reply to #%(reply)s)' % parts
+        else:
+            parts['reply'] = u''
         return u'\002%(name)s\002%(reply)s: %(text)s (posted %(timestamp)s)' % parts
 
 
