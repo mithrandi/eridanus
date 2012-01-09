@@ -135,7 +135,7 @@ class Twitter(Item, Plugin):
         conversation is followed backwards until the beginning or <limit>.
         """
         def displayStatuses(statuses):
-            map(source.notice, map(self.formatStatus, statuses))
+            map(source.notice, map(self.formatStatus, reversed(statuses)))
 
         ids = list(self.snarfStatusIDs(idOrURL))
         if not ids:
