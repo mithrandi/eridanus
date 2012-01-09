@@ -8,7 +8,7 @@ from axiom.item import Item
 
 from eridanus import iriparse
 from eridanus.ieridanus import IEridanusPluginProvider, IAmbientEventObserver
-from eridanus.plugin import Plugin, usage, rest
+from eridanus.plugin import Plugin, usage, rest, alias
 from eridanus.util import truncate
 
 from eridanusstd import twitter
@@ -24,19 +24,27 @@ class Twitter(Item, Plugin):
         source.reply(u'; '.join(results))
 
 
+    def snarfStatusIDs(self, text):
+        """
+        Find Twitter status URLs in a line of text extract the status IDs.
+        """
+        for url in iriparse.parseURLs(text):
+            id = twitter.extractStatusIDFromURL(url)
+            if id is not None:
+                yield id
+
+
     def snarfURLs(self, source, text):
         """
         Find Twitter status URLs in a line of text and display information
         about the status.
         """
-        for url in iriparse.parseURLs(text):
-            id = twitter.extractStatusIDFromURL(url)
-            if id is not None:
-                d = twitter.query('statuses/show', id)
-                d.addCallback(self.formatStatus)
-                d.addCallback(source.notice)
-                d.addErrback(lambda f: None)
-                yield d
+        for id in self.snarfStatusIDs(text):
+            d = twitter.query('statuses/show', id)
+            d.addCallback(self.formatStatus)
+            d.addCallback(source.notice)
+            d.addErrback(lambda f: None)
+            yield d
 
 
     def formatUserInfo(self, user):
@@ -116,6 +124,27 @@ class Twitter(Item, Plugin):
             map(source.reply, map(self.formatStatus, timeline.status))
 
         return d
+
+
+    @usage(u'conversation <id_or_url> [limit]')
+    def cmd_conversation(self, source, idOrURL, limit=None):
+        """
+        Retrieve a Twitter conversation.
+
+        The ID or URL of the latest tweet in the thread should be used, the
+        conversation is followed backwards until the beginning or <limit>.
+        """
+        def displayStatuses(statuses):
+            map(source.notice, map(self.formatStatus, statuses))
+
+        ids = list(self.snarfStatusIDs(idOrURL))
+        if not ids:
+            ids = [idOrURL]
+        d = twitter.conversation(ids[0], limit)
+        d.addCallback(displayStatuses)
+        return d
+
+    cmd_convo = alias(cmd_conversation, 'cmd_convo')
 
 
     # IAmbientEventObserver
