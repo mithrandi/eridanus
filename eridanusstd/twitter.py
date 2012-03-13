@@ -1,6 +1,7 @@
 import lxml.objectify
 from xml.sax.saxutils import unescape
 
+from twisted.internet.defer import succeed
 from twisted.python.failure import Failure
 from twisted.web import error as weberror
 
@@ -146,14 +147,51 @@ def formatUserInfo(user):
 
 
 
-def formatStatus(status):
+def formatStatus(status, includeReplyTo=True):
     """
     Format a status LXML C{ObjectifiedElement}.
     """
     parts = dict()
     parts['name'] = u'%s (%s)' % (status.user.name, status.user.screen_name)
-    parts['reply'] = status.in_reply_to_status_id
+    if includeReplyTo:
+        parts['reply'] = status.in_reply_to_status_id
     parts['text'] = _sanitizeFormatting(status['text'].text)
     timestamp = timeutil.parse(status.created_at.text)
     parts['timestamp'] = timestamp.asHumanly()
     return parts
+
+
+
+def conversation(statusID, limit=None, query=query):
+    """
+    Follow a Twitter conversation.
+
+    @type  statusID: C{str}
+    @param statusID: Latest tweet in the conversation.
+
+    @type  limit: C{int}
+    @param limit: Number of replies to follow, or C{None} for unlimited.
+
+    @return: C{Deferred} that fires with a C{list} of status LXML
+        C{ObjectifiedElement}s.
+    """
+    def _reachedLimit(results):
+        if limit is None:
+            return False
+        return len(results) >= limit
+
+    def _followThread(status, results):
+        results.append(status)
+        if status.in_reply_to_status_id and not _reachedLimit(results):
+            d2 = followStatus(str(status.in_reply_to_status_id), results)
+        else:
+            d2 = succeed(results)
+        return d2
+
+
+    def followStatus(statusID, results):
+        d = query('statuses/show', statusID)
+        d.addCallback(_followThread, results)
+        return d
+
+    return followStatus(statusID, [])

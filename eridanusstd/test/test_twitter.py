@@ -27,9 +27,9 @@ class MockPerseverantDownloader(object):
 
 
 
-class TwitterTests(unittest.TestCase):
+class TwitterTestsMixin(object):
     """
-    Tests for L{eridanusstd.twitter}.
+    Mixin for Twitter tests.
     """
     def setUp(self):
         self.path = FilePath(__file__)
@@ -42,9 +42,11 @@ class TwitterTests(unittest.TestCase):
         Read XML, from a file, and parse it with C{lxml.objectify}.
         """
         return lxml.objectify.fromstring(
-            self.path.sibling(filename).open().read())
+            self.path.sibling(filename).getContent())
 
 
+
+class TwitterTests(TwitterTestsMixin, unittest.TestCase):
     def test_extractStatusIDFromURL(self):
         """
         Status identifiers are extracted from known valid forms of Twitter
@@ -178,4 +180,64 @@ class TwitterTests(unittest.TestCase):
             self.assertEquals(e.request, o.request)
             self.assertEquals(e.error, o.error)
 
+        return d
+
+
+
+class TwitterConversationTests(TwitterTestsMixin, unittest.TestCase):
+    """
+    Tests for L{eridanusstd.twitter.conversation}.
+    """
+    def setUp(self):
+        super(TwitterConversationTests, self).setUp()
+        self.called = []
+
+
+    def query(self, method, arg):
+        """
+        Replacement for L{eridanusstd.twitter.query}.
+        """
+        self.called.append((method, arg))
+        return succeed(self.objectify(self.results.next()))
+
+
+    def test_conversation(self):
+        """
+        Unlimited Twitter conversation thread.
+        """
+        self.results = iter([
+            'twitter_convo_3.xml',
+            'twitter_convo_2.xml',
+            'twitter_convo_1.xml'])
+
+        def checkResults(results):
+            self.assertEquals(3, len(results))
+            self.assertEquals(3, len(self.called))
+            self.assertEquals(
+                list(zip(*self.called)[1]),
+                [str(s.id) for s in results])
+
+        d = twitter.conversation('3', limit=None, query=self.query)
+        d.addCallback(checkResults)
+        return d
+
+
+    def test_conversationLimit(self):
+        """
+        Limited Twitter conversation thread.
+        """
+        self.results = iter([
+            'twitter_convo_3.xml',
+            'twitter_convo_2.xml',
+            'twitter_convo_1.xml'])
+
+        def checkResults(results):
+            self.assertEquals(2, len(results))
+            self.assertEquals(2, len(self.called))
+            self.assertEquals(
+                list(zip(*self.called)[1]),
+                [str(s.id) for s in results])
+
+        d = twitter.conversation('3', limit=2, query=self.query)
+        d.addCallback(checkResults)
         return d
