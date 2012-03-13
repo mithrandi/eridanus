@@ -526,13 +526,7 @@ class LinkDB(Item, Plugin, AmbientEventObserver, _LinkDBHelperMixin):
         This search assumes the channel where the command was invoked, it can
         also not be used in private.  See the "findfor" command.
         """
-        lm = self.getLinkManager(source)
-
-        def gotResults(results):
-            map(source.reply, results)
-
-        return self.find(lm, term
-            ).addCallback(gotResults)
+        self.cmd_findfor(source, source.channel, term)
 
     cmd_search = alias(cmd_find, 'cmd_search')
 
@@ -544,8 +538,12 @@ class LinkDB(Item, Plugin, AmbientEventObserver, _LinkDBHelperMixin):
         Search <channel> for entries whose title, URL or comment match <term>.
         """
         lm = self.getLinkManager(source, channel)
-        msg = self.find(lm, term)
-        source.reply(msg)
+
+        def gotResults(results):
+            map(source.reply, results)
+
+        return self.find(lm, term
+            ).addCallback(gotResults)
 
 
     @usage(u'stats')
