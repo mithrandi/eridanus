@@ -544,9 +544,12 @@ class LinkDB(Item, Plugin, AmbientEventObserver, _LinkDBHelperMixin):
         Search <channel> for entries whose title, URL or comment match <term>.
         """
         lm = self.getLinkManager(source, channel)
-        msg = self.find(lm, term)
-        source.reply(msg)
 
+        def gotResults(results):
+            map(source.reply, results)
+
+        return self.find(lm, term
+            ).addCallback(gotResults)
 
     @usage(u'stats')
     def cmd_stats(self, source):
