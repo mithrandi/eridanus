@@ -1,11 +1,10 @@
-from zope.interface import implements
-
 from axiom.attributes import integer
 from axiom.item import Item
-
-from eridanus import errors
-from eridanus.plugin import getPluginByName
+from eridanus import errors, plugin
 from eridanus.ieridanus import IIRCAvatar
+from eridanus.plugin import getPluginByName
+from zope.interface import implements
+
 
 
 class _AvatarMixin(object):
@@ -21,24 +20,85 @@ class _AvatarMixin(object):
         return cmd
 
 
-    def getAllCommands(self, protocol, args):
+    def getAllCommands(self, args):
         pluginName = args.next()
-        for plugin in self.locatePlugins(protocol, pluginName):
-            yield self.locateCommand(plugin, args.copy())
+        cmd = getattr(self, 'cmd_' + pluginName, None)
+        if cmd is not None:
+            yield self.locateCommand(plugin.ICommand(cmd), args.copy())
+        else:
+            for p in self.locatePlugins(pluginName):
+                yield self.locateCommand(p, args.copy())
+
+
+    @plugin.rest
+    @plugin.usage(u'help <name>')
+    def cmd_help(self, source, name):
+        """
+        Retrieve help for a given command or plugin.
+
+        Most commands will provide a reasonable description of what it is they
+        do and how to use them.  Commands and subcommands can be listed with
+        the "list" command.
+        """
+        if not name:
+            name = u'help'
+        args = plugin.IncrementalArguments(name)
+        cmd = source.avatar.getCommand(args)
+        helps = [cmd.help]
+        if cmd.usage is not None:
+            helps.insert(0, cmd.usage)
+        elif isinstance(cmd, plugin.Plugin):
+            # XXX: argh, this is so horrible
+            # XXX: as soon as multiline responses are implemented this must
+            # be the first thing to get fixed
+            helps.insert(0, u'\002%s\002' % (cmd.pluginName,))
+            msg = u' -- '.join(helps)
+            source.reply(msg)
+            commands = plugin.listCommands(source.avatar, cmd.name)
+            helps = [u'\002%s\002' % (cmd.pluginName,),
+                     u', '.join(commands)]
+
+        msg = u' -- '.join(helps)
+        source.reply(msg)
+
+
+    @plugin.rest
+    @plugin.usage(u'list [name]')
+    def cmd_list(self, source, name):
+        """
+        List commands and sub-commands.
+
+        If no parameters are specified, top-level commands are listed along
+        with installed plugins.
+
+        Private plugins are marked with an *, subcommands are marked with an @.
+        """
+        commands = plugin.listCommands(source.avatar, name)
+        source.reply(u', '.join(commands))
+
+
+    @plugin.usage(u'crash')
+    def cmd_crash(self):
+        1 / 0
+
 
 
 class AnonymousAvatar(_AvatarMixin):
     """
     The avatar given to unauthenticated users.
     """
-    def locatePlugins(self, protocol, name):
-        yield protocol.locatePlugin(name)
+    def locatePlugins(self, name):
+        yield plugin.getPluginByName(self.appStore, name)
 
 
-    def getCommand(self, protocol, args):
+    def getCommand(self, args):
         pluginName = args.next()
-        plugin = self.locatePlugins(protocol, pluginName).next()
-        return self.locateCommand(plugin, args)
+        cmd = getattr(self, 'cmd_' + pluginName, None)
+        if cmd is not None:
+            return self.locateCommand(plugin.ICommand(cmd), args.copy())
+        else:
+            p = self.locatePlugins(pluginName).next()
+            return self.locateCommand(p, args)
 
 
 

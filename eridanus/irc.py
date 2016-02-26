@@ -153,7 +153,7 @@ class IRCSource(object):
         """
         return self.protocol.unignore(mask)
 
-    def logFailure(self, f, msg):
+    def logFailure(self, f, msg=None):
         """
         Log the failure and have the protocol mention it.
         """
