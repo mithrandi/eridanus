@@ -10,8 +10,9 @@ from eridanus import plugin
 from twisted.application.internet import ClientService
 from twisted.cred.portal import IRealm
 from twisted.internet import reactor
-from twisted.internet.defer import maybeDeferred
+from twisted.internet.defer import CancelledError, maybeDeferred
 from twisted.internet.endpoints import clientFromString
+from twisted.internet.task import deferLater, LoopingCall
 from twisted.python import log
 from twisted.python.url import URL
 from xmantissa.port import PortMixin
@@ -94,6 +95,26 @@ class SlackProtocol(WebSocketClientProtocol):
             .accountByAddress(u'Eridanus', None)
             .avatars
             .open())
+        self.pingTimer = None
+        self.pingCall = LoopingCall(self.ping)
+        self.pingCall.start(30)
+
+
+    def connectionLost(self, reason):
+        super(SlackProtocol, self).connectionLost(reason)
+        print "disconnected"
+        self.pingCall.stop()
+
+
+    def ping(self):
+        """
+        Send a Slack ping.
+        """
+        self.send({u'type': u'ping'})
+        self.pingTimer = (
+            deferLater(reactor, 30, self.transport.loseConnection)
+            .addErrback(lambda f: f.trap(CancelledError))
+            )
 
 
     def onMessage(self, payload, isBinary):
@@ -108,6 +129,14 @@ class SlackProtocol(WebSocketClientProtocol):
                 self,
                 'handle_' + mtype.encode('ascii'),
                 self.unhandled)(message)
+
+
+    def handle_pong(self, message):
+        """
+        We got a pong.
+        """
+        self.pingTimer.cancel()
+        self.pingTimer = None
 
 
     def handle_message(self, message):
