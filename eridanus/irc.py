@@ -42,6 +42,10 @@ class IRCUser(object):
     def __repr__(self):
         return '<%s %s>' % (type(self).__name__, self.usermask)
 
+    @property
+    def avatarId(self):
+        return ()
+
 
 class IRCSource(object):
     """

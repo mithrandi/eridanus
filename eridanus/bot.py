@@ -28,69 +28,7 @@ from eridanus.util import encode, decode
 
 
 
-class _IRCKeepAliveMixin(object):
-    """
-    Ping an IRC server periodically to determine the connection status.
-
-    If there has been no response before the timeout interval has elapsed,
-    C{self.factory.retry} is called in an attempt to reconnect.
-
-    @type pingInterval: C{float}
-    @cvar pingInterval: The interval, in seconds, between PING requests
-
-    @type pingTimeoutInterval: C{float}
-    @cvar pingTimeoutInterval: The number of seconds to wait for a response
-        before attempting to reconnect
-
-    @type pingTimeout: C{IDelayedCall}
-    @cvar pingTimeout: The delayed call object that will trigger a reconnect
-        unless a response is received
-    """
-    pingInterval = 120.0
-    pingTimeoutInterval = 240.0
-
-    pingTimeout = None
-
-    def die(self):
-        """
-        It's over, reconnect.
-        """
-        log.msg('PONG not received within %s seconds, asploding.' % (self.pingTimeoutInterval,))
-        self.quit('No PING response')
-        self.factory.connector.disconnect()
-
-
-    def cancelTimeout(self):
-        if self.pingTimeout is not None:
-            try:
-                self.pingTimeout.cancel()
-            except ierror.AlreadyCalled:
-                pass
-            self.pingTimeout = None
-
-
-    def rawPing(self):
-        """
-        Send a PING to the server.
-        """
-        # XXX: self.config.hostname is REALLY not great
-        self.sendLine('PING ' + self.config.hostname)
-        self.cancelTimeout()
-        self.pingTimeout = reactor.callLater(self.pingTimeoutInterval, self.die)
-
-
-    def irc_PONG(self, *args):
-        """
-        PING response handler for IRCClient.
-        """
-        self.cancelTimeout()
-        reactor.callLater(self.pingInterval, self.rawPing)
-
-
-
-# XXX: There should probably be a layer of indirection between this
-# and the rest of the world.  Behaviour etc. is too muddied up here.
-class IRCBot(IRCClient, _IRCKeepAliveMixin):
+class IRCBot(IRCClient):
     isupportStrings = [
         'are available on this server',
         'are supported by this server']
@@ -241,7 +179,6 @@ class IRCBot(IRCClient, _IRCKeepAliveMixin):
 
         self.setModes()
 
-        self.rawPing()
         channels = self.config.channels
         for channel in channels:
             self.join(encode(channel))
