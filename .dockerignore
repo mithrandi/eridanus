@@ -1,0 +1,4 @@
+*.axiom/
+*.egg-info/
+_trial_temp/
+dropin.cache
