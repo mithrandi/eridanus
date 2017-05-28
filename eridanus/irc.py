@@ -42,6 +42,10 @@ class IRCUser(object):
     def __repr__(self):
         return '<%s %s>' % (type(self).__name__, self.usermask)
 
+    @property
+    def avatarId(self):
+        return ()
+
 
 class IRCSource(object):
     """
@@ -153,7 +157,7 @@ class IRCSource(object):
         """
         return self.protocol.unignore(mask)
 
-    def logFailure(self, f, msg):
+    def logFailure(self, f, msg=None):
         """
         Log the failure and have the protocol mention it.
         """

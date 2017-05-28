@@ -1,18 +1,21 @@
 # -*- test-case-name: eridanus.test.test_plugin -*-
 
-import inspect, types, re, itertools
+import inspect
+import itertools
+import re
+import types
 from textwrap import dedent
-from zope.interface import implements, classProvides
 
+from eridanus import errors, plugins, util
+from eridanus.ieridanus import (
+    IAmbientEventObserver, ICommand, IEridanusBrokenPlugin,
+    IEridanusBrokenPluginProvider, IEridanusPlugin, IEridanusPluginProvider)
+from twisted.internet.defer import maybeDeferred
 from twisted.plugin import getPlugins, IPlugin
 from twisted.python.components import registerAdapter
-from twisted.python.util import mergeFunctionMetadata
 from twisted.python.failure import Failure
-
-from eridanus import plugins, errors
-from eridanus.ieridanus import (ICommand, IEridanusPluginProvider,
-    IEridanusPlugin, IAmbientEventObserver, IEridanusBrokenPlugin,
-    IEridanusBrokenPluginProvider)
+from twisted.python.util import mergeFunctionMetadata
+from zope.interface import classProvides, implements
 
 
 
@@ -583,3 +586,84 @@ class AmbientEventObserver(object):
     """
     def publicMessageReceived(self, source, message):
         pass
+
+
+
+def broadcastAmbientEvent(appStore, eventName, source, *args, **kw):
+    for obs in getAmbientEventObservers(appStore):
+        meth = getattr(obs, eventName, None)
+        if meth is not None:
+            d = maybeDeferred(meth, source, *args, **kw)
+            d.addErrback(source.logFailure)
+
+
+
+def getAvatar(appStore, nickname):
+    #def _getAvatar(self, nickname):
+    #    username = self.getUsername(nickname)
+    #    return self.authenticatedUsers.get(username, (None, None))
+
+    avatar, logout = (None, None)
+    if avatar is None:
+        from eridanus.avatar import AnonymousAvatar
+        avatar = AnonymousAvatar()
+        avatar.appStore = appStore
+    return avatar
+
+
+
+def command(appStore, source, message):
+    args = IncrementalArguments(message)
+    avatar = getAvatar(appStore, source.user.avatarId)
+    source.avatar = avatar
+    cmd = avatar.getCommand(args)
+    return cmd.invoke(source)
+
+
+
+def listCommands(avatar, name):
+    """
+    Retrieve a list of subcommands.
+    """
+    if name:
+        args = IncrementalArguments(name)
+        parents = avatar.getAllCommands(args)
+        commands = itertools.chain(*(p.getCommands() for p in parents))
+        plugins = []
+    else:
+        # List top-level commands and plugins.
+        commands = []
+        avStore = getattr(avatar, 'store', None)
+
+        # XXX: Can this really not be made any simpler?
+        # XXX: Perhaps the solution here is making sure that plugins that
+        #      are publically installed cannot be privately installed too.
+
+        # Plugins that are private are marked with a *.  Plugins that are
+        # public are not.  Plugins that are both private and public (?) are
+        # treated as if there were only public.
+        publicPlugins = set((p.name, p.pluginName)
+                            for p in getInstalledPlugins(avatar.appStore))
+        if avStore is not None:
+            privatePlugins = set((p.name, p.pluginName)
+                                 for p in getInstalledPlugins(avStore))
+        else:
+            privatePlugins = set()
+
+        plugins = util.collate(itertools.chain(
+            ((n, pn) for n, pn in publicPlugins),
+            ((n, u'*' + pn) for n, pn in privatePlugins - publicPlugins)))
+
+        plugins = sorted(u'%s (%s)' % (name, u', '.join(pluginNames))
+                         for name, pluginNames in plugins.iteritems())
+
+    def commandName(cmd):
+        if isinstance(cmd, SubCommand):
+            return u'@' + cmd.name
+        return cmd.name
+
+    commands = sorted(
+        (commandName(cmd)
+         for cmd in itertools.ifilter(lambda cmd: not cmd.alias, commands)))
+
+    return commands + plugins

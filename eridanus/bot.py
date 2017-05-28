@@ -21,7 +21,6 @@ from axiom.upgrade import registerUpgrader, registerAttributeCopyingUpgrader
 from axiom.userbase import LoginSystem
 
 from eridanus import util, errors, plugin, iriparse
-from eridanus.avatar import AnonymousAvatar
 from eridanus.irc import IRCSource, IRCUser
 from eridanus.ieridanus import ICommand, IIRCAvatar
 from eridanus.plugin import usage, rest, SubCommand, IncrementalArguments
@@ -29,69 +28,7 @@ from eridanus.util import encode, decode
 
 
 
-class _IRCKeepAliveMixin(object):
-    """
-    Ping an IRC server periodically to determine the connection status.
-
-    If there has been no response before the timeout interval has elapsed,
-    C{self.factory.retry} is called in an attempt to reconnect.
-
-    @type pingInterval: C{float}
-    @cvar pingInterval: The interval, in seconds, between PING requests
-
-    @type pingTimeoutInterval: C{float}
-    @cvar pingTimeoutInterval: The number of seconds to wait for a response
-        before attempting to reconnect
-
-    @type pingTimeout: C{IDelayedCall}
-    @cvar pingTimeout: The delayed call object that will trigger a reconnect
-        unless a response is received
-    """
-    pingInterval = 120.0
-    pingTimeoutInterval = 240.0
-
-    pingTimeout = None
-
-    def die(self):
-        """
-        It's over, reconnect.
-        """
-        log.msg('PONG not received within %s seconds, asploding.' % (self.pingTimeoutInterval,))
-        self.quit('No PING response')
-        self.factory.connector.disconnect()
-
-
-    def cancelTimeout(self):
-        if self.pingTimeout is not None:
-            try:
-                self.pingTimeout.cancel()
-            except ierror.AlreadyCalled:
-                pass
-            self.pingTimeout = None
-
-
-    def rawPing(self):
-        """
-        Send a PING to the server.
-        """
-        # XXX: self.config.hostname is REALLY not great
-        self.sendLine('PING ' + self.config.hostname)
-        self.cancelTimeout()
-        self.pingTimeout = reactor.callLater(self.pingTimeoutInterval, self.die)
-
-
-    def irc_PONG(self, *args):
-        """
-        PING response handler for IRCClient.
-        """
-        self.cancelTimeout()
-        reactor.callLater(self.pingInterval, self.rawPing)
-
-
-
-# XXX: There should probably be a layer of indirection between this
-# and the rest of the world.  Behaviour etc. is too muddied up here.
-class IRCBot(IRCClient, _IRCKeepAliveMixin):
+class IRCBot(IRCClient):
     isupportStrings = [
         'are available on this server',
         'are supported by this server']
@@ -161,11 +98,8 @@ class IRCBot(IRCClient, _IRCKeepAliveMixin):
 
         @rtype: C{Deferred}
         """
-        for obs in plugin.getAmbientEventObservers(self.appStore):
-            meth = getattr(obs, eventName, None)
-            if meth is not None:
-                d = maybeDeferred(meth, source, *args, **kw)
-                d.addErrback(self.mentionFailure, source)
+        plugin.broadcastAmbientEvent(
+            self.appStore, eventName, source, *args, **kw)
 
 
     def joined(self, channel):
@@ -245,27 +179,11 @@ class IRCBot(IRCClient, _IRCKeepAliveMixin):
 
         self.setModes()
 
-        self.rawPing()
         channels = self.config.channels
         for channel in channels:
             self.join(encode(channel))
 
         log.msg('Joined channels: %r' % (channels,))
-
-
-    # XXX: this method is a bit lame
-    def locateBuiltinCommand(self, args):
-        """
-        Locate a built-in command.
-        """
-        name = args.next()
-        method = getattr(self, 'cmd_%s' % name.lower(), None)
-
-        if method is None:
-            return None, args
-
-        cmd = ICommand(method)
-        return cmd.locateCommand(args)
 
 
     def locatePlugin(self, name):
@@ -279,16 +197,7 @@ class IRCBot(IRCClient, _IRCKeepAliveMixin):
         """
         Find and invoke the C{ICommand} provider from C{message}.
         """
-        args = IncrementalArguments(message)
-        # XXX: Having to call the command two different ways is not great.
-        cmd, _ = self.locateBuiltinCommand(args.copy())
-
-        if cmd is not None:
-            cmd.invoke(source)
-        else:
-            avatar = self.getAvatar(source.user.nickname)
-            cmd = avatar.getCommand(self, args)
-            return cmd.invoke(source)
+        return plugin.command(self.appStore, source, message)
 
 
     def mentionFailure(self, f, source, msg=None):
@@ -301,7 +210,7 @@ class IRCBot(IRCClient, _IRCKeepAliveMixin):
 
     def directedPublicMessage(self, source, message):
         maybeDeferred(self.command, source, message
-            ).addErrback(self.mentionFailure, source)
+            ).addErrback(source.logFailure)
 
     privateMessage = directedPublicMessage
 
@@ -310,23 +219,6 @@ class IRCBot(IRCClient, _IRCKeepAliveMixin):
         self.broadcastAmbientEvent('publicMessageReceived', source, message)
         for url in iriparse.parseURLs(message):
             self.broadcastAmbientEvent('publicURLReceived', source, url)
-
-
-    def getUsername(self, nickname):
-        # XXX: maybe check that nickname is sane?
-        return u'%s@%s' % (nickname, self.serviceID)
-
-
-    def _getAvatar(self, nickname):
-        username = self.getUsername(nickname)
-        return self.authenticatedUsers.get(username, (None, None))
-
-
-    def getAvatar(self, nickname):
-        avatar, logout = self._getAvatar(nickname)
-        if avatar is None:
-            avatar = AnonymousAvatar()
-        return avatar
 
 
     def getAuthenticatedAvatar(self, nickname):
@@ -446,115 +338,6 @@ class IRCBot(IRCClient, _IRCKeepAliveMixin):
         """
         brokenPlugins = set(plugin.getBrokenPlugins())
         return (p.pluginName for p in brokenPlugins)
-
-
-    def getCommands(self):
-        for name in dir(self):
-            if name.startswith('cmd_'):
-                yield ICommand(getattr(self, name))
-
-
-    @rest
-    @usage(u'help <name>')
-    def cmd_help(self, source, name):
-        """
-        Retrieve help for a given command or plugin.
-
-        Most commands will provide a reasonable description of what it is they
-        do and how to use them.  Commands and subcommands can be listed with
-        the "list" command.
-        """
-        if not name:
-            name = u'help'
-
-        args = IncrementalArguments(name)
-
-        # XXX: blehblehbleh, locateBuiltinCommand is pure fail
-        avatar = self.getAvatar(source.user.nickname)
-        cmd, _ = self.locateBuiltinCommand(args.copy())
-        if cmd is None:
-            cmd = avatar.getCommand(self, args)
-
-        helps = [cmd.help]
-        if cmd.usage is not None:
-            helps.insert(0, cmd.usage)
-        elif isinstance(cmd, plugin.Plugin):
-            # XXX: argh, this is so horrible
-            # XXX: as soon as multiline responses are implemented this must
-            # be the first thing to get fixed
-            helps.insert(0, u'\002%s\002' % (cmd.pluginName,))
-            msg = u' -- '.join(helps)
-            source.reply(msg)
-            commands = self.listCommands(avatar, cmd.name)
-            helps = [u'\002%s\002' % (cmd.pluginName,),
-                     u', '.join(commands)]
-
-        msg = u' -- '.join(helps)
-        source.reply(msg)
-
-
-    def listCommands(self, avatar, name):
-        """
-        Retrieve a list of subcommands.
-        """
-        if name:
-            args = IncrementalArguments(name)
-            parents = avatar.getAllCommands(self, args)
-            commands = itertools.chain(*(p.getCommands() for p in parents))
-            plugins = []
-        else:
-            # List top-level commands and plugins.
-            commands = self.getCommands()
-            avStore = getattr(avatar, 'store', None)
-
-            # XXX: Can this really not be made any simpler?
-            # XXX: Perhaps the solution here is making sure that plugins that
-            #      are publically installed cannot be privately installed too.
-
-            # Plugins that are private are marked with a *.  Plugins that are
-            # public are not.  Plugins that are both private and public (?) are
-            # treated as if there were only public.
-            publicPlugins  = set((p.name, p.pluginName)
-                                 for p in plugin.getInstalledPlugins(self.appStore))
-            if avStore is not None:
-                privatePlugins = set((p.name, p.pluginName)
-                                     for p in plugin.getInstalledPlugins(avStore))
-            else:
-                privatePlugins = set()
-
-            plugins = util.collate(itertools.chain(
-                ((n, pn) for n, pn in publicPlugins),
-                ((n, u'*' + pn) for n, pn in privatePlugins - publicPlugins)))
-
-            plugins = sorted(u'%s (%s)' % (name, u', '.join(pluginNames))
-                             for name, pluginNames in plugins.iteritems())
-
-        def commandName(cmd):
-            if isinstance(cmd, SubCommand):
-                return u'@' + cmd.name
-            return cmd.name
-
-        commands = sorted(
-            (commandName(cmd)
-             for cmd in itertools.ifilter(lambda cmd: not cmd.alias, commands)))
-
-        return commands + plugins
-
-
-    @rest
-    @usage(u'list [name]')
-    def cmd_list(self, source, name):
-        """
-        List commands and sub-commands.
-
-        If no parameters are specified, top-level commands are listed along
-        with installed plugins.
-
-        Private plugins are marked with an *, subcommands are marked with an @.
-        """
-        avatar = self.getAvatar(source.user.nickname)
-        commands = self.listCommands(avatar, name)
-        source.reply(u', '.join(commands))
 
 
 
@@ -695,7 +478,6 @@ registerAttributeCopyingUpgrader(IRCBotConfig, 4, 5)
 
 
 
-# XXX: technically this has no real ties to IRC anything, so the name sucks
 class IRCBotService(Item):
     implements(IService)
 
