@@ -14,6 +14,7 @@ from epsilon.extime import Time
 from twisted.internet.defer import succeed
 from twisted.python import log
 from twisted.web import error as weberror
+from twisted.web.http_headers import Headers
 
 from axiom import batch
 from axiom.attributes import (AND, timestamp, integer, reference, text,
@@ -201,43 +202,6 @@ def _monkey_read_eof(self):
         pass
 
 
-def _decodeData(data, contentType, contentEncoding):
-    """
-    Decode C{data} handling content encoding and content type.
-
-    @type data: C{str}
-
-    @type contentType: C{str}
-    @param contentType: C{data} is decoded using any C{charset} directive found
-        in the content type
-
-    @type contentEncoding: C{str}
-    @param contentEncoding: Content encoding to decode to obtain the intended
-        data, only gzip is currently supported
-
-    @raise ValueError: If C{contentEncoding} is not C{None} and not gzip
-
-    @rtype: C{unicode}
-    """
-    # XXX: this should be done at a lower level, like util.getPage maybe
-    if contentEncoding is not None:
-        if contentEncoding in ('x-gzip', 'gzip'):
-            gzf = gzip.GzipFile(fileobj=StringIO(data))
-            # Monkey patch `_read_eof` so that it doesn't explode with an
-            # IOError if the CRC doesn't match and break everything. I
-            # believe the main reason for this is that we only request the
-            # first 4096 bytes, which are almost certainly not going to
-            # match the entire data's checksum.
-            gzf._real_read_eof = gzf._read_eof
-            gzf._read_eof = lambda: _monkey_read_eof(gzf)
-            data = gzf.read()
-        else:
-            raise ValueError(u'Unsupported content encoding: %r' % (contentEncoding,))
-
-    params = dict(p.lower().strip().split(u'=', 1) for p in contentType.split(u';')[1:] if u'=' in p)
-    return _decodeText(data, params.get('charset'))
-
-
 
 def _extractImageMetadata(stream):
     """
@@ -271,7 +235,7 @@ def _buildMetadata(data, headers):
     @return: Iterable of C{(key, value)} pairs
     """
     def getHeader(name):
-        h = headers.get(name)
+        h = headers.getRawHeaders(name)
         if h is not None:
             return unicode(h[0], 'ascii')
         return None
@@ -317,7 +281,7 @@ def _extractTitle(data):
 
 
 def fetchPageData(url):
-    def _doFetch(headers={}):
+    def _doFetch(headers):
         return util.PerseverantDownloader(url, headers=headers).go()
 
     def maybeBadBehaviour(f):
@@ -325,7 +289,7 @@ def fetchPageData(url):
         # <http://www.bad-behavior.ioerror.us/>.  The end.
         f.trap(weberror.Error)
         if f.value.args[1] == 'Bad Behavior':
-            return _doFetch()
+            return _doFetch(Headers())
         return f
 
     def gotData((data, headers)):
@@ -334,15 +298,13 @@ def fetchPageData(url):
         contentType = metadata.get('contentType', u'application/octet-stream')
         major, minor = util.padIterable(contentType.split(u'/', 1), 2)
         if major == u'text' or u'html' in minor:
-            contentEncoding = headers.get('content-encoding', [None])[0]
-            data = _decodeData(data, contentType, contentEncoding)
             title = _extractTitle(data)
         else:
             title = None
 
         return succeed((title, metadata))
 
-    headers = dict(range='bytes=0-4095')
+    headers = Headers({'range': ['bytes=0-4095']})
     return _doFetch(headers
         ).addErrback(maybeBadBehaviour
         ).addCallback(gotData)

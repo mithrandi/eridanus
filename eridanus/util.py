@@ -1,8 +1,12 @@
 import re, math, fnmatch, itertools, warnings, htmlentitydefs
 
 from twisted.internet import reactor, task, error as ineterror
+from twisted.internet.defer import inlineCallbacks, returnValue
 from twisted.web import client, http, error as weberror
+from twisted.web.http_headers import Headers
 from twisted.python import log
+
+import treq
 
 from nevow.url import URL
 from nevow.rend import Page, Fragment
@@ -103,46 +107,21 @@ class PerseverantDownloader(object):
     def __repr__(self):
         return '<%s %s>' % (type(self).__name__, self.url)
 
+    @inlineCallbacks
     def go(self):
         """
         Attempt to download L{self.url}.
         """
-        d, f = getPage(str(self.url), timeout=self.timeout, *self.args, **self.kwargs)
-        return d.addErrback(self.retryWeb
-               ).addCallback(lambda data: (data, f.response_headers))
-
-    def retryWeb(self, f):
-        """
-        Retry failed downloads in the case of "web errors."
-
-        Only errors that are web related are considered for a retry attempt
-        and then only when the HTTP status code is one of those in
-        L{self.retryableHTTPCodes}.
-
-        Other errors are not trapped.
-        """
-        f.trap((weberror.Error, ineterror.ConnectionDone))
-        err = f.value
-        if int(err.status) in self.retryableHTTPCodes:
-            return self.retry(f)
-
-        return f
-
-    def retry(self, f):
-        """
-        The retry machinery.
-
-        If C{self.tries} is greater than zero, a retry is attempted for
-        C{self.delay} seconds in the future.
-        """
-        self.tries -= 1
-        log.msg('PerseverantDownloader is retrying, %d attempts left.' % (self.tries,))
-        log.err(f)
-        self.delay = min(self.delay * self.factor, self.maxDelay)
-        if self.tries == 0:
-            return f
-
-        return task.deferLater(reactor, self.delay, self.go)
+        headers = self.kwargs.pop('headers', Headers())
+        headers.setRawHeaders('user-agent', ['Eridanus IRC bot'])
+        response = yield treq.get(
+            str(self.url), timeout=self.timeout, headers=headers,
+            *self.args, **self.kwargs)
+        data = yield response.content()
+        if response.code // 100 == 2:
+            returnValue((data, response.headers))
+        else:
+            raise weberror.Error(response.code, response.phrase, data)
 
 
 def encode(s):
@@ -151,35 +130,6 @@ def encode(s):
 
 def decode(s):
     return s.decode(const.ENCODING, 'replace')
-
-
-def handle206(f):
-    """
-    Return any partial content when HTTP 206 is returned.
-    """
-    f.trap(weberror.Error)
-    err = f.value
-    try:
-        if int(err.status) == http.PARTIAL_CONTENT:
-            return err.response
-    except ValueError:
-        pass
-
-    return f
-
-
-# XXX: a copy from twisted.web.client because we need the useful stuff
-def getPage(url, contextFactory=None, *args, **kwargs):
-    if 'agent' not in kwargs:
-        kwargs['agent'] = 'Eridanus Page Fetcher'
-
-    factory = client._makeGetterFactory(
-        url,
-        client.HTTPClientFactory,
-        contextFactory=contextFactory,
-        *args, **kwargs)
-
-    return factory.deferred.addErrback(handle206), factory
 
 
 def truncate(s, limit):
