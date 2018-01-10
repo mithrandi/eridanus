@@ -1,8 +1,15 @@
 from StringIO import StringIO
 
+import fixtures
+
+from axiom.store import Store
+
 from twisted.trial import unittest
 from twisted.python.filepath import FilePath
 from twisted.web.http_headers import Headers
+
+from xmantissa.fulltext import SQLiteIndexer
+from xmantissa.ixmantissa import IFulltextIndexer
 
 from eridanus import util
 from eridanusstd import linkdb
@@ -121,3 +128,58 @@ class TitleExtractionTests(unittest.TestCase):
         self.assertEquals(
             linkdb._extractTitle(data),
             u'Google')
+
+
+
+class FullTextIndexerFixture(fixtures.Fixture):
+    def __init__(self, store):
+        self.store = store
+
+    def _setUp(self):
+        indexer = SQLiteIndexer(store=self.store)
+        self.store.powerUp(indexer, IFulltextIndexer)
+        entrySource = self.store.findOrCreate(linkdb.LinkEntrySource)
+        indexer.addSource(entrySource)
+        commentSource = self.store.findOrCreate(linkdb.LinkEntryCommentSource)
+        indexer.addSource(commentSource)
+
+
+
+class RandomEntryTests(unittest.TestCase, fixtures.TestWithFixtures):
+    """
+    Tests for L{eridanusstd.linkdb.LinkManager.randomEntry}.
+    """
+    def test_finds_success(self):
+        """
+        L{randomEntry} returns the only result available.
+        """
+        store = Store()
+        self.useFixture(FullTextIndexerFixture(store))
+        manager = linkdb.LinkManager(store=store, channel=u'foo')
+        entry = manager.createEntry(u'bar', u'baz', u'title')
+        result = manager.randomEntry()
+        self.assertIs(result, entry)
+
+
+    def test_no_links(self):
+        """
+        L{randomEntry} returns L{None} if there are no link entries.
+        """
+        store = Store()
+        self.useFixture(FullTextIndexerFixture(store))
+        manager = linkdb.LinkManager(store=store, channel=u'foo')
+        result = manager.randomEntry()
+        self.assertIs(result, None)
+
+
+    def test_no_deleted(self):
+        """
+        L{randomEntry} returns L{None} and not the deleted entry.
+        """
+        store = Store()
+        self.useFixture(FullTextIndexerFixture(store))
+        manager = linkdb.LinkManager(store=store, channel=u'foo')
+        entry = manager.createEntry(u'bar', u'baz', u'title')
+        entry.isDeleted = True
+        result = manager.randomEntry()
+        self.assertIs(result, None)

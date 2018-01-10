@@ -1,5 +1,5 @@
 # -*- test-case-name: eridanusstd.test.test_linkdb -*-
-import datetime, itertools, urllib, re, chardet, gzip
+import datetime, itertools, urllib, re, chardet, gzip, random
 from StringIO import StringIO
 try:
     import PIL.Image
@@ -419,6 +419,20 @@ class LinkManager(Item):
             criteria.append(LinkEntry.url == url)
 
         return self.store.findFirst(LinkEntry, AND(*criteria))
+
+
+    def randomEntry(self):
+        """
+        Get a random L{LinkEntry}.
+
+        @rtype: L{LinkEntry} or C{None}
+        """
+        entry = None
+        if self.store.findFirst(LinkEntry, AND(LinkEntry.isDeleted == False)) is not None:
+            while entry is None:
+                entry = self.entryByID(random.randint(0, self.lastEid))
+        return entry
+
 
     def entryByID(self, eid, evenDeleted=False):
         """
