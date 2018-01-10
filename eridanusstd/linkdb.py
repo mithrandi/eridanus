@@ -428,7 +428,9 @@ class LinkManager(Item):
         @rtype: L{LinkEntry} or C{None}
         """
         entry = None
-        if self.store.findFirst(LinkEntry, AND(LinkEntry.isDeleted == False)) is not None:
+        criteria = [LinkEntry.isDeleted == False,
+                    LinkEntry.channel == self.channel]
+        if self.store.findFirst(LinkEntry, AND(*criteria)) is not None:
             while entry is None:
                 entry = self.entryByID(random.randint(0, self.lastEid))
         return entry

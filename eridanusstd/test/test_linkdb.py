@@ -183,3 +183,17 @@ class RandomEntryTests(unittest.TestCase, fixtures.TestWithFixtures):
         entry.isDeleted = True
         result = manager.randomEntry()
         self.assertIs(result, None)
+
+
+    def test_from_channel(self):
+        """
+        Entry exists query includes the LinkManager's channel.
+        """
+        store = Store()
+        self.useFixture(FullTextIndexerFixture(store))
+        manager = linkdb.LinkManager(store=store, channel=u'foo')
+        manager.lastEid = 0
+        linkdb.LinkEntry(
+            store=store, channel=u'not_foo', url=u'bar', nick=u'baz', eid=0)
+        result = manager.randomEntry()
+        self.assertIs(result, None)
