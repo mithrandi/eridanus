@@ -16,6 +16,7 @@ setup(
         'wokkel',
         'lxml',
         'autobahn',
+        'fixtures'
         ],
     license='MIT',
     packages=find_packages() + ['axiom.plugins'],
