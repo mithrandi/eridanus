@@ -2,6 +2,7 @@ from StringIO import StringIO
 
 from twisted.trial import unittest
 from twisted.python.filepath import FilePath
+from twisted.web.http_headers import Headers
 
 from eridanus import util
 from eridanusstd import linkdb
@@ -75,16 +76,16 @@ class MetadataExtractionTests(unittest.TestCase):
         """
         data = self.pngStream.read()
 
-        md = dict(linkdb._buildMetadata(data, {}))
+        md = dict(linkdb._buildMetadata(data, Headers()))
         self.assertEquals({}, md)
 
-        md = dict(linkdb._buildMetadata(data, {
-            'content-type': ['text/plain']}))
+        md = dict(linkdb._buildMetadata(data, Headers({
+            'content-type': ['text/plain']})))
         self.assertEquals({
             u'contentType': u'text/plain'}, md)
 
-        md = dict(linkdb._buildMetadata(data, {
-            'content-range': ['bytes 10240/20480']}))
+        md = dict(linkdb._buildMetadata(
+            data, Headers({'content-range': ['bytes 10240/20480']})))
         self.assertEquals({
             u'size': util.humanReadableFileSize(20480)}, md)
 
@@ -99,8 +100,8 @@ class MetadataExtractionTests(unittest.TestCase):
 
         self.patch(
             linkdb, '_extractImageMetadata', lambda stream: [(u'foo', u'bar')])
-        md = dict(linkdb._buildMetadata(data, {
-            'content-type': ['image/png']}))
+        md = dict(linkdb._buildMetadata(
+            data, Headers({'content-type': ['image/png']})))
         self.assertEquals({
             u'contentType': u'image/png',
             u'foo': u'bar'}, md)
