@@ -517,6 +517,15 @@ class LinkDB(Item, Plugin, AmbientEventObserver, _LinkDBHelperMixin):
             ).addCallback(processResults)
 
 
+    @usage(u'random')
+    def cmd_random(self, source):
+        lm = self.getLinkManager(source)
+        result = lm.randomEntry()
+        if result is not None:
+            source.reply(result.completeHumanReadable)
+        source.reply('No results found')
+
+
     @rest
     @usage(u'find <term>')
     def cmd_find(self, source, term):
