@@ -523,7 +523,8 @@ class LinkDB(Item, Plugin, AmbientEventObserver, _LinkDBHelperMixin):
         result = lm.randomEntry()
         if result is not None:
             source.reply(result.completeHumanReadable)
-        source.reply('No results found')
+        else:
+            source.reply('No results found')
 
 
     @rest
