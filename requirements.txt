@@ -36,7 +36,7 @@ service-identity==17.0.0
 six==1.10.0
 treq==17.3.1
 twisted[tls]==17.1.0
-urllib3==1.21.1
+urllib3==1.26.5
 vertex==0.3.1
 webencodings==0.5.1
 zope.interface==4.4.1
